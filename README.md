@@ -1,6 +1,6 @@
 # DAZZ
 
-DAZZ is a React AI chat interface with a glass-and-violet visual theme. Assistant replies support Markdown formatting, and sidebar settings let you choose and persist the interface font. The UI is divided into chat components under `src/components/chat`; `App.tsx` owns conversation state and streaming.
+DAZZ is a React AI chat interface with switchable Neon Purple, Neon Green, Cloud White, and Midnight Gold themes. Each theme applies its own palette and matching font; Settings also provides additional fonts for manual selection. Theme and font choices persist between visits. Assistant replies support Markdown formatting. The UI is divided into chat components under `src/components/chat`; `App.tsx` owns conversation state and streaming.
 
 The TypeScript server streams responses from OpenRouter over a JSON `POST /api/chat` request. The API key is only read by the server; it is never sent to the browser.
 

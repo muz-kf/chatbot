@@ -117,7 +117,7 @@ export function ChatSidebar({
                   <div className="setting-select-wrap">
                     <select
                       id="theme-choice"
-                      className="setting-select"
+                      className="setting-select theme-choice-select"
                       value={theme}
                       onChange={(event) => onThemeChange(event.target.value as ThemeChoice)}
                     >
@@ -125,6 +125,7 @@ export function ChatSidebar({
                         <option key={value} value={value}>{label}</option>
                       ))}
                     </select>
+                    <span className={`theme-swatch theme-swatch-${theme}`} aria-hidden="true" />
                     <ChevronDown size={14} aria-hidden="true" />
                   </div>
                 </div>

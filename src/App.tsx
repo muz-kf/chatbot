@@ -4,15 +4,23 @@ import { ChatHeader } from "./components/chat/ChatHeader";
 import { ChatSidebar } from "./components/chat/ChatSidebar";
 import { MessageList } from "./components/chat/MessageList";
 import { WelcomeScreen } from "./components/chat/WelcomeScreen";
-import type { FontChoice, Message, ThemeChoice } from "./types/chat";
-
-function getSavedFont(): FontChoice {
-  const savedFont = window.localStorage.getItem("chat-font");
-  return savedFont === "DM Sans" || savedFont === "Manrope" ? savedFont : "Poppins";
-}
+import {
+  isFontChoice,
+  isThemeChoice,
+  themeFonts,
+  type FontChoice,
+  type Message,
+  type ThemeChoice,
+} from "./types/chat";
 
 function getSavedTheme(): ThemeChoice {
-  return window.localStorage.getItem("chat-theme") === "gold" ? "gold" : "violet";
+  const savedTheme = window.localStorage.getItem("chat-theme");
+  return isThemeChoice(savedTheme) ? savedTheme : "purple";
+}
+
+function getSavedFont(theme: ThemeChoice): FontChoice {
+  const savedFont = window.localStorage.getItem("chat-font");
+  return isFontChoice(savedFont) ? savedFont : themeFonts[theme];
 }
 
 function App() {
@@ -25,8 +33,8 @@ function App() {
     window.matchMedia("(min-width: 768px)").matches,
   );
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [font, setFont] = useState<FontChoice>(getSavedFont);
   const [theme, setTheme] = useState<ThemeChoice>(getSavedTheme);
+  const [font, setFont] = useState<FontChoice>(() => getSavedFont(theme));
   const bottomRef = useRef<HTMLDivElement>(null);
   const requestRef = useRef<AbortController | null>(null);
   const draftRef = useRef<HTMLTextAreaElement>(null);
@@ -46,6 +54,13 @@ function App() {
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     window.localStorage.setItem("chat-theme", theme);
+    const themeColors: Record<ThemeChoice, string> = {
+      purple: "#08060c",
+      green: "#06110d",
+      white: "#f4f6fb",
+      gold: "#111208",
+    };
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", themeColors[theme]);
   }, [theme]);
 
   useEffect(() => {
@@ -171,6 +186,11 @@ function App() {
     draftRef.current?.focus();
   }
 
+  function changeTheme(nextTheme: ThemeChoice) {
+    setTheme(nextTheme);
+    setFont(themeFonts[nextTheme]);
+  }
+
   async function copyMessage(message: Message) {
     try {
       await navigator.clipboard.writeText(message.content);
@@ -197,7 +217,7 @@ function App() {
         onNewChat={newChat}
         onToggleSettings={() => setSettingsOpen((open) => !open)}
         onFontChange={setFont}
-        onThemeChange={setTheme}
+        onThemeChange={changeTheme}
       />
       <main className="chat-workspace">
         <ChatHeader

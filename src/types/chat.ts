@@ -4,11 +4,38 @@ export type Message = {
   content: string;
 };
 
-export const fonts = ["Poppins", "DM Sans", "Manrope"] as const;
+export const fonts = [
+  "Poppins",
+  "DM Sans",
+  "Manrope",
+  "Space Grotesk",
+  "Outfit",
+  "Sora",
+  "Orbitron",
+  "Rajdhani",
+  "Oxanium",
+] as const;
 export type FontChoice = (typeof fonts)[number];
 
 export const themes = [
-  { value: "violet", label: "Cosmic Violet" },
+  { value: "purple", label: "Neon Purple" },
+  { value: "green", label: "Neon Green" },
+  { value: "white", label: "Cloud White" },
   { value: "gold", label: "Midnight Gold" },
 ] as const;
 export type ThemeChoice = (typeof themes)[number]["value"];
+
+export const themeFonts: Record<ThemeChoice, FontChoice> = {
+  purple: "Space Grotesk",
+  green: "Rajdhani",
+  white: "DM Sans",
+  gold: "Oxanium",
+};
+
+export function isFontChoice(value: string | null): value is FontChoice {
+  return fonts.some((font) => font === value);
+}
+
+export function isThemeChoice(value: string | null): value is ThemeChoice {
+  return themes.some((theme) => theme.value === value);
+}
