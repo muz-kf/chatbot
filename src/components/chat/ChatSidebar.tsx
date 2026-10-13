@@ -1,18 +1,30 @@
 import { useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronDown, PanelLeftClose, Plus, Settings2, Sparkles, X } from "lucide-react";
+import { ChevronDown, LogOut, MessageSquare, PanelLeftClose, Plus, Settings2, Sparkles, X } from "lucide-react";
 import { Button } from "../ui/button";
 import { DazzMark } from "./DazzMark";
 import { VoiceToTextWidget } from "./VoiceToTextWidget";
-import { fonts, themes, type FontChoice, type ThemeChoice } from "../../types/chat";
+import {
+  fonts,
+  themes,
+  type ChatSummary,
+  type FontChoice,
+  type ThemeChoice,
+  type UserProfile,
+} from "../../types/chat";
 
 type ChatSidebarProps = {
   open: boolean;
   settingsOpen: boolean;
   font: FontChoice;
   theme: ThemeChoice;
+  chats: ChatSummary[];
+  activeChatId: string | null;
+  user: UserProfile;
   onClose: () => void;
   onNewChat: () => void;
+  onSelectChat: (chatId: string) => void;
+  onSignOut: () => void;
   onToggleSettings: () => void;
   onFontChange: (font: FontChoice) => void;
   onThemeChange: (theme: ThemeChoice) => void;
@@ -23,8 +35,13 @@ export function ChatSidebar({
   settingsOpen,
   font,
   theme,
+  chats,
+  activeChatId,
+  user,
   onClose,
   onNewChat,
+  onSelectChat,
+  onSignOut,
   onToggleSettings,
   onFontChange,
   onThemeChange,
@@ -74,10 +91,25 @@ export function ChatSidebar({
 
         <div className="sidebar-section-label">YOUR SPACE</div>
         <VoiceToTextWidget />
-        <div className="sidebar-empty">
-          <div className="sidebar-empty-icon"><Sparkles size={17} /></div>
-          <p>A little room to think</p>
-          <span>Your conversations will appear here.</span>
+        <div className="conversation-list" aria-label="Saved conversations">
+          {chats.length === 0 ? (
+            <div className="sidebar-empty">
+              <div className="sidebar-empty-icon"><Sparkles size={17} /></div>
+              <p>A little room to think</p>
+              <span>Your conversations will appear here.</span>
+            </div>
+          ) : chats.map((chat) => (
+            <button
+              type="button"
+              className={`conversation-item ${activeChatId === chat.id ? "is-active" : ""}`}
+              key={chat.id}
+              onClick={() => onSelectChat(chat.id)}
+              title={chat.title}
+            >
+              <MessageSquare size={14} />
+              <span>{chat.title}</span>
+            </button>
+          ))}
         </div>
 
         <div className="sidebar-settings">
@@ -137,9 +169,18 @@ export function ChatSidebar({
         </div>
 
         <div className="sidebar-profile">
-          <span className="profile-avatar">D</span>
-          <span className="profile-copy"><strong>Your workspace</strong><small>Personal space</small></span>
-          <span className="status-dot" title="Ready" />
+          <span className="profile-avatar">{user.name.trim().slice(0, 1).toUpperCase()}</span>
+          <span className="profile-copy"><strong>{user.name}</strong><small>{user.email}</small></span>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="sign-out-button"
+            aria-label="Sign out"
+            title="Sign out"
+            onClick={onSignOut}
+          >
+            <LogOut size={15} />
+          </Button>
         </div>
       </aside>
     </>

@@ -17,6 +17,18 @@ export type ChatAttachment = {
   frames?: string[];
 };
 
+export type UserProfile = {
+  email: string;
+  name: string;
+  dateOfBirth?: string;
+};
+
+export type ChatSummary = {
+  id: string;
+  title: string;
+  updatedAt: string;
+};
+
 export const fonts = [
   "Poppins",
   "DM Sans",

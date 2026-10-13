@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import { AuthGate } from "./components/chat/AuthGate";
 import { ChatComposer } from "./components/chat/ChatComposer";
 import { ChatHeader } from "./components/chat/ChatHeader";
 import { ChatSidebar } from "./components/chat/ChatSidebar";
@@ -12,9 +13,13 @@ import {
   themeFonts,
   type FontChoice,
   type ChatAttachment,
+  type ChatSummary,
   type Message,
   type ThemeChoice,
+  type UserProfile,
 } from "./types/chat";
+
+type AuthState = "loading" | "authenticated" | "unauthenticated";
 
 function getSavedTheme(): ThemeChoice {
   const savedTheme = window.localStorage.getItem("chat-theme");
@@ -28,6 +33,11 @@ function getSavedFont(theme: ThemeChoice): FontChoice {
 
 function App() {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [chats, setChats] = useState<ChatSummary[]>([]);
+  const [activeChatId, setActiveChatId] = useState<string | null>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [authState, setAuthState] = useState<AuthState>("loading");
+  const [authError, setAuthError] = useState("");
   const [draft, setDraft] = useState("");
   const [attachments, setAttachments] = useState<ChatAttachment[]>([]);
   const [streaming, setStreaming] = useState(false);
@@ -50,6 +60,31 @@ function App() {
   const recordingFinalTextRef = useRef("");
   const recordingInterimTextRef = useRef("");
   const recognitionRef = useRef<ReturnType<typeof createSpeechRecognition> | null>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void (async () => {
+      try {
+        const sessionResponse = await fetch("/api/auth/session", { signal: controller.signal });
+        if (!sessionResponse.ok) {
+          setAuthState("unauthenticated");
+          return;
+        }
+        const session = (await sessionResponse.json()) as { user: UserProfile };
+        setUser(session.user);
+        const chatsResponse = await fetch("/api/chats", { signal: controller.signal });
+        if (!chatsResponse.ok) throw new Error("Could not load saved conversations.");
+        const result = (await chatsResponse.json()) as { chats: ChatSummary[] };
+        setChats(result.chats);
+        setAuthState("authenticated");
+      } catch (loadError) {
+        if (controller.signal.aborted) return;
+        setAuthError(loadError instanceof Error ? loadError.message : "Could not load your profile.");
+        setAuthState("unauthenticated");
+      }
+    })();
+    return () => controller.abort();
+  }, []);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -107,29 +142,13 @@ function App() {
       attachments: attachedFiles,
     };
     const assistantMessage: Message = { id: crypto.randomUUID(), role: "assistant", content: "" };
-    const nextMessages = [...messages, userMessage];
-    const requestMessages = nextMessages.map((message) => ({
-      role: message.role,
-      content: message.content,
-      attachments: message.attachments?.map((attachment) => {
-        if (message.id === userMessage.id) return attachment;
-        const { data: _data, frames: _frames, ...previousAttachment } = attachment;
-        if (attachment.mimeType.startsWith("image/") || attachment.mimeType.startsWith("video/")) {
-          previousAttachment.text = [
-            previousAttachment.text,
-            "This file was attached to an earlier turn and its visual content is not re-sent in this request.",
-          ].filter(Boolean).join("\n\n");
-        }
-        return previousAttachment;
-      }),
-    }));
-    const requestBody = JSON.stringify({ messages: requestMessages });
+    const requestBody = JSON.stringify({ message: userMessage });
     if (new Blob([requestBody]).size > 28 * 1024 * 1024) {
       setError("These attachments exceed the 28 MB request limit. Remove a file and try again.");
       return;
     }
 
-    setMessages([...nextMessages, assistantMessage]);
+    setMessages((current) => [...current, userMessage, assistantMessage]);
     setDraft("");
     setAttachments([]);
     setError("");
@@ -150,10 +169,28 @@ function App() {
       };
 
       try {
-        const response = await fetch("/api/chat", {
+        let chatId = activeChatId;
+        if (!chatId) {
+          const createResponse = await fetch("/api/chats", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ title: messageContent.slice(0, 120) || "New conversation" }),
+            signal: controller.signal,
+          });
+          const created = (await createResponse.json()) as { chat?: ChatSummary; error?: string };
+          if (!createResponse.ok || !created.chat) {
+            throw new Error(created.error || "Could not create a conversation.");
+          }
+          const createdChat = created.chat;
+          chatId = createdChat.id;
+          setActiveChatId(chatId);
+          setChats((current) => [createdChat, ...current]);
+        }
+
+        const response = await fetch(`/api/chats/${chatId}/turns`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: requestBody,
+          body: JSON.stringify({ message: userMessage }),
           signal: controller.signal,
         });
 
@@ -182,6 +219,11 @@ function App() {
           if (done) break;
         }
         processLine(pending);
+        const chatsResponse = await fetch("/api/chats", { signal: controller.signal });
+        if (chatsResponse.ok) {
+          const result = (await chatsResponse.json()) as { chats: ChatSummary[] };
+          setChats(result.chats);
+        }
       } catch (requestError) {
         if (!controller.signal.aborted) {
           setError(
@@ -221,11 +263,63 @@ function App() {
     stopResponse();
     cancelVoiceRecording();
     setMessages([]);
+    setActiveChatId(null);
     setDraft("");
     setAttachments([]);
     setError("");
     if (window.matchMedia("(max-width: 767px)").matches) setSidebarOpen(false);
     draftRef.current?.focus();
+  }
+
+  async function openChat(chatId: string) {
+    if (chatId === activeChatId) {
+      if (window.matchMedia("(max-width: 767px)").matches) setSidebarOpen(false);
+      return;
+    }
+    stopResponse();
+    setError("");
+    try {
+      const response = await fetch(`/api/chats/${chatId}`);
+      const result = (await response.json()) as { chat?: { id: string; chats: Message[] }; error?: string };
+      if (!response.ok || !result.chat) throw new Error(result.error || "Could not load this conversation.");
+      setActiveChatId(result.chat.id);
+      setMessages(result.chat.chats);
+      setDraft("");
+      setAttachments([]);
+      if (window.matchMedia("(max-width: 767px)").matches) setSidebarOpen(false);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "Could not load this conversation.");
+    }
+  }
+
+  async function completeSignIn(signedInUser: UserProfile) {
+    setUser(signedInUser);
+    setAuthError("");
+    try {
+      const response = await fetch("/api/chats");
+      const result = (await response.json()) as { chats?: ChatSummary[]; error?: string };
+      if (!response.ok || !result.chats) throw new Error(result.error || "Could not load saved conversations.");
+      setChats(result.chats);
+      setAuthState("authenticated");
+    } catch (loadError) {
+      setAuthError(loadError instanceof Error ? loadError.message : "Could not load saved conversations.");
+      setAuthState("authenticated");
+    }
+  }
+
+  async function signOut() {
+    stopResponse();
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch {
+      setError("Could not confirm sign-out with the server.");
+    }
+    setUser(null);
+    setChats([]);
+    setMessages([]);
+    setActiveChatId(null);
+    setAuthState("unauthenticated");
+    setSidebarOpen(false);
   }
 
   function changeTheme(nextTheme: ThemeChoice) {
@@ -405,8 +499,13 @@ function App() {
         settingsOpen={settingsOpen}
         font={font}
         theme={theme}
+        chats={chats}
+        activeChatId={activeChatId}
+        user={user ?? { email: "", name: "" }}
         onClose={() => setSidebarOpen(false)}
         onNewChat={newChat}
+        onSelectChat={(chatId) => void openChat(chatId)}
+        onSignOut={() => void signOut()}
         onToggleSettings={() => setSettingsOpen((open) => !open)}
         onFontChange={setFont}
         onThemeChange={changeTheme}
@@ -447,6 +546,17 @@ function App() {
           onRecord={() => (recording ? stopVoiceRecording() : void startVoiceRecording())}
         />
       </main>
+      {authState === "loading" && (
+        <div className="auth-overlay">
+          <div className="auth-loading" role="status">Restoring your DAZZ session...</div>
+        </div>
+      )}
+      {authState === "unauthenticated" && (
+        <AuthGate onAuthenticated={(profile) => void completeSignIn(profile)} />
+      )}
+      {authError && authState !== "authenticated" && (
+        <div className="auth-load-error" role="alert">{authError}</div>
+      )}
     </div>
   );
 }

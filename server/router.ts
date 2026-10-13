@@ -2,6 +2,7 @@ import OpenAI from "openai";
 import { z } from "zod";
 
 export const messageSchema = z.object({
+  id: z.string().uuid(),
   role: z.enum(["user", "assistant"]),
   content: z.string().max(12_000),
   attachments: z.array(z.object({
@@ -20,8 +21,9 @@ export const messageSchema = z.object({
   "User messages must include text or an attachment.",
 );
 
-export const chatRequestSchema = z.object({
-  messages: z.array(messageSchema).min(1).max(40),
+export const chatTurnRequestSchema = z.object({
+  chatId: z.string().uuid(),
+  message: messageSchema.refine((message) => message.role === "user", "A chat turn must be a user message."),
 });
 
 export type ChatMessage = z.infer<typeof messageSchema>;
@@ -42,6 +44,15 @@ function toOpenRouterMessage(message: ChatMessage): OpenAI.Chat.Completions.Chat
     textParts.push(`Attached file: ${attachment.name} (${attachment.mimeType}).`);
     if (attachment.transcript) textParts.push(`Voice transcript: ${attachment.transcript}`);
     if (attachment.text) textParts.push(`Extracted text from ${attachment.name}:\n${attachment.text}`);
+    if (
+      (attachment.mimeType.startsWith("image/") ||
+        attachment.mimeType.startsWith("audio/") ||
+        attachment.mimeType.startsWith("video/")) &&
+      !attachment.data &&
+      !attachment.frames?.length
+    ) {
+      textParts.push(`The media content of ${attachment.name} is not included in this turn.`);
+    }
   }
   content.push({ type: "text", text: textParts.join("\n\n") });
 
@@ -86,7 +97,9 @@ export async function* streamChatResponse(
       "X-Title": "DAZZ",
     },
   });
-  const usesAttachments = messages.some((message) => (message.attachments?.length ?? 0) > 0);
+  const usesAttachments = messages.some((message) =>
+    message.attachments?.some((attachment) => Boolean(attachment.data || attachment.frames?.length)),
+  );
   const model = usesAttachments
     ? process.env.OPENROUTER_MULTIMODAL_MODEL?.trim() || "google/gemini-2.5-flash"
     : process.env.OPENROUTER_MODEL?.trim() || "openrouter/free";
