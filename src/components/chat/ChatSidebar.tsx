@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, PanelLeftClose, Plus, Settings2, Sparkles, X } from "lucide-react";
 import { Button } from "../ui/button";
 import { DazzMark } from "./DazzMark";
+import { VoiceToTextWidget } from "./VoiceToTextWidget";
 import { fonts, themes, type FontChoice, type ThemeChoice } from "../../types/chat";
 
 type ChatSidebarProps = {
@@ -72,6 +73,7 @@ export function ChatSidebar({
         </Button>
 
         <div className="sidebar-section-label">YOUR SPACE</div>
+        <VoiceToTextWidget />
         <div className="sidebar-empty">
           <div className="sidebar-empty-icon"><Sparkles size={17} /></div>
           <p>A little room to think</p>

@@ -7,9 +7,11 @@ The TypeScript server streams responses from OpenRouter over a JSON `POST /api/c
 ## Setup
 
 1. Install Node.js 20 or newer.
-2. Copy `.env.sample` to `.env` and set `OPENROUTER_API_KEY` to your OpenRouter key. `OPENROUTER_MODEL` is optional and defaults to `openrouter/free`.
+2. Copy `.env.sample` to `.env` and set `OPENROUTER_API_KEY` to your OpenRouter key. `OPENROUTER_MODEL` defaults to `openrouter/free` for text chats. Attachments use the multimodal model set in `OPENROUTER_MULTIMODAL_MODEL`, which defaults to `google/gemini-2.5-flash`.
 3. Install dependencies with `npm install`.
 4. Start the frontend and chat server with `npm run dev`.
 5. Open the Vite URL printed by the dev server (usually `http://localhost:5173`).
+
+Image attachments are sent for vision analysis; PDF and DOCX files are text-extracted in the browser; video uploads are represented by three extracted frames. Audio uploads and voice recordings are converted to WAV and sent along with live speech transcripts when browser speech recognition is available. The “Voice to text” sidebar tool prints live recognition results locally and does not send them to DAZZ.
 
 The existing Python CLI in `main.py` is retained. The web app uses the same OpenRouter environment variables through its TypeScript server.

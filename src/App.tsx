@@ -4,11 +4,14 @@ import { ChatHeader } from "./components/chat/ChatHeader";
 import { ChatSidebar } from "./components/chat/ChatSidebar";
 import { MessageList } from "./components/chat/MessageList";
 import { WelcomeScreen } from "./components/chat/WelcomeScreen";
+import { processAttachment, recordedAudioToWav } from "./lib/attachmentProcessing";
+import { createSpeechRecognition } from "./lib/speechRecognition";
 import {
   isFontChoice,
   isThemeChoice,
   themeFonts,
   type FontChoice,
+  type ChatAttachment,
   type Message,
   type ThemeChoice,
 } from "./types/chat";
@@ -26,7 +29,10 @@ function getSavedFont(theme: ThemeChoice): FontChoice {
 function App() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState("");
+  const [attachments, setAttachments] = useState<ChatAttachment[]>([]);
   const [streaming, setStreaming] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const [recordingTranscript, setRecordingTranscript] = useState("");
   const [error, setError] = useState("");
   const [copiedId, setCopiedId] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(() =>
@@ -38,6 +44,12 @@ function App() {
   const bottomRef = useRef<HTMLDivElement>(null);
   const requestRef = useRef<AbortController | null>(null);
   const draftRef = useRef<HTMLTextAreaElement>(null);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const recordingFinalTextRef = useRef("");
+  const recordingInterimTextRef = useRef("");
+  const recognitionRef = useRef<ReturnType<typeof createSpeechRecognition> | null>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -73,20 +85,53 @@ function App() {
   useEffect(
     () => () => {
       requestRef.current?.abort();
+      recognitionRef.current?.abort();
+      if (recorderRef.current?.state === "recording") {
+        recorderRef.current.onstop = null;
+        recorderRef.current.stop();
+      }
+      mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
     },
     [],
   );
 
-  function startChat(prompt: string) {
+  function startChat(prompt: string, attachedFiles = attachments) {
     const content = prompt.trim();
-    if (!content || streaming) return;
+    if ((!content && attachedFiles.length === 0) || streaming) return;
 
-    const userMessage: Message = { id: crypto.randomUUID(), role: "user", content };
+    const messageContent = content || `Please review the attached file${attachedFiles.length === 1 ? "" : "s"}: ${attachedFiles.map((file) => file.name).join(", ")}.`;
+    const userMessage: Message = {
+      id: crypto.randomUUID(),
+      role: "user",
+      content: messageContent,
+      attachments: attachedFiles,
+    };
     const assistantMessage: Message = { id: crypto.randomUUID(), role: "assistant", content: "" };
     const nextMessages = [...messages, userMessage];
+    const requestMessages = nextMessages.map((message) => ({
+      role: message.role,
+      content: message.content,
+      attachments: message.attachments?.map((attachment) => {
+        if (message.id === userMessage.id) return attachment;
+        const { data: _data, frames: _frames, ...previousAttachment } = attachment;
+        if (attachment.mimeType.startsWith("image/") || attachment.mimeType.startsWith("video/")) {
+          previousAttachment.text = [
+            previousAttachment.text,
+            "This file was attached to an earlier turn and its visual content is not re-sent in this request.",
+          ].filter(Boolean).join("\n\n");
+        }
+        return previousAttachment;
+      }),
+    }));
+    const requestBody = JSON.stringify({ messages: requestMessages });
+    if (new Blob([requestBody]).size > 28 * 1024 * 1024) {
+      setError("These attachments exceed the 28 MB request limit. Remove a file and try again.");
+      return;
+    }
 
     setMessages([...nextMessages, assistantMessage]);
     setDraft("");
+    setAttachments([]);
     setError("");
     setStreaming(true);
     requestRef.current?.abort();
@@ -108,12 +153,7 @@ function App() {
         const response = await fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            messages: nextMessages.map(({ role, content: messageContent }) => ({
-              role,
-              content: messageContent,
-            })),
-          }),
+          body: requestBody,
           signal: controller.signal,
         });
 
@@ -179,8 +219,10 @@ function App() {
 
   function newChat() {
     stopResponse();
+    cancelVoiceRecording();
     setMessages([]);
     setDraft("");
+    setAttachments([]);
     setError("");
     if (window.matchMedia("(max-width: 767px)").matches) setSidebarOpen(false);
     draftRef.current?.focus();
@@ -189,6 +231,156 @@ function App() {
   function changeTheme(nextTheme: ThemeChoice) {
     setTheme(nextTheme);
     setFont(themeFonts[nextTheme]);
+  }
+
+  async function addFiles(files: File[]) {
+    setError("");
+    if (attachments.length + files.length > 6) {
+      setError("Attach up to 6 files to one message.");
+      return;
+    }
+
+    const processed: ChatAttachment[] = [];
+    for (const file of files) {
+      try {
+        const attachment = await processAttachment(file);
+        processed.push(attachment);
+      } catch (processingError) {
+        setError((current) => [
+          current,
+          processingError instanceof Error ? processingError.message : `Could not read ${file.name}.`,
+        ].filter(Boolean).join(" "));
+      }
+    }
+
+    if (processed.length === 0) return;
+    const combined = [...attachments, ...processed];
+    const payloadSize = combined.reduce(
+      (total, item) =>
+        total +
+        (item.data?.length ?? 0) +
+        (item.text?.length ?? 0) +
+        (item.frames?.reduce((size, frame) => size + frame.length, 0) ?? 0),
+      0,
+    );
+    if (payloadSize > 24 * 1024 * 1024) {
+      setError("Attachments exceed the 24 MB message limit. Remove a file and try again.");
+      return;
+    }
+    setAttachments(combined);
+  }
+
+  function removeAttachment(id: string) {
+    setAttachments((current) => current.filter((attachment) => attachment.id !== id));
+  }
+
+  async function startVoiceRecording() {
+    if (recording || streaming) return;
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
+      setError("Audio recording is not supported in this browser.");
+      return;
+    }
+
+    try {
+      setError("");
+      setRecordingTranscript("");
+      recordingFinalTextRef.current = "";
+      recordingInterimTextRef.current = "";
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaStreamRef.current = stream;
+      audioChunksRef.current = [];
+      const recorder = new MediaRecorder(stream);
+      recorderRef.current = recorder;
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) audioChunksRef.current.push(event.data);
+      };
+      recorder.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: recorder.mimeType || "audio/webm" });
+        stream.getTracks().forEach((track) => track.stop());
+        mediaStreamRef.current = null;
+        recognitionRef.current?.stop();
+        recognitionRef.current = null;
+        setRecording(false);
+
+        void (async () => {
+          try {
+            const wav = await recordedAudioToWav(audioBlob);
+            if (wav.size > 12 * 1024 * 1024) {
+              throw new Error("This recording is too large to send. Please record a shorter voice message.");
+            }
+            const attachment = await processAttachment(
+              new File([wav], "dazz-voice-message.wav", { type: "audio/wav" }),
+            );
+            const transcript = [
+              recordingFinalTextRef.current.trim(),
+              recordingInterimTextRef.current.trim(),
+            ].filter(Boolean).join(" ");
+            attachment.transcript = transcript;
+            const instruction = transcript
+              ? `Please respond to my voice message. The live transcript is: "${transcript}"`
+              : "Please listen to the attached voice message and respond.";
+            startChat(instruction, [...attachments, attachment]);
+            setRecordingTranscript("");
+          } catch (recordingError) {
+            setError(recordingError instanceof Error ? recordingError.message : "Could not process the voice recording.");
+          }
+        })();
+      };
+
+      try {
+        recognitionRef.current = createSpeechRecognition(
+          (finalText, interimText) => {
+            if (finalText) recordingFinalTextRef.current += finalText;
+            recordingInterimTextRef.current = interimText;
+            setRecordingTranscript(`${recordingFinalTextRef.current}${interimText}`);
+          },
+          (message) => setError(`${message} The audio recording will still be attached.`),
+          () => undefined,
+        );
+        recognitionRef.current.start();
+      } catch (recognitionError) {
+        setError(
+          recognitionError instanceof Error
+            ? `${recognitionError.message} The audio recording will still be attached.`
+            : "Live transcription is unavailable; the audio recording will still be attached.",
+        );
+      }
+
+      recorder.start();
+      setRecording(true);
+    } catch (recordingError) {
+      mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
+      mediaStreamRef.current = null;
+      setError(
+        recordingError instanceof Error
+          ? `Could not access the microphone: ${recordingError.message}`
+          : "Could not access the microphone.",
+      );
+    }
+  }
+
+  function stopVoiceRecording() {
+    if (recorderRef.current?.state === "recording") recorderRef.current.stop();
+  }
+
+  function cancelVoiceRecording() {
+    recognitionRef.current?.abort();
+    recognitionRef.current = null;
+    const recorder = recorderRef.current;
+    if (recorder?.state === "recording") {
+      recorder.onstop = () => {
+        mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
+        mediaStreamRef.current = null;
+      };
+      recorder.stop();
+    } else {
+      mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
+      mediaStreamRef.current = null;
+    }
+    setRecording(false);
+    setRecordingTranscript("");
+    recordingFinalTextRef.current = "";
+    recordingInterimTextRef.current = "";
   }
 
   async function copyMessage(message: Message) {
@@ -242,11 +434,17 @@ function App() {
           value={draft}
           error={error}
           streaming={streaming}
+          attachments={attachments}
+          recording={recording}
+          recordingTranscript={recordingTranscript}
           textareaRef={draftRef}
           onChange={setDraft}
+          onFiles={(files) => void addFiles(files)}
+          onRemoveAttachment={removeAttachment}
           onSubmit={submit}
           onKeyDown={handleKeyDown}
           onStop={stopResponse}
+          onRecord={() => (recording ? stopVoiceRecording() : void startVoiceRecording())}
         />
       </main>
     </div>

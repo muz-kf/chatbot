@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, Copy, Sparkles } from "lucide-react";
+import { Check, Copy, FileAudio2, FileText, Film, Sparkles } from "lucide-react";
 import type { RefObject } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -31,7 +31,44 @@ export function MessageList({ messages, streaming, copiedId, bottomRef, onCopy }
             )}
             <div className={`message-content ${message.role === "user" ? "user-content" : ""}`}>
               {message.role === "user" ? (
-                <div className="user-bubble">{message.content}</div>
+                <div className="user-bubble">
+                  {message.content && <p className="user-message-text">{message.content}</p>}
+                  {message.attachments && message.attachments.length > 0 && (
+                    <div className="message-attachments">
+                      {message.attachments.map((attachment) => (
+                        <div className="message-attachment" key={attachment.id}>
+                          {attachment.mimeType.startsWith("image/") && attachment.data ? (
+                            <img
+                              className="message-attachment-image"
+                              src={`data:${attachment.mimeType};base64,${attachment.data}`}
+                              alt={attachment.name}
+                            />
+                          ) : attachment.mimeType.startsWith("audio/") && attachment.data ? (
+                            <audio
+                              className="message-attachment-audio"
+                              controls
+                              src={`data:${attachment.mimeType};base64,${attachment.data}`}
+                              aria-label={`Recorded voice message: ${attachment.name}`}
+                            />
+                          ) : (
+                            <span className="message-attachment-icon">
+                              {attachment.mimeType.startsWith("video/") ? <Film size={15} /> :
+                                attachment.mimeType.startsWith("audio/") ? <FileAudio2 size={15} /> :
+                                  <FileText size={15} />}
+                            </span>
+                          )}
+                          <span className="message-attachment-name">{attachment.name}</span>
+                          {attachment.transcript && (
+                            <span className="message-attachment-transcript">
+                              “{attachment.transcript}”
+                            </span>
+                          )}
+                          {attachment.frames && <span className="message-attachment-note">3 video frames sent to DAZZ</span>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               ) : (
                 <>
                   <div className="markdown-content">

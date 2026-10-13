@@ -2,6 +2,19 @@ export type Message = {
   id: string;
   role: "user" | "assistant";
   content: string;
+  attachments?: ChatAttachment[];
+};
+
+export type ChatAttachment = {
+  id: string;
+  name: string;
+  mimeType: string;
+  size: number;
+  data?: string;
+  format?: string;
+  text?: string;
+  transcript?: string;
+  frames?: string[];
 };
 
 export const fonts = [
