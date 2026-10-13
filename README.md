@@ -1,6 +1,6 @@
 # Chatbot sample
 
-This project includes a React chat interface and a TypeScript tRPC server that streams responses from OpenRouter. The API key is only read by the server; it is never sent to the browser.
+This project includes a React chat interface and a TypeScript server that streams responses from OpenRouter over a JSON `POST /api/chat` request. Assistant replies support Markdown formatting. The sidebar settings let you choose and persist the interface font. The API key is only read by the server; it is never sent to the browser.
 
 ## Setup
 

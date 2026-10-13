@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
-import { httpSubscriptionLink, createTRPCClient } from "@trpc/client";
 import { AnimatePresence, motion } from "framer-motion";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import {
   ArrowDown,
   ArrowUp,
@@ -10,11 +11,13 @@ import {
   Command,
   Copy,
   Menu,
+  PanelLeftClose,
+  PanelLeftOpen,
   Plus,
+  Settings2,
   Sparkles,
   X,
 } from "lucide-react";
-import type { AppRouter } from "../server/router";
 import { Button } from "./components/ui/button";
 import { Textarea } from "./components/ui/textarea";
 
@@ -30,9 +33,13 @@ const suggestions = [
   { title: "Write with me", prompt: "Help me write a clear and friendly email." },
 ];
 
-const trpc = createTRPCClient<AppRouter>({
-  links: [httpSubscriptionLink({ url: "/trpc" })],
-});
+const fonts = ["Poppins", "DM Sans", "Manrope"] as const;
+type FontChoice = (typeof fonts)[number];
+
+function getSavedFont(): FontChoice {
+  const savedFont = window.localStorage.getItem("chat-font");
+  return fonts.find((font) => font === savedFont) ?? "Poppins";
+}
 
 function App() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -40,18 +47,28 @@ function App() {
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState("");
   const [copiedId, setCopiedId] = useState("");
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(() =>
+    window.matchMedia("(min-width: 768px)").matches,
+  );
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [font, setFont] = useState<FontChoice>(getSavedFont);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const subscriptionRef = useRef<{ unsubscribe: () => void } | null>(null);
+  const requestRef = useRef<AbortController | null>(null);
   const draftRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages]);
 
+  useEffect(() => {
+    const fontStack = `"${font}", ui-sans-serif, system-ui, sans-serif`;
+    document.documentElement.style.setProperty("--chat-font", fontStack);
+    window.localStorage.setItem("chat-font", font);
+  }, [font]);
+
   useEffect(
     () => () => {
-      subscriptionRef.current?.unsubscribe();
+      requestRef.current?.abort();
     },
     [],
   );
@@ -76,30 +93,76 @@ function App() {
     setDraft("");
     setError("");
     setStreaming(true);
-    subscriptionRef.current?.unsubscribe();
-    subscriptionRef.current = trpc.chat.subscribe(
-      { messages: nextMessages.map(({ role, content: messageContent }) => ({ role, content: messageContent })) },
-      {
-        onData: (token) => {
-          setMessages((current) =>
-            current.map((message) =>
-              message.id === assistantMessage.id
-                ? { ...message, content: message.content + token }
-                : message,
-            ),
+    requestRef.current?.abort();
+    const controller = new AbortController();
+    requestRef.current = controller;
+
+    void (async () => {
+      const appendToken = (token: string) => {
+        setMessages((current) =>
+          current.map((message) =>
+            message.id === assistantMessage.id
+              ? { ...message, content: message.content + token }
+              : message,
+          ),
+        );
+      };
+
+      try {
+        const response = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            messages: nextMessages.map(({ role, content: messageContent }) => ({
+              role,
+              content: messageContent,
+            })),
+          }),
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          const result = (await response.json()) as { error?: string };
+          throw new Error(result.error || "The assistant could not complete this response.");
+        }
+        if (!response.body) {
+          throw new Error("The chat response did not include a readable stream.");
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let pending = "";
+        const processLine = (line: string) => {
+          if (!line.trim()) return;
+          const event = JSON.parse(line) as { token?: string; error?: string };
+          if (event.error) throw new Error(event.error);
+          if (typeof event.token === "string") appendToken(event.token);
+        };
+
+        while (true) {
+          const { done, value } = await reader.read();
+          pending += decoder.decode(value, { stream: !done });
+          const lines = pending.split("\n");
+          pending = lines.pop() ?? "";
+          lines.forEach(processLine);
+          if (done) break;
+        }
+        processLine(pending);
+      } catch (requestError) {
+        if (!controller.signal.aborted) {
+          setError(
+            requestError instanceof Error
+              ? requestError.message
+              : "The assistant could not complete this response. Please try again.",
           );
-        },
-        onError: (streamError) => {
-          setError(streamError.message);
+        }
+      } finally {
+        if (requestRef.current === controller) {
+          requestRef.current = null;
           setStreaming(false);
-          subscriptionRef.current = null;
-        },
-        onComplete: () => {
-          setStreaming(false);
-          subscriptionRef.current = null;
-        },
-      },
-    );
+        }
+      }
+    })();
   }
 
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -115,8 +178,8 @@ function App() {
   }
 
   function stopResponse() {
-    subscriptionRef.current?.unsubscribe();
-    subscriptionRef.current = null;
+    requestRef.current?.abort();
+    requestRef.current = null;
     setStreaming(false);
   }
 
@@ -125,7 +188,7 @@ function App() {
     setMessages([]);
     setDraft("");
     setError("");
-    setSidebarOpen(false);
+    if (window.matchMedia("(max-width: 767px)").matches) setSidebarOpen(false);
     draftRef.current?.focus();
   }
 
@@ -154,8 +217,10 @@ function App() {
       </AnimatePresence>
 
       <aside
-        className={`fixed inset-y-0 left-0 z-30 flex w-[272px] flex-col border-r border-stone-200/80 bg-[#f3f3f1] px-3 py-4 transition-transform duration-300 md:static md:translate-x-0 ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        className={`fixed inset-y-0 left-0 z-30 flex w-[272px] flex-col border-r border-stone-200/80 bg-[#f3f3f1] px-3 py-4 transition-all duration-300 md:static md:shrink-0 ${
+          sidebarOpen
+            ? "translate-x-0 md:w-[272px]"
+            : "-translate-x-full md:w-0 md:-translate-x-full md:overflow-hidden md:border-r-0 md:px-0"
         }`}
       >
         <div className="flex items-center justify-between px-2 pb-8">
@@ -168,11 +233,12 @@ function App() {
           <Button
             variant="ghost"
             size="icon"
-            className="size-8 md:hidden"
-            aria-label="Close menu"
+            className="size-8"
+            aria-label="Close sidebar"
             onClick={() => setSidebarOpen(false)}
           >
-            <X size={17} />
+            <X size={17} className="md:hidden" />
+            <PanelLeftClose size={17} className="hidden md:block" />
           </Button>
         </div>
 
@@ -199,6 +265,47 @@ function App() {
           </p>
         </div>
 
+        <div className="mb-3">
+          <Button
+            variant="ghost"
+            className="w-full justify-start gap-2.5 px-3 text-[13px]"
+            aria-expanded={settingsOpen}
+            onClick={() => setSettingsOpen((open) => !open)}
+          >
+            <Settings2 size={16} />
+            Settings
+          </Button>
+          <AnimatePresence initial={false}>
+            {settingsOpen && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="overflow-hidden"
+              >
+                <label
+                  htmlFor="font-choice"
+                  className="mb-1.5 mt-2 block px-3 text-[11px] font-medium text-stone-500"
+                >
+                  Interface font
+                </label>
+                <select
+                  id="font-choice"
+                  value={font}
+                  onChange={(event) => setFont(event.target.value as FontChoice)}
+                  className="mx-2 w-[calc(100%-1rem)] rounded-lg border border-stone-200 bg-white px-2.5 py-2 text-xs text-ink outline-none focus-visible:ring-2 focus-visible:ring-stone-400"
+                >
+                  {fonts.map((fontName) => (
+                    <option key={fontName} value={fontName}>
+                      {fontName}
+                    </option>
+                  ))}
+                </select>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
         <div className="flex items-center gap-3 rounded-xl bg-white/70 p-3">
           <div className="flex size-8 items-center justify-center rounded-full bg-[#e9e2d9] text-[11px] font-semibold text-stone-600">
             Y
@@ -217,11 +324,16 @@ function App() {
             <Button
               variant="ghost"
               size="icon"
-              className="size-9 md:hidden"
-              aria-label="Open menu"
-              onClick={() => setSidebarOpen(true)}
+              className="size-9"
+              aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
+              onClick={() => setSidebarOpen((open) => !open)}
             >
-              <Menu size={19} />
+              <Menu size={19} className="md:hidden" />
+              {sidebarOpen ? (
+                <PanelLeftClose size={19} className="hidden md:block" />
+              ) : (
+                <PanelLeftOpen size={19} className="hidden md:block" />
+              )}
             </Button>
             <div>
               <h1 className="font-display text-sm font-bold tracking-tight">A thoughtful assistant</h1>
@@ -300,7 +412,29 @@ function App() {
                         ) : (
                           <>
                             <div className="whitespace-pre-wrap break-words text-[14px] leading-7 text-stone-700">
-                              {message.content || (streaming ? <span className="inline-flex gap-1.5 py-2" aria-label="Thinking"><i className="size-1.5 animate-soft-pulse rounded-full bg-stone-400" /><i className="size-1.5 animate-soft-pulse rounded-full bg-stone-400 [animation-delay:150ms]" /><i className="size-1.5 animate-soft-pulse rounded-full bg-stone-400 [animation-delay:300ms]" /></span> : null)}
+                              {message.content ? (
+                                <ReactMarkdown
+                                  remarkPlugins={[remarkGfm]}
+                                  components={{
+                                    p: ({ children }) => <p className="mb-3 last:mb-0">{children}</p>,
+                                    h1: ({ children }) => <h1 className="mb-3 mt-5 text-2xl font-semibold leading-tight text-ink first:mt-0">{children}</h1>,
+                                    h2: ({ children }) => <h2 className="mb-2 mt-5 text-xl font-semibold leading-tight text-ink first:mt-0">{children}</h2>,
+                                    h3: ({ children }) => <h3 className="mb-2 mt-4 text-base font-semibold text-ink first:mt-0">{children}</h3>,
+                                    ul: ({ children }) => <ul className="mb-3 list-disc space-y-1 pl-6">{children}</ul>,
+                                    ol: ({ children }) => <ol className="mb-3 list-decimal space-y-1 pl-6">{children}</ol>,
+                                    blockquote: ({ children }) => <blockquote className="my-3 border-l-2 border-[#b68858] pl-4 text-stone-500">{children}</blockquote>,
+                                    pre: ({ children }) => <pre className="my-3 overflow-x-auto rounded-xl bg-stone-100 p-4 font-mono text-xs leading-6">{children}</pre>,
+                                    code: ({ children }) => <code className="rounded bg-stone-100 px-1 py-0.5 font-mono text-[0.9em] text-[#8f4d29]">{children}</code>,
+                                    a: ({ children, href }) => <a href={href} target="_blank" rel="noreferrer" className="text-[#986e44] underline underline-offset-2">{children}</a>,
+                                    hr: () => <hr className="my-4 border-stone-200" />,
+                                    table: ({ children }) => <div className="my-3 overflow-x-auto"><table className="w-full border-collapse text-left text-sm">{children}</table></div>,
+                                    th: ({ children }) => <th className="border-b border-stone-300 px-2 py-1.5 font-semibold text-ink">{children}</th>,
+                                    td: ({ children }) => <td className="border-b border-stone-200 px-2 py-1.5">{children}</td>,
+                                  }}
+                                >
+                                  {message.content}
+                                </ReactMarkdown>
+                              ) : (streaming ? <span className="inline-flex gap-1.5 py-2" aria-label="Thinking"><i className="size-1.5 animate-soft-pulse rounded-full bg-stone-400" /><i className="size-1.5 animate-soft-pulse rounded-full bg-stone-400 [animation-delay:150ms]" /><i className="size-1.5 animate-soft-pulse rounded-full bg-stone-400 [animation-delay:300ms]" /></span> : null)}
                               {streaming && message.content && <span className="ml-1 inline-block h-4 w-[2px] translate-y-[3px] animate-pulse rounded-full bg-[#b68858]" />}
                             </div>
                             {message.content && !streaming && (

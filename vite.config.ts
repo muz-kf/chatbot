@@ -5,7 +5,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      "/trpc": "http://localhost:4000",
+      "/api": "http://localhost:4000",
     },
   },
 });

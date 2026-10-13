@@ -3,7 +3,8 @@
 @tailwind utilities;
 
 :root {
-  font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --chat-font: "Poppins", ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--chat-font);
   color: #171717;
   background: #f8f8f7;
   font-synthesis: none;
@@ -29,7 +30,7 @@ textarea {
 }
 
 .font-display {
-  font-family: "Manrope", "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--chat-font);
 }
 
 ::selection {
