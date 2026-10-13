@@ -3,6 +3,7 @@ import { and, desc, eq } from "drizzle-orm";
 import { Router } from "express";
 import { z } from "zod";
 import { getAuthenticatedEmail } from "./auth";
+import { openRouterApiKey } from "./config";
 import { db } from "./db";
 import { publicChats, type StoredAttachment, type StoredMessage } from "./db/schema";
 import { chatTurnRequestSchema, streamChatResponse, type ChatMessage } from "./router";
@@ -100,7 +101,7 @@ router.post("/:chatId/turns", async (request, response) => {
     response.status(400).json({ error: "Invalid chat message." });
     return;
   }
-  if (!process.env.OPENROUTER_API_KEY) {
+  if (!openRouterApiKey) {
     response.status(500).json({ error: "OPENROUTER_API_KEY is missing from the server environment." });
     return;
   }

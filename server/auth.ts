@@ -4,6 +4,13 @@ import { SignJWT, jwtVerify } from "jose";
 import { Resend } from "resend";
 import { Router, type Request, type Response } from "express";
 import { z } from "zod";
+import {
+  isProduction,
+  resendApiKey,
+  resendFromEmail,
+  sessionSecret,
+  strictAuth as configuredStrictAuth,
+} from "./config";
 import { db } from "./db";
 import { emailVerificationCodes, users } from "./db/schema";
 
@@ -15,6 +22,13 @@ const sendLimitWindowMs = 60 * 60 * 1000;
 const maxCodeSendsPerWindow = 5;
 const maxCodeAttempts = 5;
 const sessionLifetimeSeconds = 7 * 24 * 60 * 60;
+function strictAuthEnabled(): boolean {
+  return configuredStrictAuth !== "false" || isProduction;
+}
+
+if (configuredStrictAuth === "false" && isProduction) {
+  console.warn("strict_auth=false is ignored in production; email verification remains required.");
+}
 
 const sendCodeSchema = z.object({
   email: z.string().trim().email().max(320),
@@ -30,11 +44,10 @@ const verifyCodeSchema = z.object({
 });
 
 function sessionKey(): Uint8Array {
-  const secret = process.env.SESSION_SECRET;
-  if (!secret || secret.length < 32 || secret.startsWith("replace-with-a-random-secret")) {
+  if (!sessionSecret || sessionSecret.length < 32 || sessionSecret.startsWith("replace-with-a-random-secret")) {
     throw new Error("SESSION_SECRET must be configured with at least 32 characters.");
   }
-  return new TextEncoder().encode(secret);
+  return new TextEncoder().encode(sessionSecret);
 }
 
 function digestCode(email: string, code: string): string {
@@ -52,8 +65,42 @@ function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
+const profileSchema = z.object({
+  email: z.string().trim().email().max(320),
+  name: z.string().trim().min(1).max(100),
+  dateOfBirth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+});
+
+function resendFailureMessage(statusCode?: number): string {
+  if (statusCode === 401) {
+    return "Resend rejected the API key. Check that RESEND_API_KEY is current and belongs to this Resend account.";
+  }
+  if (statusCode === 403) {
+    return "Resend denied this request. Check the API key permissions and verify the sender domain.";
+  }
+  if (statusCode === 422) {
+    return "Resend rejected the email details. Check that RESEND_FROM_EMAIL uses a verified sender domain.";
+  }
+  if (statusCode === 429) {
+    return "Resend is rate-limiting requests. Wait a little and try again.";
+  }
+  return "Resend could not send the code. Check the sender configuration and server outbound network access.";
+}
+
+function resendStatusCode(error: unknown): number | undefined {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "statusCode" in error &&
+    typeof error.statusCode === "number"
+  ) {
+    return error.statusCode;
+  }
+  return undefined;
+}
+
 function setSessionCookie(response: Response, token: string): void {
-  const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
+  const secure = isProduction ? "; Secure" : "";
   response.setHeader(
     "Set-Cookie",
     `${sessionCookieName}=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${sessionLifetimeSeconds}${secure}`,
@@ -61,7 +108,7 @@ function setSessionCookie(response: Response, token: string): void {
 }
 
 export function clearSessionCookie(response: Response): void {
-  const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
+  const secure = isProduction ? "; Secure" : "";
   response.setHeader(
     "Set-Cookie",
     `${sessionCookieName}=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0${secure}`,
@@ -99,6 +146,51 @@ export async function issueSession(response: Response, email: string): Promise<v
   setSessionCookie(response, token);
 }
 
+router.get("/mode", (_request, response) => {
+  response.json({ requiresEmailVerification: strictAuthEnabled() });
+});
+
+router.post("/dev-sign-in", async (request, response) => {
+  if (strictAuthEnabled()) {
+    response.status(404).json({ error: "Not found." });
+    return;
+  }
+  const parsed = profileSchema.safeParse(request.body);
+  if (!parsed.success || !validDateOfBirth(parsed.data?.dateOfBirth ?? "")) {
+    response.status(400).json({ error: "Enter a valid email, name, and date of birth." });
+    return;
+  }
+
+  const email = normalizeEmail(parsed.data.email);
+  await db
+    .insert(users)
+    .values({
+      email,
+      name: parsed.data.name,
+      dateOfBirth: parsed.data.dateOfBirth,
+    })
+    .onConflictDoNothing({ target: users.email });
+
+  const [user] = await db
+    .select({ email: users.email, name: users.name, dateOfBirth: users.dateOfBirth })
+    .from(users)
+    .where(eq(users.email, email))
+    .limit(1);
+  if (!user || user.dateOfBirth !== parsed.data.dateOfBirth) {
+    response.status(401).json({ error: "Authentication failed. Check your email and date of birth." });
+    return;
+  }
+
+  try {
+    await issueSession(response, email);
+  } catch (error) {
+    console.error("Could not establish DAZZ development session:", error instanceof Error ? error.message : "unknown error");
+    response.status(503).json({ error: "Sign-in is temporarily unavailable." });
+    return;
+  }
+  response.json({ user: { email: user.email, name: user.name } });
+});
+
 router.get("/session", async (request, response) => {
   const email = await getAuthenticatedEmail(request);
   if (!email) {
@@ -125,7 +217,7 @@ router.post("/send-code", async (request, response) => {
     response.status(400).json({ error: "Enter a valid email, name, and date of birth." });
     return;
   }
-  if (!process.env.RESEND_API_KEY || !process.env.RESEND_FROM_EMAIL) {
+  if (!resendApiKey || !resendFromEmail) {
     response.status(503).json({ error: "Email sign-in is not configured on the server." });
     return;
   }
@@ -183,20 +275,35 @@ router.post("/send-code", async (request, response) => {
       },
     });
 
-  const resend = new Resend(process.env.RESEND_API_KEY);
-  const { error } = await resend.emails.send({
-    from: process.env.RESEND_FROM_EMAIL,
-    to: email,
-    subject: "Your DAZZ sign-in code",
-    text: `Your DAZZ verification code is ${code}. It expires in 10 minutes.`,
-  });
-  if (error) {
+  const expireChallenge = async () => {
     await db
       .update(emailVerificationCodes)
       .set({ expiresAt: new Date() })
       .where(eq(emailVerificationCodes.email, email));
-    console.error("Could not send DAZZ sign-in email:", error.name);
-    response.status(502).json({ error: "Could not send a sign-in code. Please try again later." });
+  };
+  const resend = new Resend(resendApiKey);
+  try {
+    const { error } = await resend.emails.send({
+      from: resendFromEmail,
+      to: email,
+      subject: "Your DAZZ sign-in code",
+      text: `Your DAZZ verification code is ${code}. It expires in 10 minutes.`,
+    });
+    if (error) {
+      await expireChallenge();
+      console.error("Resend rejected DAZZ sign-in email:", {
+        name: error.name,
+        statusCode: error.statusCode,
+      });
+      response.status(502).json({ error: resendFailureMessage(error.statusCode ?? undefined) });
+      return;
+    }
+  } catch (error) {
+    await expireChallenge();
+    const statusCode = resendStatusCode(error);
+    const name = error instanceof Error ? error.name : "UnknownError";
+    console.error("Resend request failed:", { name, statusCode });
+    response.status(502).json({ error: resendFailureMessage(statusCode) });
     return;
   }
   response.json({ message: "If the email can receive sign-in codes, one has been sent." });

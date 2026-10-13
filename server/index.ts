@@ -1,17 +1,21 @@
-import "dotenv/config";
 import express from "express";
 import { authRouter } from "./auth";
 import { chatsRouter } from "./chats";
+import {
+  appOrigin,
+  isProduction,
+  serverPort,
+  trustedOrigins,
+} from "./config";
 
 const app = express();
-const port = Number(process.env.PORT) || 4000;
 const configuredOrigins = [
-  process.env.APP_ORIGIN,
-  ...(process.env.TRUSTED_ORIGINS ?? "").split(","),
+  appOrigin,
+  ...trustedOrigins,
 ]
   .map((origin) => origin?.trim())
   .filter((origin): origin is string => Boolean(origin));
-const developmentOrigins = process.env.NODE_ENV === "production"
+const developmentOrigins = isProduction
   ? []
   : ["http://localhost:5173", "http://127.0.0.1:5173"];
 const allowedOrigins = new Set(
@@ -24,7 +28,7 @@ const allowedOrigins = new Set(
   }),
 );
 
-if (process.env.NODE_ENV === "production" && allowedOrigins.size === 0) {
+if (isProduction && allowedOrigins.size === 0) {
   throw new Error("Configure APP_ORIGIN with the public DAZZ origin in production.");
 }
 
@@ -74,6 +78,6 @@ app.use((error: unknown, _request: express.Request, response: express.Response, 
   }
 });
 
-app.listen(port, () => {
-  console.log(`Chat server listening on http://localhost:${port}`);
+app.listen(serverPort, () => {
+  console.log(`Chat server listening on http://localhost:${serverPort}`);
 });

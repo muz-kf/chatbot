@@ -1,5 +1,10 @@
 import OpenAI from "openai";
 import { z } from "zod";
+import {
+  openRouterApiKey,
+  openRouterModel,
+  openRouterMultimodalModel,
+} from "./config";
 
 export const messageSchema = z.object({
   id: z.string().uuid(),
@@ -84,14 +89,13 @@ export async function* streamChatResponse(
   messages: ChatMessage[],
   signal: AbortSignal,
 ): AsyncGenerator<string> {
-  const apiKey = process.env.OPENROUTER_API_KEY;
-  if (!apiKey) {
+  if (!openRouterApiKey) {
     throw new Error("OPENROUTER_API_KEY is missing from the server environment.");
   }
 
   const client = new OpenAI({
     baseURL: "https://openrouter.ai/api/v1",
-    apiKey,
+    apiKey: openRouterApiKey,
     defaultHeaders: {
       "HTTP-Referer": "http://localhost:5173",
       "X-Title": "DAZZ",
@@ -101,8 +105,8 @@ export async function* streamChatResponse(
     message.attachments?.some((attachment) => Boolean(attachment.data || attachment.frames?.length)),
   );
   const model = usesAttachments
-    ? process.env.OPENROUTER_MULTIMODAL_MODEL?.trim() || "google/gemini-2.5-flash"
-    : process.env.OPENROUTER_MODEL?.trim() || "openrouter/free";
+    ? openRouterMultimodalModel
+    : openRouterModel;
 
   try {
     const stream = await client.chat.completions.create({

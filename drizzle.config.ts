@@ -1,8 +1,7 @@
-import "dotenv/config";
 import { defineConfig } from "drizzle-kit";
+import { databaseUrl } from "./server/config";
 
-const connectionString = process.env.PSQL_STR ?? process.env.DATABASE_URL;
-if (!connectionString) {
+if (!databaseUrl) {
   throw new Error("Set PSQL_STR or DATABASE_URL before running Drizzle commands.");
 }
 
@@ -10,7 +9,7 @@ export default defineConfig({
   schema: "./server/db/schema.ts",
   out: "./drizzle",
   dialect: "postgresql",
-  dbCredentials: { url: connectionString },
+  dbCredentials: { url: databaseUrl },
   strict: true,
   verbose: true,
 });

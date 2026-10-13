@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { ArrowLeft, ArrowRight, Sparkles } from "lucide-react";
 import type { UserProfile } from "../../types/chat";
 
@@ -15,6 +15,28 @@ export function AuthGate({ onAuthenticated }: AuthGateProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [strictAuth, setStrictAuth] = useState(true);
+  const [modeLoading, setModeLoading] = useState(true);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void fetch("/api/auth/mode", { signal: controller.signal })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Could not load authentication settings.");
+        const result = (await response.json()) as { requiresEmailVerification?: boolean };
+        setStrictAuth(result.requiresEmailVerification !== false);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) {
+          setStrictAuth(true);
+          setError("Could not load authentication settings. Email verification will be required.");
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setModeLoading(false);
+      });
+    return () => controller.abort();
+  }, []);
 
   async function requestCode(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -22,13 +44,24 @@ export function AuthGate({ onAuthenticated }: AuthGateProps) {
     setError("");
     setNotice("");
     try {
-      const response = await fetch("/api/auth/send-code", {
+      const response = await fetch(
+        strictAuth ? "/api/auth/send-code" : "/api/auth/dev-sign-in",
+        {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, name, dateOfBirth }),
-      });
-      const result = (await response.json()) as { message?: string; error?: string };
+        },
+      );
+      const result = (await response.json()) as {
+        message?: string;
+        error?: string;
+        user?: UserProfile;
+      };
       if (!response.ok) throw new Error(result.error || "Could not send a sign-in code.");
+      if (result.user) {
+        onAuthenticated(result.user);
+        return;
+      }
       setCodeSent(true);
       setNotice(result.message || "Check your inbox for a six-digit sign-in code.");
     } catch (requestError) {
@@ -100,7 +133,11 @@ export function AuthGate({ onAuthenticated }: AuthGateProps) {
         ) : (
           <>
             <h1 id="auth-title">A little room to think.</h1>
-            <p className="auth-description">Add your profile details to get started. We’ll verify your email before saving your account.</p>
+            <p className="auth-description">
+              {strictAuth
+                ? "Add your profile details to get started. We’ll verify your email before saving your account."
+                : "Development sign-in is enabled. Your email and date of birth will be used to find or create your local profile; no email will be sent."}
+            </p>
             <form onSubmit={(event) => void requestCode(event)} className="auth-form">
               <label htmlFor="auth-name">Name</label>
               <input
@@ -134,11 +171,21 @@ export function AuthGate({ onAuthenticated }: AuthGateProps) {
                 onChange={(event) => setDateOfBirth(event.target.value)}
               />
               {error && <p className="auth-error" role="alert">{error}</p>}
-              <button className="auth-submit" type="submit" disabled={loading}>
-                {loading ? "Sending code..." : "Continue with email"} <ArrowRight size={16} />
+              <button className="auth-submit" type="submit" disabled={loading || modeLoading}>
+                {loading
+                  ? (strictAuth ? "Sending code..." : "Signing in...")
+                  : modeLoading
+                    ? "Loading..."
+                    : strictAuth
+                      ? "Continue with email"
+                      : "Continue"} <ArrowRight size={16} />
               </button>
             </form>
-            <p className="auth-privacy">Your name and date of birth are saved to your profile. Chats are private to your verified email.</p>
+            <p className="auth-privacy">
+              {strictAuth
+                ? "Your name and date of birth are saved to your profile. Chats are private to your verified email."
+                : "Development mode only. Date of birth is not a secure substitute for a password."}
+            </p>
           </>
         )}
       </section>

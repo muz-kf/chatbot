@@ -30,12 +30,12 @@ export type ChatSummary = {
 };
 
 export const fonts = [
+  "Sora",
   "Poppins",
   "DM Sans",
   "Manrope",
   "Space Grotesk",
   "Outfit",
-  "Sora",
   "Orbitron",
   "Rajdhani",
   "Oxanium",
@@ -51,7 +51,7 @@ export const themes = [
 export type ThemeChoice = (typeof themes)[number]["value"];
 
 export const themeFonts: Record<ThemeChoice, FontChoice> = {
-  purple: "Space Grotesk",
+  purple: "Sora",
   green: "Rajdhani",
   white: "DM Sans",
   gold: "Oxanium",
