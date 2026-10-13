@@ -26,7 +26,7 @@ export async function* streamChatResponse(
     apiKey,
     defaultHeaders: {
       "HTTP-Referer": "http://localhost:5173",
-      "X-Title": "Chatbot Sample",
+      "X-Title": "DAZZ",
     },
   });
   const model = process.env.OPENROUTER_MODEL?.trim() || "openrouter/free";
