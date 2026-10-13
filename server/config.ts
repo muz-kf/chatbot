@@ -11,7 +11,8 @@ export const openRouterModel = process.env.OPENROUTER_MODEL?.trim() || "openrout
 export const openRouterMultimodalModel =
   process.env.OPENROUTER_MULTIMODAL_MODEL?.trim() || "google/gemini-2.5-flash";
 export const strictAuth = process.env.strict_auth ?? process.env.STRICT_AUTH ?? "true";
-export const isProduction = process.env.NODE_ENV === "production";
+export const isProduction = false;
+//  process.env.NODE_ENV === "production";
 export const serverPort = Number(process.env.PORT) || 4000;
 export const appOrigin = process.env.APP_ORIGIN;
 export const trustedOrigins = (process.env.TRUSTED_ORIGINS ?? "")
