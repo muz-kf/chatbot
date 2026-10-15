@@ -1,5 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { ArrowLeft, ArrowRight, Sparkles } from "lucide-react";
+import { apiRequest, queryKeys } from "../../lib/api";
 import type { UserProfile } from "../../types/chat";
 
 type AuthGateProps = {
@@ -12,52 +14,54 @@ export function AuthGate({ onAuthenticated }: AuthGateProps) {
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [code, setCode] = useState("");
   const [codeSent, setCodeSent] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const [strictAuth, setStrictAuth] = useState(true);
-  const [modeLoading, setModeLoading] = useState(true);
+  const authModeQuery = useQuery({
+    queryKey: queryKeys.authMode,
+    queryFn: () => apiRequest<{ requiresEmailVerification: boolean }>("/api/auth/mode"),
+    retry: false,
+  });
+  const strictAuth = authModeQuery.data?.requiresEmailVerification !== false;
+  const modeLoading = authModeQuery.isPending;
 
   useEffect(() => {
-    const controller = new AbortController();
-    void fetch("/api/auth/mode", { signal: controller.signal })
-      .then(async (response) => {
-        if (!response.ok) throw new Error("Could not load authentication settings.");
-        const result = (await response.json()) as { requiresEmailVerification?: boolean };
-        setStrictAuth(result.requiresEmailVerification !== false);
-      })
-      .catch(() => {
-        if (!controller.signal.aborted) {
-          setStrictAuth(true);
-          setError("Could not load authentication settings. Email verification will be required.");
-        }
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setModeLoading(false);
-      });
-    return () => controller.abort();
-  }, []);
+    if (authModeQuery.isError) {
+      setError("Could not load authentication settings. Email verification will be required.");
+    }
+  }, [authModeQuery.isError]);
+
+  const requestCodeMutation = useMutation({
+    mutationFn: (profile: { email: string; name: string; dateOfBirth: string }) =>
+      apiRequest<{ message?: string; user?: UserProfile }>(
+        strictAuth ? "/api/auth/send-code" : "/api/auth/dev-sign-in",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(profile),
+        },
+      ),
+  });
+  const verifyCodeMutation = useMutation({
+    mutationFn: (profile: {
+      email: string;
+      code: string;
+      name: string;
+      dateOfBirth: string;
+    }) =>
+      apiRequest<{ user?: UserProfile }>("/api/auth/verify-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(profile),
+      }),
+  });
+  const loading = requestCodeMutation.isPending || verifyCodeMutation.isPending;
 
   async function requestCode(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setLoading(true);
     setError("");
     setNotice("");
     try {
-      const response = await fetch(
-        strictAuth ? "/api/auth/send-code" : "/api/auth/dev-sign-in",
-        {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, name, dateOfBirth }),
-        },
-      );
-      const result = (await response.json()) as {
-        message?: string;
-        error?: string;
-        user?: UserProfile;
-      };
-      if (!response.ok) throw new Error(result.error || "Could not send a sign-in code.");
+      const result = await requestCodeMutation.mutateAsync({ email, name, dateOfBirth });
       if (result.user) {
         onAuthenticated(result.user);
         return;
@@ -66,28 +70,18 @@ export function AuthGate({ onAuthenticated }: AuthGateProps) {
       setNotice(result.message || "Check your inbox for a six-digit sign-in code.");
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Could not send a sign-in code.");
-    } finally {
-      setLoading(false);
     }
   }
 
   async function verifyCode(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setLoading(true);
     setError("");
     try {
-      const response = await fetch("/api/auth/verify-code", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, code, name, dateOfBirth }),
-      });
-      const result = (await response.json()) as { user?: UserProfile; error?: string };
-      if (!response.ok || !result.user) throw new Error(result.error || "Could not verify that code.");
+      const result = await verifyCodeMutation.mutateAsync({ email, code, name, dateOfBirth });
+      if (!result.user) throw new Error("Could not verify that code.");
       onAuthenticated(result.user);
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Could not verify that code.");
-    } finally {
-      setLoading(false);
     }
   }
 

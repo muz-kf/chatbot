@@ -1,0 +1,249 @@
+import json
+import logging
+from uuid import uuid4
+
+from fastapi import APIRouter, HTTPException, Request
+from fastapi.responses import StreamingResponse
+from openai import AsyncOpenAI
+from psycopg.types.json import Jsonb
+
+from .auth import require_user
+from .config import (
+    OPENROUTER_API_KEY,
+    OPENROUTER_MODEL,
+    OPENROUTER_MULTIMODAL_MODEL,
+)
+from .database import get_pool
+from .models import ChatMessage, ChatTurnRequest, CreateChatRequest
+
+logger = logging.getLogger(__name__)
+router = APIRouter(prefix="/api/chats", tags=["chats"])
+
+
+def to_openrouter_message(message: ChatMessage) -> dict:
+    if message.role == "assistant":
+        return {"role": "assistant", "content": message.content}
+
+    text_parts = [message.content.strip()] if message.content.strip() else []
+    content: list[dict] = []
+    for attachment in message.attachments:
+        text_parts.append(f"Attached file: {attachment.name} ({attachment.mimeType}).")
+        if attachment.transcript:
+            text_parts.append(f"Voice transcript: {attachment.transcript}")
+        if attachment.text:
+            text_parts.append(f"Extracted text from {attachment.name}:\n{attachment.text}")
+        if (
+            attachment.mimeType.startswith(("image/", "audio/", "video/"))
+            and not attachment.data
+            and not attachment.frames
+        ):
+            text_parts.append(
+                f"The media content of {attachment.name} is not included in this turn."
+            )
+    content.append({"type": "text", "text": "\n\n".join(text_parts)})
+    for attachment in message.attachments:
+        if attachment.data and attachment.mimeType.startswith("image/"):
+            content.append(
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:{attachment.mimeType};base64,{attachment.data}"
+                    },
+                }
+            )
+        if attachment.data and attachment.format:
+            content.append(
+                {
+                    "type": "input_audio",
+                    "input_audio": {
+                        "data": attachment.data,
+                        "format": attachment.format,
+                    },
+                }
+            )
+        for index, frame in enumerate(attachment.frames, start=1):
+            content.extend(
+                [
+                    {
+                        "type": "text",
+                        "text": f"Video frame {index} from {attachment.name}:",
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/jpeg;base64,{frame}"},
+                    },
+                ]
+            )
+    return {"role": "user", "content": content}
+
+
+@router.get("")
+async def list_chats(request: Request) -> dict:
+    email = await require_user(request)
+    async with get_pool().connection() as connection:
+        chats = await (
+            await connection.execute(
+                """
+                SELECT id, title, updated_at AS "updatedAt"
+                FROM public_chats WHERE email = %s
+                ORDER BY updated_at DESC
+                """,
+                (email,),
+            )
+        ).fetchall()
+    return {"chats": chats}
+
+
+@router.post("", status_code=201)
+async def create_chat(data: CreateChatRequest, request: Request) -> dict:
+    email = await require_user(request)
+    chat_id = str(uuid4())
+    async with get_pool().connection() as connection:
+        chat = await (
+            await connection.execute(
+                """
+                INSERT INTO public_chats (id, email, title)
+                VALUES (%s, %s, %s)
+                RETURNING id, title, updated_at AS "updatedAt"
+                """,
+                (chat_id, email, data.title),
+            )
+        ).fetchone()
+    return {"chat": chat}
+
+
+@router.get("/{chat_id}")
+async def get_chat(chat_id: str, request: Request) -> dict:
+    email = await require_user(request)
+    async with get_pool().connection() as connection:
+        chat = await (
+            await connection.execute(
+                """
+                SELECT id, title, chats, updated_at AS "updatedAt"
+                FROM public_chats WHERE id = %s AND email = %s
+                """,
+                (chat_id, email),
+            )
+        ).fetchone()
+    if not chat:
+        raise HTTPException(status_code=404, detail="Conversation not found.")
+    return {"chat": chat}
+
+
+@router.post("/{chat_id}/turns")
+async def create_turn(chat_id: str, data: ChatTurnRequest, request: Request):
+    email = await require_user(request)
+    if str(data.chatId) != chat_id:
+        raise HTTPException(status_code=400, detail="Invalid chat message.")
+    if not OPENROUTER_API_KEY:
+        raise HTTPException(
+            status_code=500,
+            detail="OPENROUTER_API_KEY is missing from the server environment.",
+        )
+
+    user_message = data.message
+    async with get_pool().connection() as connection:
+        async with connection.transaction():
+            chat = await (
+                await connection.execute(
+                    """
+                    SELECT chats FROM public_chats
+                    WHERE id = %s AND email = %s FOR UPDATE
+                    """,
+                    (chat_id, email),
+                )
+            ).fetchone()
+            if not chat:
+                raise HTTPException(status_code=404, detail="Conversation not found.")
+            history = [*chat["chats"], user_message.persistent()]
+            await connection.execute(
+                """
+                UPDATE public_chats SET chats = %s, updated_at = now()
+                WHERE id = %s AND email = %s
+                """,
+                (Jsonb(history), chat_id, email),
+            )
+    current_messages = [
+        ChatMessage.model_validate(message) for message in history[-41:-1]
+    ]
+    current_messages.append(user_message)
+    uses_attachments = any(
+        attachment.data or attachment.frames
+        for message in current_messages
+        for attachment in message.attachments
+    )
+    model = OPENROUTER_MULTIMODAL_MODEL if uses_attachments else OPENROUTER_MODEL
+
+    async def event_stream():
+        assistant_content = ""
+        client = AsyncOpenAI(
+            base_url="https://openrouter.ai/api/v1",
+            api_key=OPENROUTER_API_KEY,
+            default_headers={
+                "HTTP-Referer": "http://localhost:5173",
+                "X-Title": "DAZZ",
+            },
+        )
+        try:
+            stream = await client.chat.completions.create(
+                model=model,
+                messages=[
+                    {"role": "system", "content": "You are a helpful personal AI assistant."},
+                    *(to_openrouter_message(message) for message in current_messages),
+                ],
+                stream=True,
+            )
+            async for chunk in stream:
+                if await request.is_disconnected():
+                    return
+                token = chunk.choices[0].delta.content
+                if isinstance(token, str) and token:
+                    assistant_content += token
+                    yield json.dumps({"token": token}) + "\n"
+
+            async with get_pool().connection() as connection:
+                async with connection.transaction():
+                    latest = await (
+                        await connection.execute(
+                            """
+                            SELECT chats FROM public_chats
+                            WHERE id = %s AND email = %s FOR UPDATE
+                            """,
+                            (chat_id, email),
+                        )
+                    ).fetchone()
+                    if latest:
+                        updated = [
+                            *latest["chats"],
+                            {
+                                "id": str(uuid4()),
+                                "role": "assistant",
+                                "content": assistant_content,
+                            },
+                        ]
+                        await connection.execute(
+                            """
+                            UPDATE public_chats SET chats = %s, updated_at = now()
+                            WHERE id = %s AND email = %s
+                            """,
+                            (Jsonb(updated), chat_id, email),
+                        )
+            yield json.dumps({"done": True}) + "\n"
+        except Exception as error:
+            logger.exception("OpenRouter chat stream failed")
+            yield json.dumps(
+                {
+                    "error": "The assistant could not complete this response. Please try again."
+                }
+            ) + "\n"
+        finally:
+            await client.close()
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="application/x-ndjson",
+        headers={
+            "Cache-Control": "no-cache, no-transform",
+            "X-Accel-Buffering": "no",
+        },
+    )
