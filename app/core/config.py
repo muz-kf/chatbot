@@ -1,3 +1,5 @@
+"""Environment-backed application settings."""
+
 import os
 
 from dotenv import load_dotenv
@@ -37,12 +39,16 @@ def allowed_origins() -> set[str]:
         )
     normalized: set[str] = set()
     for origin in filter(None, origins):
-        from urllib.parse import urlsplit
-
-        parsed = urlsplit(origin)
-        if parsed.scheme not in {"http", "https"} or not parsed.netloc:
-            raise ValueError(f"Invalid origin configured in APP_ORIGIN/TRUSTED_ORIGINS: {origin}")
-        normalized.add(f"{parsed.scheme}://{parsed.netloc}")
+        normalized.add(normalize_origin(origin))
     if IS_PRODUCTION and not normalized:
         raise ValueError("Configure APP_ORIGIN with the public DAZZ origin in production.")
     return normalized
+
+
+def normalize_origin(origin: str) -> str:
+    from urllib.parse import urlsplit
+
+    parsed = urlsplit(origin)
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        raise ValueError(f"Invalid origin configured in APP_ORIGIN/TRUSTED_ORIGINS: {origin}")
+    return f"{parsed.scheme}://{parsed.netloc}"

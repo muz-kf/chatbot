@@ -4,8 +4,9 @@ from uuid import uuid4
 import pytest
 from pydantic import ValidationError
 
-from app.chat import to_openrouter_message
-from app.models import ChatMessage, ChatTurnRequest, ProfileRequest
+from app.api.routes.chats import to_openrouter_message
+from app.schemas.auth import ProfileRequest
+from app.schemas.chat import ChatMessage, ChatTurnRequest
 
 
 def test_profile_rejects_future_birth_date() -> None:

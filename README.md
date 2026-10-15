@@ -2,7 +2,7 @@
 
 DAZZ is a React AI chat interface with switchable Neon Purple, Neon Green, Cloud White, and Midnight Gold themes. The frontend is built with Vite and uses TanStack Query for API reads and mutations. Assistant responses stream as newline-delimited JSON so tokens can appear as they are generated.
 
-The API is built with FastAPI. PostgreSQL access uses Psycopg with parameterized SQL; the existing `users`, `email_verification_codes`, and `public_chats` tables are retained without an ORM. The OpenRouter API key stays on the server.
+The API is built with FastAPI. The code is arranged around `api/routes` for HTTP endpoints, `api/dependencies.py` for request-scoped authentication, `schemas` for Pydantic validation/serialization, `core` for configuration and session security, and `db` for PostgreSQL connections. Database persistence uses Psycopg with parameterized SQL; Pydantic schemas validate API data and are not database models. The existing `users`, `email_verification_codes`, and `public_chats` tables are retained without an ORM. The OpenRouter API key stays on the server.
 
 ## Setup
 
@@ -15,6 +15,8 @@ The API is built with FastAPI. PostgreSQL access uses Psycopg with parameterized
 7. Open the Vite URL printed by the frontend (usually `http://localhost:5173`).
 
 Vite proxies `/api` requests to FastAPI on `http://localhost:8000`. In production, build the React app with `npm run build`; FastAPI serves the generated `dist` directory when it is present. Set `APP_ENV=production` and configure `APP_ORIGIN` with the public application origin.
+
+`GET /health` returns a UTC server timestamp and a short randomly generated health message. API mutations accept same-origin requests plus configured and local development origins.
 
 On first visit, DAZZ asks for a name, email, and date of birth, then verifies the email with a six-digit code sent through Resend. Codes expire after 10 minutes, are limited to five attempts, and can be requested at most once per minute and five times per hour per email. A signed, HTTP-only, SameSite cookie keeps the verified session.
 

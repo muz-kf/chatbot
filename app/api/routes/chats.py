@@ -2,19 +2,26 @@ import json
 import logging
 from uuid import uuid4
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from openai import AsyncOpenAI
 from psycopg.types.json import Jsonb
 
-from .auth import require_user
-from .config import (
+from ...core.config import (
     OPENROUTER_API_KEY,
     OPENROUTER_MODEL,
     OPENROUTER_MULTIMODAL_MODEL,
 )
-from .database import get_pool
-from .models import ChatMessage, ChatTurnRequest, CreateChatRequest
+from ...db.session import get_pool
+from ...schemas.chat import (
+    ChatCreatedResponse,
+    ChatListResponse,
+    ChatMessage,
+    ChatResponse,
+    ChatTurnRequest,
+    CreateChatRequest,
+)
+from ..dependencies import get_current_user_email
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/chats", tags=["chats"])
@@ -77,9 +84,8 @@ def to_openrouter_message(message: ChatMessage) -> dict:
     return {"role": "user", "content": content}
 
 
-@router.get("")
-async def list_chats(request: Request) -> dict:
-    email = await require_user(request)
+@router.get("", response_model=ChatListResponse)
+async def list_chats(email: str = Depends(get_current_user_email)) -> dict:
     async with get_pool().connection() as connection:
         chats = await (
             await connection.execute(
@@ -94,9 +100,11 @@ async def list_chats(request: Request) -> dict:
     return {"chats": chats}
 
 
-@router.post("", status_code=201)
-async def create_chat(data: CreateChatRequest, request: Request) -> dict:
-    email = await require_user(request)
+@router.post("", status_code=201, response_model=ChatCreatedResponse)
+async def create_chat(
+    data: CreateChatRequest,
+    email: str = Depends(get_current_user_email),
+) -> dict:
     chat_id = str(uuid4())
     async with get_pool().connection() as connection:
         chat = await (
@@ -112,9 +120,11 @@ async def create_chat(data: CreateChatRequest, request: Request) -> dict:
     return {"chat": chat}
 
 
-@router.get("/{chat_id}")
-async def get_chat(chat_id: str, request: Request) -> dict:
-    email = await require_user(request)
+@router.get("/{chat_id}", response_model=ChatResponse)
+async def get_chat(
+    chat_id: str,
+    email: str = Depends(get_current_user_email),
+) -> dict:
     async with get_pool().connection() as connection:
         chat = await (
             await connection.execute(
@@ -131,8 +141,12 @@ async def get_chat(chat_id: str, request: Request) -> dict:
 
 
 @router.post("/{chat_id}/turns")
-async def create_turn(chat_id: str, data: ChatTurnRequest, request: Request):
-    email = await require_user(request)
+async def create_turn(
+    chat_id: str,
+    data: ChatTurnRequest,
+    request: Request,
+    email: str = Depends(get_current_user_email),
+):
     if str(data.chatId) != chat_id:
         raise HTTPException(status_code=400, detail="Invalid chat message.")
     if not OPENROUTER_API_KEY:
@@ -229,7 +243,7 @@ async def create_turn(chat_id: str, data: ChatTurnRequest, request: Request):
                             (Jsonb(updated), chat_id, email),
                         )
             yield json.dumps({"done": True}) + "\n"
-        except Exception as error:
+        except Exception:
             logger.exception("OpenRouter chat stream failed")
             yield json.dumps(
                 {

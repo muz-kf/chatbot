@@ -1,17 +1,17 @@
 from contextlib import asynccontextmanager
-from typing import AsyncIterator
+from collections.abc import AsyncGenerator
 
 from fastapi import HTTPException
 from psycopg.rows import dict_row
 from psycopg_pool import AsyncConnectionPool
 
-from .config import DATABASE_URL
+from ..core.config import DATABASE_URL
 
 pool: AsyncConnectionPool | None = None
 
 
 @asynccontextmanager
-async def lifespan_pool() -> AsyncIterator[None]:
+async def lifespan_pool() -> AsyncGenerator[None, None]:
     global pool
     if DATABASE_URL:
         pool = AsyncConnectionPool(

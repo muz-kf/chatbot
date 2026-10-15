@@ -1,30 +1,9 @@
-from datetime import date
+from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, StringConstraints, field_validator
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
 from typing_extensions import Annotated
-
-
-class ProfileRequest(BaseModel):
-    email: EmailStr
-    name: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
-    dateOfBirth: date
-
-    @field_validator("dateOfBirth")
-    @classmethod
-    def birth_date_must_not_be_future(cls, value: date) -> date:
-        if value > date.today():
-            raise ValueError("Date of birth cannot be in the future.")
-        return value
-
-
-class VerifyCodeRequest(ProfileRequest):
-    code: Annotated[str, StringConstraints(pattern=r"^\d{6}$")]
-
-
-class CreateChatRequest(BaseModel):
-    title: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=120)]
 
 
 class StoredAttachment(BaseModel):
@@ -35,6 +14,38 @@ class StoredAttachment(BaseModel):
     format: Literal["wav", "mp3"] | None = None
     text: Annotated[str, StringConstraints(max_length=180_000)] | None = None
     transcript: Annotated[str, StringConstraints(max_length=12_000)] | None = None
+
+
+class StoredMessage(BaseModel):
+    id: UUID
+    role: Literal["user", "assistant"]
+    content: Annotated[str, StringConstraints(max_length=12_000)]
+    attachments: list[StoredAttachment] = Field(default_factory=list, max_length=6)
+
+
+class ChatSummaryResponse(BaseModel):
+    id: str
+    title: str
+    updatedAt: datetime
+
+
+class ChatListResponse(BaseModel):
+    chats: list[ChatSummaryResponse]
+
+
+class ChatCreatedResponse(BaseModel):
+    chat: ChatSummaryResponse
+
+
+class ChatDetailResponse(BaseModel):
+    id: str
+    title: str
+    chats: list[StoredMessage]
+    updatedAt: datetime
+
+
+class ChatResponse(BaseModel):
+    chat: ChatDetailResponse
 
 
 class ChatAttachment(StoredAttachment):
@@ -75,3 +86,9 @@ class ChatTurnRequest(BaseModel):
             raise ValueError("A chat turn must be a user message.")
         message.validate_user_content()
         return message
+
+
+class CreateChatRequest(BaseModel):
+    title: Annotated[
+        str, StringConstraints(strip_whitespace=True, min_length=1, max_length=120)
+    ]

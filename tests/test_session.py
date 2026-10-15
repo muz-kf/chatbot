@@ -2,7 +2,7 @@ from types import SimpleNamespace
 
 from starlette.responses import Response
 
-import app.session as session
+import app.core.security as session
 
 
 def test_session_token_uses_existing_jwt_cookie_format(monkeypatch) -> None:

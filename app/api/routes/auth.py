@@ -8,10 +8,22 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 from fastapi import APIRouter, HTTPException, Request as FastAPIRequest, Response
-from .config import RESEND_API_KEY, RESEND_FROM_EMAIL, STRICT_AUTH
-from .database import get_pool
-from .models import ProfileRequest, VerifyCodeRequest
-from .session import authenticated_email, clear_session, issue_session
+
+from ...core.config import (
+    RESEND_API_KEY,
+    RESEND_FROM_EMAIL,
+    SESSION_SECRET,
+    STRICT_AUTH,
+)
+from ...core.security import authenticated_email, clear_session, issue_session
+from ...db.session import get_pool
+from ...schemas.auth import (
+    AuthModeResponse,
+    MessageResponse,
+    ProfileRequest,
+    UserResponse,
+    VerifyCodeRequest,
+)
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 CODE_LIFETIME = timedelta(minutes=10)
@@ -26,8 +38,6 @@ def normalize_email(email: str) -> str:
 
 
 def _digest(email: str, code: str) -> str:
-    from .config import SESSION_SECRET
-
     if len(SESSION_SECRET) < 32 or SESSION_SECRET.startswith(
         "replace-with-a-random-secret"
     ):
@@ -82,27 +92,12 @@ def _resend_error_message(error: RuntimeError) -> str:
     return "Resend could not send the code. Check the sender configuration and server outbound network access."
 
 
-async def require_user(request: FastAPIRequest) -> str:
-    email = authenticated_email(request)
-    if not email:
-        raise HTTPException(status_code=401, detail="Sign-in required.")
-    async with get_pool().connection() as connection:
-        user = await (
-            await connection.execute(
-                "SELECT email FROM users WHERE email = %s", (email,)
-            )
-        ).fetchone()
-    if not user:
-        raise HTTPException(status_code=401, detail="Sign-in required.")
-    return email
-
-
-@router.get("/mode")
+@router.get("/mode", response_model=AuthModeResponse)
 async def auth_mode() -> dict[str, bool]:
     return {"requiresEmailVerification": STRICT_AUTH}
 
 
-@router.post("/dev-sign-in")
+@router.post("/dev-sign-in", response_model=UserResponse)
 async def dev_sign_in(profile: ProfileRequest, response: Response) -> dict:
     if STRICT_AUTH:
         raise HTTPException(status_code=404, detail="Not found.")
@@ -135,7 +130,7 @@ async def dev_sign_in(profile: ProfileRequest, response: Response) -> dict:
     return {"user": {"email": user["email"], "name": user["name"]}}
 
 
-@router.get("/session")
+@router.get("/session", response_model=UserResponse)
 async def session(request: FastAPIRequest, response: Response) -> dict:
     email = authenticated_email(request)
     if not email:
@@ -153,7 +148,7 @@ async def session(request: FastAPIRequest, response: Response) -> dict:
     return {"user": user}
 
 
-@router.post("/send-code")
+@router.post("/send-code", response_model=MessageResponse)
 async def send_code(profile: ProfileRequest) -> dict[str, str]:
     if not RESEND_API_KEY or not RESEND_FROM_EMAIL:
         raise HTTPException(
@@ -226,7 +221,7 @@ async def send_code(profile: ProfileRequest) -> dict[str, str]:
     return {"message": "If the email can receive sign-in codes, one has been sent."}
 
 
-@router.post("/verify-code")
+@router.post("/verify-code", response_model=UserResponse)
 async def verify_code(data: VerifyCodeRequest, response: Response) -> dict:
     email = normalize_email(str(data.email))
     now = datetime.now(timezone.utc)
@@ -286,4 +281,5 @@ async def verify_code(data: VerifyCodeRequest, response: Response) -> dict:
 @router.post("/logout", status_code=204)
 async def logout(response: Response) -> Response:
     clear_session(response)
+    response.status_code = 204
     return response
