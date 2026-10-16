@@ -1,9 +1,8 @@
-from fastapi.testclient import TestClient
 from datetime import datetime
 import re
 
 from app.main import app
-
+from fastapi.testclient import TestClient
 
 client = TestClient(app)
 
@@ -35,6 +34,20 @@ def test_same_origin_request_is_allowed() -> None:
     )
 
     assert response.status_code == 204
+
+
+def test_auth_code_endpoints_are_removed() -> None:
+    response = client.get(
+        "/api/auth/mode",
+        headers={"Origin": "http://testserver"},
+    )
+
+    assert response.status_code == 404
+
+
+def test_email_and_dob_sign_in_route_is_registered() -> None:
+    paths = app.openapi()["paths"]
+    assert "post" in paths["/api/auth/sign-in"]
 
 
 def test_untrusted_origin_is_rejected() -> None:

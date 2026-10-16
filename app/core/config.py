@@ -13,13 +13,8 @@ OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "openrouter/free").strip()
 OPENROUTER_MULTIMODAL_MODEL = os.getenv(
     "OPENROUTER_MULTIMODAL_MODEL", "google/gemini-2.5-flash"
 ).strip()
-RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
-RESEND_FROM_EMAIL = os.getenv("RESEND_FROM_EMAIL", "")
 APP_ENV = os.getenv("APP_ENV", os.getenv("NODE_ENV", "development")).lower()
 IS_PRODUCTION = APP_ENV == "production"
-STRICT_AUTH = os.getenv("strict_auth", os.getenv("STRICT_AUTH", "true")).lower() != "false"
-if IS_PRODUCTION:
-    STRICT_AUTH = True
 
 APP_ORIGIN = os.getenv("APP_ORIGIN", "")
 TRUSTED_ORIGINS = [

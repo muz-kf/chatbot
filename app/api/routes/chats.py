@@ -5,14 +5,15 @@ from uuid import uuid4
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from openai import AsyncOpenAI
-from psycopg.types.json import Jsonb
+from sqlalchemy.orm import Session
 
 from ...core.config import (
     OPENROUTER_API_KEY,
     OPENROUTER_MODEL,
     OPENROUTER_MULTIMODAL_MODEL,
 )
-from ...db.session import get_pool
+from ...db.models import PublicChat
+from ...db.session import SessionLocal, get_db
 from ...schemas.chat import (
     ChatCreatedResponse,
     ChatListResponse,
@@ -85,59 +86,60 @@ def to_openrouter_message(message: ChatMessage) -> dict:
 
 
 @router.get("", response_model=ChatListResponse)
-async def list_chats(email: str = Depends(get_current_user_email)) -> dict:
-    async with get_pool().connection() as connection:
-        chats = await (
-            await connection.execute(
-                """
-                SELECT id, title, updated_at AS "updatedAt"
-                FROM public_chats WHERE email = %s
-                ORDER BY updated_at DESC
-                """,
-                (email,),
-            )
-        ).fetchall()
-    return {"chats": chats}
+def list_chats(
+    email: str = Depends(get_current_user_email),
+    db: Session = Depends(get_db),
+) -> dict:
+    chats = (
+        db.query(PublicChat)
+        .filter(PublicChat.email == email)
+        .order_by(PublicChat.updated_at.desc())
+        .all()
+    )
+    return {
+        "chats": [
+            {"id": item.id, "title": item.title, "updatedAt": item.updated_at}
+            for item in chats
+        ]
+    }
 
 
 @router.post("", status_code=201, response_model=ChatCreatedResponse)
-async def create_chat(
+def create_chat(
     data: CreateChatRequest,
     email: str = Depends(get_current_user_email),
+    db: Session = Depends(get_db),
 ) -> dict:
-    chat_id = str(uuid4())
-    async with get_pool().connection() as connection:
-        chat = await (
-            await connection.execute(
-                """
-                INSERT INTO public_chats (id, email, title)
-                VALUES (%s, %s, %s)
-                RETURNING id, title, updated_at AS "updatedAt"
-                """,
-                (chat_id, email, data.title),
-            )
-        ).fetchone()
-    return {"chat": chat}
+    chat = PublicChat(id=str(uuid4()), email=email, title=data.title, messages=[])
+    db.add(chat)
+    db.commit()
+    db.refresh(chat)
+    return {
+        "chat": {"id": chat.id, "title": chat.title, "updatedAt": chat.updated_at}
+    }
 
 
 @router.get("/{chat_id}", response_model=ChatResponse)
-async def get_chat(
+def get_chat(
     chat_id: str,
     email: str = Depends(get_current_user_email),
+    db: Session = Depends(get_db),
 ) -> dict:
-    async with get_pool().connection() as connection:
-        chat = await (
-            await connection.execute(
-                """
-                SELECT id, title, chats, updated_at AS "updatedAt"
-                FROM public_chats WHERE id = %s AND email = %s
-                """,
-                (chat_id, email),
-            )
-        ).fetchone()
+    chat = (
+        db.query(PublicChat)
+        .filter(PublicChat.id == chat_id, PublicChat.email == email)
+        .first()
+    )
     if not chat:
         raise HTTPException(status_code=404, detail="Conversation not found.")
-    return {"chat": chat}
+    return {
+        "chat": {
+            "id": chat.id,
+            "title": chat.title,
+            "chats": chat.messages,
+            "updatedAt": chat.updated_at,
+        }
+    }
 
 
 @router.post("/{chat_id}/turns")
@@ -146,6 +148,7 @@ async def create_turn(
     data: ChatTurnRequest,
     request: Request,
     email: str = Depends(get_current_user_email),
+    db: Session = Depends(get_db),
 ):
     if str(data.chatId) != chat_id:
         raise HTTPException(status_code=400, detail="Invalid chat message.")
@@ -156,27 +159,17 @@ async def create_turn(
         )
 
     user_message = data.message
-    async with get_pool().connection() as connection:
-        async with connection.transaction():
-            chat = await (
-                await connection.execute(
-                    """
-                    SELECT chats FROM public_chats
-                    WHERE id = %s AND email = %s FOR UPDATE
-                    """,
-                    (chat_id, email),
-                )
-            ).fetchone()
-            if not chat:
-                raise HTTPException(status_code=404, detail="Conversation not found.")
-            history = [*chat["chats"], user_message.persistent()]
-            await connection.execute(
-                """
-                UPDATE public_chats SET chats = %s, updated_at = now()
-                WHERE id = %s AND email = %s
-                """,
-                (Jsonb(history), chat_id, email),
-            )
+    chat = (
+        db.query(PublicChat)
+        .filter(PublicChat.id == chat_id, PublicChat.email == email)
+        .with_for_update()
+        .first()
+    )
+    if not chat:
+        raise HTTPException(status_code=404, detail="Conversation not found.")
+    history = [*chat.messages, user_message.persistent()]
+    chat.messages = history
+    db.commit()
     current_messages = [
         ChatMessage.model_validate(message) for message in history[-41:-1]
     ]
@@ -215,33 +208,28 @@ async def create_turn(
                     assistant_content += token
                     yield json.dumps({"token": token}) + "\n"
 
-            async with get_pool().connection() as connection:
-                async with connection.transaction():
-                    latest = await (
-                        await connection.execute(
-                            """
-                            SELECT chats FROM public_chats
-                            WHERE id = %s AND email = %s FOR UPDATE
-                            """,
-                            (chat_id, email),
-                        )
-                    ).fetchone()
-                    if latest:
-                        updated = [
-                            *latest["chats"],
-                            {
-                                "id": str(uuid4()),
-                                "role": "assistant",
-                                "content": assistant_content,
-                            },
-                        ]
-                        await connection.execute(
-                            """
-                            UPDATE public_chats SET chats = %s, updated_at = now()
-                            WHERE id = %s AND email = %s
-                            """,
-                            (Jsonb(updated), chat_id, email),
-                        )
+            if SessionLocal is None:
+                raise RuntimeError("Database session is unavailable.")
+            with SessionLocal() as stream_db:
+                latest = (
+                    stream_db.query(PublicChat)
+                    .filter(
+                        PublicChat.id == chat_id,
+                        PublicChat.email == email,
+                    )
+                    .with_for_update()
+                    .first()
+                )
+                if latest:
+                    latest.messages = [
+                        *latest.messages,
+                        {
+                            "id": str(uuid4()),
+                            "role": "assistant",
+                            "content": assistant_content,
+                        },
+                    ]
+                    stream_db.commit()
             yield json.dumps({"done": True}) + "\n"
         except Exception:
             logger.exception("OpenRouter chat stream failed")

@@ -8,7 +8,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from .api.routes import auth, chats, health
-from .db.session import lifespan_pool
+from .db.session import engine
 from .middleware import ApiSecurityMiddleware, RequestSizeLimitMiddleware
 
 logging.basicConfig(level=logging.INFO)
@@ -16,8 +16,9 @@ logging.basicConfig(level=logging.INFO)
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    async with lifespan_pool():
-        yield
+    yield
+    if engine is not None:
+        engine.dispose()
 
 
 app = FastAPI(title="DAZZ API", lifespan=lifespan)

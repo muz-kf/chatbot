@@ -4,7 +4,7 @@ from pydantic import BaseModel, EmailStr, StringConstraints, field_validator
 from typing_extensions import Annotated
 
 
-class ProfileRequest(BaseModel):
+class UserSignInRequest(BaseModel):
     email: EmailStr
     name: Annotated[
         str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)
@@ -18,11 +18,6 @@ class ProfileRequest(BaseModel):
             raise ValueError("Date of birth cannot be in the future.")
         return value
 
-
-class VerifyCodeRequest(ProfileRequest):
-    code: Annotated[str, StringConstraints(pattern=r"^\d{6}$")]
-
-
 class UserProfileResponse(BaseModel):
     email: EmailStr
     name: str
@@ -30,11 +25,3 @@ class UserProfileResponse(BaseModel):
 
 class UserResponse(BaseModel):
     user: UserProfileResponse
-
-
-class AuthModeResponse(BaseModel):
-    requiresEmailVerification: bool
-
-
-class MessageResponse(BaseModel):
-    message: str

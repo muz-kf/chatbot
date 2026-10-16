@@ -1,39 +1,35 @@
-from contextlib import asynccontextmanager
-from collections.abc import AsyncGenerator
+from collections.abc import Generator
 
 from fastapi import HTTPException
-from psycopg.rows import dict_row
-from psycopg_pool import AsyncConnectionPool
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
 
 from ..core.config import DATABASE_URL
 
-pool: AsyncConnectionPool | None = None
+engine = None
+SessionLocal: sessionmaker[Session] | None = None
 
-
-@asynccontextmanager
-async def lifespan_pool() -> AsyncGenerator[None, None]:
-    global pool
-    if DATABASE_URL:
-        pool = AsyncConnectionPool(
-            DATABASE_URL,
-            min_size=1,
-            max_size=10,
-            kwargs={"row_factory": dict_row},
-            open=False,
+if DATABASE_URL:
+    database_url = DATABASE_URL
+    if database_url.startswith("postgres://"):
+        database_url = database_url.replace("postgres://", "postgresql://", 1)
+    if database_url.startswith("postgresql+psycopg://"):
+        database_url = database_url.replace(
+            "postgresql+psycopg://", "postgresql://", 1
         )
-        await pool.open()
-    try:
-        yield
-    finally:
-        if pool is not None:
-            await pool.close()
-            pool = None
+    engine = create_engine(database_url, pool_pre_ping=True)
+    SessionLocal = sessionmaker(
+        bind=engine,
+        autoflush=False,
+        expire_on_commit=False,
+    )
 
 
-def get_pool() -> AsyncConnectionPool:
-    if pool is None:
+def get_db() -> Generator[Session, None, None]:
+    if SessionLocal is None:
         raise HTTPException(
             status_code=503,
             detail="Set PSQL_STR or DATABASE_URL to connect to PostgreSQL.",
         )
-    return pool
+    with SessionLocal() as session:
+        yield session

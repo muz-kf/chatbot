@@ -5,13 +5,15 @@ import pytest
 from pydantic import ValidationError
 
 from app.api.routes.chats import to_openrouter_message
-from app.schemas.auth import ProfileRequest
+from app.db.base import Base
+from app.db.models import PublicChat
+from app.schemas.auth import UserSignInRequest
 from app.schemas.chat import ChatMessage, ChatTurnRequest
 
 
 def test_profile_rejects_future_birth_date() -> None:
     with pytest.raises(ValidationError):
-        ProfileRequest(
+        UserSignInRequest(
             email="person@example.com",
             name="Person",
             dateOfBirth=date.today() + timedelta(days=1),
@@ -80,3 +82,8 @@ def test_video_frames_are_included_for_model_but_not_storage() -> None:
 
     assert request["content"][-1]["image_url"]["url"] == "data:image/jpeg;base64,frame-data"
     assert "frames" not in message.persistent()["attachments"][0]
+
+
+def test_sqlalchemy_models_map_existing_tables_without_otp_table() -> None:
+    assert set(Base.metadata.tables) == {"users", "public_chats"}
+    assert PublicChat.__table__.c.chats.name == "chats"
