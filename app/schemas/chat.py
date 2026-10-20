@@ -76,7 +76,7 @@ class ChatMessage(BaseModel):
 
 
 class ChatTurnRequest(BaseModel):
-    chatId: UUID
+    chatId: str
     message: ChatMessage
 
     @field_validator("message")

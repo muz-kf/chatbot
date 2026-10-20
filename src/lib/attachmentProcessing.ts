@@ -1,5 +1,6 @@
 import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import type { ChatAttachment } from "../types/chat";
+import { getRandomId } from "./utils";
 
 const maxFileSize = 12 * 1024 * 1024;
 const maxVideoSize = 60 * 1024 * 1024;
@@ -118,7 +119,7 @@ export async function processAttachment(file: File): Promise<ChatAttachment> {
   }
 
   const attachment: ChatAttachment = {
-    id: crypto.randomUUID(),
+    id: getRandomId(),
     name: file.name,
     mimeType: file.type || "application/octet-stream",
     size: file.size,

@@ -20,6 +20,7 @@ import {
   type ThemeChoice,
   type UserProfile,
 } from "./types/chat";
+import { getRandomId } from "./lib/utils";
 
 type AuthState = "loading" | "authenticated" | "unauthenticated";
 
@@ -197,12 +198,12 @@ function App() {
 
     const messageContent = content || `Please review the attached file${attachedFiles.length === 1 ? "" : "s"}: ${attachedFiles.map((file) => file.name).join(", ")}.`;
     const userMessage: Message = {
-      id: crypto.randomUUID(),
+      id: getRandomId(),
       role: "user",
       content: messageContent,
       attachments: attachedFiles,
     };
-    const assistantMessage: Message = { id: crypto.randomUUID(), role: "assistant", content: "" };
+    const assistantMessage: Message = { id: getRandomId(), role: "assistant", content: "" };
     const requestBody = JSON.stringify({ message: userMessage });
     if (new Blob([requestBody]).size > 28 * 1024 * 1024) {
       setError("These attachments exceed the 28 MB request limit. Remove a file and try again.");

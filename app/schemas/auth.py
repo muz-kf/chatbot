@@ -1,7 +1,7 @@
 from datetime import date
 
 from pydantic import BaseModel, EmailStr, StringConstraints, field_validator
-from typing_extensions import Annotated
+from typing import Annotated
 
 
 class UserSignInRequest(BaseModel):
