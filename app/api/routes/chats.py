@@ -199,7 +199,7 @@ async def create_turn(
                     *(to_openrouter_message(message) for message in current_messages),
                 ],
                 stream=True,
-            )
+            )  # ty: ignore[no-matching-overload]
             async for chunk in stream:
                 if await request.is_disconnected():
                     return

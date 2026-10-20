@@ -1,6 +1,9 @@
 from datetime import datetime
 import re
+from types import SimpleNamespace
+from unittest.mock import AsyncMock
 
+import app.api.routes.health as health_route
 from app.main import app
 from fastapi.testclient import TestClient
 
@@ -16,6 +19,71 @@ def test_health_check_returns_timestamp_and_random_message() -> None:
     datetime.fromisoformat(result["server_time"].replace("Z", "+00:00"))
     assert result["message"].startswith("DAZZ API is healthy: ")
     assert re.fullmatch(r"[a-z0-9]{10}", result["message"].rsplit(" ", 1)[-1])
+
+
+def test_agent_health_calls_agent_with_random_prompt_when_body_is_missing(
+    monkeypatch,
+) -> None:
+    create = AsyncMock(
+        return_value=SimpleNamespace(
+            choices=[SimpleNamespace(message=SimpleNamespace(content="Hello!"))]
+        )
+    )
+    close = AsyncMock()
+    client_instance = SimpleNamespace(
+        chat=SimpleNamespace(completions=SimpleNamespace(create=create)),
+        close=close,
+    )
+    monkeypatch.setattr(health_route, "OPENROUTER_API_KEY", "test-key")
+    monkeypatch.setattr(health_route, "AsyncOpenAI", lambda **_: client_instance)
+
+    response = client.post(
+        "/health/agent",
+        headers={"Origin": "http://testserver"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["healthy"] is True
+    assert response.json()["agent_response"] == "Hello!"
+    prompt = create.await_args.kwargs["messages"][-1]["content"]
+    assert prompt
+    close.assert_awaited_once()
+
+
+def test_agent_health_sends_request_text_to_agent(monkeypatch) -> None:
+    create = AsyncMock(
+        return_value=SimpleNamespace(
+            choices=[SimpleNamespace(message=SimpleNamespace(content="Yes."))]
+        )
+    )
+    client_instance = SimpleNamespace(
+        chat=SimpleNamespace(completions=SimpleNamespace(create=create)),
+        close=AsyncMock(),
+    )
+    monkeypatch.setattr(health_route, "OPENROUTER_API_KEY", "test-key")
+    monkeypatch.setattr(health_route, "AsyncOpenAI", lambda **_: client_instance)
+
+    response = client.post(
+        "/health/agent",
+        json={"text": "Check this prompt"},
+        headers={"Origin": "http://testserver"},
+    )
+
+    assert response.status_code == 200
+    assert create.await_args.kwargs["messages"][-1]["content"] == "Check this prompt"
+
+
+def test_agent_health_returns_unavailable_when_api_key_is_missing(monkeypatch) -> None:
+    monkeypatch.setattr(health_route, "OPENROUTER_API_KEY", "")
+
+    response = client.post(
+        "/health/agent",
+        json={"text": "Are you available?"},
+        headers={"Origin": "http://testserver"},
+    )
+
+    assert response.status_code == 503
+    assert response.json()["healthy"] is False
 
 
 def test_state_change_requires_origin() -> None:

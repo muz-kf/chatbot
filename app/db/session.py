@@ -1,3 +1,4 @@
+from sqlalchemy.engine.base import Engine
 from collections.abc import Generator
 
 from fastapi import HTTPException
@@ -17,8 +18,8 @@ if DATABASE_URL:
         database_url = database_url.replace(
             "postgresql+psycopg://", "postgresql://", 1
         )
-    engine = create_engine(database_url, pool_pre_ping=True)
-    SessionLocal = sessionmaker(
+    engine: Engine = create_engine(database_url, pool_pre_ping=True)
+    SessionLocal: sessionmaker[Session] = sessionmaker(
         bind=engine,
         autoflush=False,
         expire_on_commit=False,
