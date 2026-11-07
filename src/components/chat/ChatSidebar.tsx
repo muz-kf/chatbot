@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, LogOut, MessageSquare, PanelLeftClose, Plus, Settings2, Sparkles, X } from "lucide-react";
 import { Button } from "../ui/button";
 import { DazzMark } from "./DazzMark";
+import { VoiceToTextWidget } from "./VoiceToTextWidget";
 import {
   fonts,
   themes,
@@ -89,6 +90,8 @@ export function ChatSidebar({
         </Button>
 
         <div className="sidebar-section-label">YOUR SPACE</div>
+        {/* VoiceToTextWidget reserved for future expansion */}
+        {/* <VoiceToTextWidget /> */}
         <div className="conversation-list" aria-label="Saved conversations">
           {chats.length === 0 ? (
             <div className="sidebar-empty">

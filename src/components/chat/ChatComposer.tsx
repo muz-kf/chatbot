@@ -119,9 +119,19 @@ export function ChatComposer({
         {/* Live Voice-to-Text Recognition Preview Banner */}
         {listening && (
           <div className="voice-dictation-banner" aria-live="polite">
-            <div className="dictation-indicator">
-              <span className="dictation-dot" />
-              <span className="dictation-label">Listening</span>
+            <div className="dictation-header">
+              <div className="dictation-indicator">
+                <span className="dictation-dot" />
+                <span className="dictation-label">Live Voice Recognition</span>
+              </div>
+              <button
+                type="button"
+                className="dictation-done-btn"
+                onClick={stopListening}
+                aria-label="Stop voice recognition"
+              >
+                Done
+              </button>
             </div>
             <p className="dictation-text">
               {interimText ? (
@@ -130,14 +140,6 @@ export function ChatComposer({
                 <span className="dictation-placeholder">Speak now — words will appear directly here...</span>
               )}
             </p>
-            <button
-              type="button"
-              className="dictation-done-btn"
-              onClick={stopListening}
-              aria-label="Stop voice recognition"
-            >
-              Done
-            </button>
           </div>
         )}
 
