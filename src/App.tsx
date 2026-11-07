@@ -172,6 +172,8 @@ function App() {
       maroon: "#18030b",
       skyblue: "#f0f7ff",
       pink: "#1b0415",
+      zyricon: "#130d1d",
+      miracle: "#f4f0ff",
     };
     document.querySelector('meta[name="theme-color"]')?.setAttribute("content", themeColors[theme] || "#08060c");
   }, [theme]);

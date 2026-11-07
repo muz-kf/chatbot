@@ -58,6 +58,8 @@ export const themes = [
   { value: "maroon", label: "Velvet Maroon" },
   { value: "skyblue", label: "Sky Blue" },
   { value: "pink", label: "Neon Pink" },
+  { value: "zyricon", label: "Zyricon Dark" },
+  { value: "miracle", label: "Miracle Lilac" },
 ] as const;
 export type ThemeChoice = (typeof themes)[number]["value"];
 
@@ -72,6 +74,8 @@ export const themeFonts: Record<ThemeChoice, FontChoice> = {
   maroon: "Inter",
   skyblue: "Outfit",
   pink: "Audiowide",
+  zyricon: "Plus Jakarta Sans",
+  miracle: "Manrope",
 };
 
 export function isFontChoice(value: string | null): value is FontChoice {
