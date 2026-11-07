@@ -1,0 +1,54 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: dazz-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: dazz
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./migrations/0001_initial.sql:/docker-entrypoint-initdb.d/0001_initial.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d dazz"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    container_name: dazz-server
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      - PSQL_STR=postgresql://postgres:postgres@db:5432/dazz
+      - PORT=5002
+      - HOST=0.0.0.0
+      - APP_ORIGIN=http://localhost:5001
+      - TRUSTED_ORIGINS=http://localhost:5001,http://127.0.0.1:5001,http://localhost:5002,http://127.0.0.1:5002
+    ports:
+      - "5002:5002"
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.app
+    container_name: dazz-app
+    restart: unless-stopped
+    depends_on:
+      - server
+    ports:
+      - "5001:5001"
+
+volumes:
+  pgdata:
+

@@ -22,15 +22,26 @@ TRUSTED_ORIGINS = [
     for origin in os.getenv("TRUSTED_ORIGINS", "").split(",")
     if origin.strip()
 ]
-SERVER_HOST = os.getenv("HOST", "127.0.0.1")
-SERVER_PORT = int(os.getenv("PORT", "8000"))
+SERVER_HOST = os.getenv("HOST", "0.0.0.0")
+SERVER_PORT = int(os.getenv("PORT", "5002"))
 
 
 def allowed_origins() -> set[str]:
     origins = [APP_ORIGIN, *TRUSTED_ORIGINS]
     if not IS_PRODUCTION:
         origins.extend(
-            ["http://localhost:5173", "http://127.0.0.1:5173"]
+            [
+                "http://localhost:5173",
+                "http://127.0.0.1:5173",
+                "http://localhost:5001",
+                "http://127.0.0.1:5001",
+                "http://localhost:5002",
+                "http://127.0.0.1:5002",
+                "http://localhost:5003",
+                "http://127.0.0.1:5003",
+                "http://localhost:8000",
+                "http://127.0.0.1:8000",
+            ]
         )
     normalized: set[str] = set()
     for origin in filter(None, origins):

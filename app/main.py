@@ -16,6 +16,13 @@ logging.basicConfig(level=logging.INFO)
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    if engine is not None:
+        try:
+            from .db.base import Base
+            from .db import models  # noqa: F401
+            Base.metadata.create_all(bind=engine)
+        except Exception:
+            logging.getLogger(__name__).warning("Could not auto-create database tables on startup", exc_info=True)
     yield
     if engine is not None:
         engine.dispose()

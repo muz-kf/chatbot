@@ -1,6 +1,7 @@
 import logging
 import secrets
 import string
+from typing import Any
 
 from fastapi import APIRouter, Response
 from openai import AsyncOpenAI
@@ -39,6 +40,20 @@ async def liveness() :
         key=suffix
     )
 
+def _to_serializable(obj: Any) -> Any:
+    if hasattr(obj, "model_dump"):
+        return obj.model_dump()
+    if hasattr(obj, "dict") and callable(obj.dict):
+        return obj.dict()
+    if hasattr(obj, "__dict__"):
+        return {k: _to_serializable(v) for k, v in vars(obj).items()}
+    if isinstance(obj, list):
+        return [_to_serializable(v) for v in obj]
+    if isinstance(obj, dict):
+        return {k: _to_serializable(v) for k, v in obj.items()}
+    return obj
+
+
 @router.post("/health/agent")
 async def agent_health(
     response: Response,
@@ -73,12 +88,13 @@ async def agent_health(
             ],
         )
         agent_response = completion.choices[0].message.content
+        raw = _to_serializable(completion)
         return AgentHealthResponse(
             server_time=get_current_time(),
             healthy=True,
             message="Agent is healthy.",
             agent_response=agent_response,
-            raw=completion.dict(),
+            raw=raw,
         )
     except Exception:
         logger.exception("Agent health check failed")

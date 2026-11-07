@@ -4,17 +4,39 @@ DAZZ is a React AI chat interface with switchable Neon Purple, Neon Green, Cloud
 
 The API is built with FastAPI. The code is arranged around `api/routes` for HTTP endpoints, `api/dependencies.py` for request-scoped authentication, `schemas` for Pydantic validation/serialization, `core` for configuration and auth utilities, and `db` for SQLAlchemy models and sessions. SQLAlchemy 2.x ORM uses PostgreSQL through psycopg2. Pydantic schemas validate API data and are separate from database models. The OpenRouter API key stays on the server.
 
-## Setup
+## Quick Start with Docker Compose
+
+You can launch the entire stack (PostgreSQL DB, FastAPI Server on port 5002, and Vite/React App on port 5001) using Docker Compose:
+
+```bash
+# 1. Start all services
+docker compose up -d --build
+
+# 2. Access the services:
+# - Frontend App: http://localhost:5001
+# - API Server:   http://localhost:5002 (health check at http://localhost:5002/health)
+# - Database:     localhost:5432
+```
+
+To stop the services:
+```bash
+docker compose down
+```
+
+## Setup (Local Development)
 
 1. Install Node.js 20 or newer and Python 3.12 or newer.
 2. Create and activate a Python virtual environment, then install the API dependencies with `pip install -r requirements.txt`.
-3. Configure `.env` with `OPENROUTER_API_KEY`, `PSQL_STR` (or `DATABASE_URL`), and `SESSION_SECRET`. `SESSION_SECRET` must be at least 32 characters. `OPENROUTER_MODEL` defaults to `openrouter/free`; attachments use `OPENROUTER_MULTIMODAL_MODEL`, which defaults to `google/gemini-2.5-flash`.
-4. For a fresh database, apply the schema with `psql "$PSQL_STR" -f migrations/0001_initial.sql`. Existing databases created by the former Drizzle setup already have these tables and need no conversion.
+3. Start the PostgreSQL database using Docker:
+   ```bash
+   docker compose up -d db
+   ```
+4. Configure `.env` with `OPENROUTER_API_KEY`, `PSQL_STR=postgresql://postgres:postgres@localhost:5432/dazz`, and `SESSION_SECRET`.
 5. Install frontend dependencies with `npm install`.
-6. Start FastAPI and Vite together with `npm run dev`, or separately with `npm run dev:api` and `npm run dev:web`.
-7. Open the Vite URL printed by the frontend (usually `http://localhost:5173`).
+6. Start FastAPI and Vite together with `npm run dev`, or separately with `npm run dev:api` (port 5002) and `npm run dev:web` (port 5001).
+7. Open the app at `http://localhost:5001`.
 
-Vite proxies `/api` requests to FastAPI on `http://localhost:8000`. In production, build the React app with `npm run build`; FastAPI serves the generated `dist` directory when it is present. Set `APP_ENV=production` and configure `APP_ORIGIN` with the public application origin.
+Vite proxies `/api` requests to FastAPI on `http://127.0.0.1:5002`. In production, build the React app with `npm run build`; FastAPI serves the generated `dist` directory when it is present. Set `APP_ENV=production` and configure `APP_ORIGIN` with the public application origin.
 
 `GET /health` returns a UTC server timestamp and a short randomly generated health message. API mutations accept same-origin requests plus configured and local development origins.
 
