@@ -161,17 +161,17 @@ function App() {
     document.documentElement.dataset.theme = theme;
     window.localStorage.setItem("chat-theme", theme);
     const themeColors: Record<string, string> = {
-      purple: "#08060c",
-      green: "#06110d",
-      white: "#f4f6fb",
-      gold: "#111208",
-      dazz: "#030a16",
-      jarvis: "#030a16",
-      red: "#130507",
-      orange: "#150a04",
-      maroon: "#100408",
-      skyblue: "#05111a",
-      pink: "#14040d",
+      purple: "#0e051c",
+      green: "#02160d",
+      white: "#f3f6fc",
+      gold: "#171203",
+      dazz: "#020e1a",
+      jarvis: "#020e1a",
+      red: "#fff5f6",
+      orange: "#1c0e07",
+      maroon: "#18030b",
+      skyblue: "#f0f7ff",
+      pink: "#1b0415",
     };
     document.querySelector('meta[name="theme-color"]')?.setAttribute("content", themeColors[theme] || "#08060c");
   }, [theme]);
