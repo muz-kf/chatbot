@@ -90,7 +90,8 @@ export function ChatSidebar({
         </Button>
 
         <div className="sidebar-section-label">YOUR SPACE</div>
-        <VoiceToTextWidget />
+        {/* VoiceToTextWidget reserved for future expansion */}
+        {/* <VoiceToTextWidget /> */}
         <div className="conversation-list" aria-label="Saved conversations">
           {chats.length === 0 ? (
             <div className="sidebar-empty">

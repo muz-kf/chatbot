@@ -118,8 +118,8 @@ export function MessageList({ messages, streaming, copiedId, bottomRef, onCopy }
                         >
                           {message.content}
                         </ReactMarkdown>
-                      ) : (streaming ? <span className="thinking-dots" aria-label="DAZZ is thinking"><i /><i /><i /></span> : null)}
-                      {streaming && message.content && <span className="stream-cursor" />}
+                      ) : (isStreamingAssistant ? <span className="thinking-dots" aria-label="DAZZ is thinking"><i /><i /><i /></span> : null)}
+                      {isStreamingAssistant && Boolean(message.content) && <span className="stream-cursor" />}
                     </div>
                     {message.content && !streaming && (
                       <Button

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <rect width="512" height="512" rx="128" fill="#030a16"/>
+  <circle cx="256" cy="256" r="180" fill="url(#arc_radial)" stroke="#00f0ff" stroke-width="6" opacity="0.9"/>
+  <path d="M128 116h256a42 42 0 0 1 42 42v188a42 42 0 0 1-42 42H280l-88 58v-58h-64a42 42 0 0 1-42-42V158a42 42 0 0 1 42-42Z" fill="url(#bubble_grad)"/>
+  <path d="M180 210v92M256 170v172M332 210v92" stroke="#030a16" stroke-width="28" stroke-linecap="round"/>
+  <defs>
+    <radialGradient id="arc_radial" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.3"/>
+      <stop offset="50%" stop-color="#00f0ff" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#004488" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="bubble_grad" x1="86" y1="116" x2="426" y2="446" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#00f0ff"/>
+      <stop offset="60%" stop-color="#00aaff"/>
+      <stop offset="100%" stop-color="#ffbe3b"/>
+    </linearGradient>
+  </defs>
+</svg>
+

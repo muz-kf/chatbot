@@ -687,8 +687,11 @@ button {
   position: relative;
   display: flex;
   min-width: 0;
+  min-height: 0;
+  height: 100%;
   flex: 1;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .auth-overlay {
@@ -957,9 +960,11 @@ button {
   display: flex;
   width: 100%;
   flex: 1;
+  min-height: 0;
   flex-direction: column;
   overflow-x: hidden;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   scrollbar-color: rgba(164, 148, 220, .27) transparent;
   scrollbar-width: thin;
 }
@@ -967,12 +972,13 @@ button {
 .welcome-screen {
   display: flex;
   width: min(100% - 40px, 760px);
-  min-height: 100%;
+  min-height: min-content;
+  margin: auto 0;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   align-self: center;
-  padding: 38px 0 50px;
+  padding: 30px 0 40px;
   text-align: center;
 }
 
@@ -1708,40 +1714,46 @@ button {
   }
 
   .welcome-screen {
-    width: min(100% - 30px, 520px);
-    padding: 24px 0 28px;
+    width: min(100% - 24px, 480px);
+    min-height: min-content;
+    margin: auto 0;
+    padding: 14px 0 20px;
   }
 
   .welcome-orb-wrap {
-    width: 96px;
-    height: 96px;
-    margin-bottom: 17px;
+    width: 72px;
+    height: 72px;
+    margin-bottom: 12px;
   }
 
   .welcome-orb {
-    width: 62px;
-    height: 62px;
+    width: 50px;
+    height: 50px;
+    border-radius: 18px;
   }
 
   .welcome-screen h2 {
-    font-size: clamp(31px, 9vw, 42px);
+    font-size: clamp(22px, 6.5vw, 30px);
+    line-height: 1.25;
+    margin: 8px 0 4px;
   }
 
   .welcome-copy {
-    margin-top: 11px;
-    font-size: 11px;
+    margin-top: 6px;
+    font-size: 12.5px;
+    line-height: 1.45;
   }
 
   .suggestion-grid {
     grid-template-columns: 1fr;
-    gap: 8px;
-    margin-top: 23px;
+    gap: 7px;
+    margin-top: 14px;
   }
 
   .suggestion-card {
-    min-height: 61px;
+    min-height: 50px;
     align-items: center;
-    padding: 10px 12px;
+    padding: 8px 12px;
   }
 
   .suggestion-text {
@@ -3727,4 +3739,242 @@ button {
 @keyframes jarvisBlink {
   0%, 100% { opacity: 1; }
   50% { opacity: 0; }
+}
+
+/* ==========================================================================
+   Voice-to-Text in Chat Box & Dictation Banner
+   ========================================================================== */
+
+.voice-dictation-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  border-radius: 12px;
+  background: rgba(115, 84, 245, 0.14);
+  border: 1px solid rgba(115, 84, 245, 0.35);
+  max-height: 180px;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.dictation-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.dictation-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.dictation-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ff3b30;
+  box-shadow: 0 0 10px #ff3b30;
+  animation: pulseDot 1s infinite alternate;
+}
+
+.dictation-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #ff5544;
+}
+
+.dictation-text {
+  width: 100%;
+  margin: 0;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+  color: inherit;
+  font-size: 13.5px;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.dictation-active {
+  font-style: italic;
+  font-weight: 500;
+  color: #ffffff;
+}
+
+.dictation-placeholder {
+  opacity: 0.65;
+}
+
+.dictation-done-btn {
+  flex-shrink: 0;
+  padding: 3px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.dictation-done-btn:hover {
+  background: rgba(255, 255, 255, 0.24);
+}
+
+.voice-tool.is-listening {
+  color: #ff4444 !important;
+  background: rgba(255, 68, 68, 0.16) !important;
+  border-color: rgba(255, 68, 68, 0.45) !important;
+  position: relative;
+}
+
+.mic-pulse-ring {
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 1.5px solid #ff4444;
+  animation: pulseRing 1.2s infinite;
+}
+
+@keyframes pulseDot {
+  0% { transform: scale(0.85); opacity: 0.6; }
+  100% { transform: scale(1.15); opacity: 1; }
+}
+
+@keyframes pulseRing {
+  0% { transform: scale(0.9); opacity: 0.8; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+
+/* JARVIS Theme Overrides for In-Chat Voice Dictation */
+:root[data-theme="jarvis"] .voice-dictation-banner {
+  background: rgba(0, 240, 255, 0.12);
+  border: 1px solid rgba(0, 240, 255, 0.45);
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.15);
+}
+
+:root[data-theme="jarvis"] .dictation-dot {
+  background: #00f0ff;
+  box-shadow: 0 0 10px #00f0ff, 0 0 18px rgba(0, 240, 255, 0.8);
+}
+
+:root[data-theme="jarvis"] .dictation-label {
+  font-family: 'Orbitron', monospace;
+  color: #00f0ff;
+  text-shadow: 0 0 8px rgba(0, 240, 255, 0.7);
+}
+
+:root[data-theme="jarvis"] .dictation-active {
+  color: #00f0ff;
+  text-shadow: 0 0 6px rgba(0, 240, 255, 0.5);
+}
+
+:root[data-theme="jarvis"] .dictation-done-btn {
+  border-color: rgba(0, 240, 255, 0.4);
+  background: rgba(0, 240, 255, 0.15);
+  color: #00f0ff;
+}
+
+:root[data-theme="jarvis"] .dictation-done-btn:hover {
+  background: rgba(0, 240, 255, 0.3);
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
+}
+
+:root[data-theme="jarvis"] .voice-tool.is-listening {
+  color: #00f0ff !important;
+  background: rgba(0, 240, 255, 0.2) !important;
+  border-color: rgba(0, 240, 255, 0.6) !important;
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.5);
+}
+
+:root[data-theme="jarvis"] .mic-pulse-ring {
+  border-color: #00f0ff;
+}
+
+/* ==========================================================================
+   Mobile & PWA Optimizations (iPhone / Android)
+   ========================================================================== */
+
+@media (max-width: 767px) {
+  /* Prevent layout overflow or viewport trimming */
+  .app-shell {
+    min-height: 0 !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+  }
+
+  .chat-workspace {
+    min-height: 0;
+    flex: 1;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .conversation-viewport {
+    min-height: 0;
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Safe area insets for notches, dynamic islands, home bars */
+  .chat-header {
+    padding-top: max(6px, env(safe-area-inset-top));
+    height: auto;
+    min-height: 56px;
+    flex-shrink: 0;
+  }
+
+  .composer-area {
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    width: calc(100% - 18px);
+    flex-shrink: 0;
+  }
+
+  .sidebar-glass {
+    padding-top: max(20px, env(safe-area-inset-top));
+    padding-bottom: max(18px, env(safe-area-inset-bottom));
+  }
+
+  /* Welcome Screen mobile display without trimming */
+  .welcome-screen {
+    width: min(100% - 24px, 480px);
+    min-height: min-content;
+    margin: auto 0;
+    padding: 14px 0 20px;
+    justify-content: flex-start;
+  }
+
+  /* Prevent iOS automatic zoom on input focus */
+  .composer-input {
+    font-size: 16px !important;
+  }
+
+  /* Comfortable touch targets on mobile */
+  .composer-tool,
+  .send-button,
+  .sidebar-toggle,
+  .new-chat-button {
+    min-width: 38px;
+    min-height: 38px;
+  }
+
+  .voice-dictation-banner {
+    font-size: 12px;
+    padding: 8px 10px;
+  }
+
+  .dictation-text {
+    font-size: 13px;
+  }
 }
