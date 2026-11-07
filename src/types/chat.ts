@@ -47,6 +47,7 @@ export const themes = [
   { value: "green", label: "Neon Green" },
   { value: "white", label: "Cloud White" },
   { value: "gold", label: "Midnight Gold" },
+  { value: "jarvis", label: "JARVIS HUD" },
 ] as const;
 export type ThemeChoice = (typeof themes)[number]["value"];
 
@@ -55,6 +56,7 @@ export const themeFonts: Record<ThemeChoice, FontChoice> = {
   green: "Rajdhani",
   white: "DM Sans",
   gold: "Oxanium",
+  jarvis: "Orbitron",
 };
 
 export function isFontChoice(value: string | null): value is FontChoice {

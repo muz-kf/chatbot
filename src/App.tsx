@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AuthGate } from "./components/chat/AuthGate";
 import { ChatComposer } from "./components/chat/ChatComposer";
 import { ChatHeader } from "./components/chat/ChatHeader";
@@ -6,6 +7,7 @@ import { ChatSidebar } from "./components/chat/ChatSidebar";
 import { MessageList } from "./components/chat/MessageList";
 import { WelcomeScreen } from "./components/chat/WelcomeScreen";
 import { processAttachment, recordedAudioToWav } from "./lib/attachmentProcessing";
+import { ApiError, apiRequest, queryKeys } from "./lib/api";
 import { createSpeechRecognition } from "./lib/speechRecognition";
 import {
   isFontChoice,
@@ -18,6 +20,7 @@ import {
   type ThemeChoice,
   type UserProfile,
 } from "./types/chat";
+import { getRandomId } from "./lib/utils";
 
 type AuthState = "loading" | "authenticated" | "unauthenticated";
 
@@ -32,6 +35,7 @@ function getSavedFont(theme: ThemeChoice): FontChoice {
 }
 
 function App() {
+  const queryClient = useQueryClient();
   const [messages, setMessages] = useState<Message[]>([]);
   const [chats, setChats] = useState<ChatSummary[]>([]);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
@@ -51,6 +55,68 @@ function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [theme, setTheme] = useState<ThemeChoice>(getSavedTheme);
   const [font, setFont] = useState<FontChoice>(() => getSavedFont(theme));
+  const sessionQuery = useQuery({
+    queryKey: queryKeys.session,
+    queryFn: () => apiRequest<{ user: UserProfile }>("/api/auth/session"),
+    retry: false,
+  });
+  const chatsQuery = useQuery({
+    queryKey: queryKeys.chats,
+    queryFn: () => apiRequest<{ chats: ChatSummary[] }>("/api/chats"),
+    enabled: authState === "authenticated",
+    retry: false,
+  });
+  const createChatMutation = useMutation({
+    mutationFn: (title: string) =>
+      apiRequest<{ chat: ChatSummary }>("/api/chats", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title }),
+      }),
+  });
+  const chatTurnMutation = useMutation({
+    mutationFn: async (input: {
+      chatId: string;
+      message: Message;
+      signal: AbortSignal;
+      onToken: (token: string) => void;
+    }) => {
+      const response = await fetch(`/api/chats/${input.chatId}/turns`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chatId: input.chatId, message: input.message }),
+        signal: input.signal,
+      });
+      if (!response.ok) {
+        const result = (await response.json()) as { error?: string };
+        throw new ApiError(result.error || "DAZZ could not complete this response.", response.status);
+      }
+      if (!response.body) throw new Error("The chat response did not include a readable stream.");
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let pending = "";
+      const processLine = (line: string) => {
+        if (!line.trim()) return;
+        const event = JSON.parse(line) as { token?: string; error?: string };
+        if (event.error) throw new Error(event.error);
+        if (typeof event.token === "string") input.onToken(event.token);
+      };
+      while (true) {
+        const { done, value } = await reader.read();
+        pending += decoder.decode(value, { stream: !done });
+        const lines = pending.split("\n");
+        pending = lines.pop() ?? "";
+        lines.forEach(processLine);
+        if (done) break;
+      }
+      processLine(pending);
+    },
+  });
+  const logoutMutation = useMutation({
+    mutationFn: () =>
+      apiRequest<void>("/api/auth/logout", { method: "POST" }),
+  });
   const bottomRef = useRef<HTMLDivElement>(null);
   const requestRef = useRef<AbortController | null>(null);
   const draftRef = useRef<HTMLTextAreaElement>(null);
@@ -62,29 +128,25 @@ function App() {
   const recognitionRef = useRef<ReturnType<typeof createSpeechRecognition> | null>(null);
 
   useEffect(() => {
-    const controller = new AbortController();
-    void (async () => {
-      try {
-        const sessionResponse = await fetch("/api/auth/session", { signal: controller.signal });
-        if (!sessionResponse.ok) {
-          setAuthState("unauthenticated");
-          return;
-        }
-        const session = (await sessionResponse.json()) as { user: UserProfile };
-        setUser(session.user);
-        const chatsResponse = await fetch("/api/chats", { signal: controller.signal });
-        if (!chatsResponse.ok) throw new Error("Could not load saved conversations.");
-        const result = (await chatsResponse.json()) as { chats: ChatSummary[] };
-        setChats(result.chats);
-        setAuthState("authenticated");
-      } catch (loadError) {
-        if (controller.signal.aborted) return;
-        setAuthError(loadError instanceof Error ? loadError.message : "Could not load your profile.");
-        setAuthState("unauthenticated");
+    if (sessionQuery.isSuccess) {
+      setUser(sessionQuery.data.user);
+      setAuthState("authenticated");
+      setAuthError("");
+    } else if (sessionQuery.isError) {
+      setUser(null);
+      setAuthState("unauthenticated");
+      if (!(sessionQuery.error instanceof ApiError && sessionQuery.error.status === 401)) {
+        setAuthError(sessionQuery.error.message || "Could not load your profile.");
       }
-    })();
-    return () => controller.abort();
-  }, []);
+    }
+  }, [sessionQuery.data, sessionQuery.error, sessionQuery.isError, sessionQuery.isSuccess]);
+
+  useEffect(() => {
+    if (chatsQuery.isSuccess) setChats(chatsQuery.data.chats);
+    if (chatsQuery.isError) {
+      setAuthError(chatsQuery.error.message || "Could not load saved conversations.");
+    }
+  }, [chatsQuery.data, chatsQuery.error, chatsQuery.isError, chatsQuery.isSuccess]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -106,6 +168,7 @@ function App() {
       green: "#06110d",
       white: "#f4f6fb",
       gold: "#111208",
+      jarvis: "#030a16",
     };
     document.querySelector('meta[name="theme-color"]')?.setAttribute("content", themeColors[theme]);
   }, [theme]);
@@ -136,12 +199,12 @@ function App() {
 
     const messageContent = content || `Please review the attached file${attachedFiles.length === 1 ? "" : "s"}: ${attachedFiles.map((file) => file.name).join(", ")}.`;
     const userMessage: Message = {
-      id: crypto.randomUUID(),
+      id: getRandomId(),
       role: "user",
       content: messageContent,
       attachments: attachedFiles,
     };
-    const assistantMessage: Message = { id: crypto.randomUUID(), role: "assistant", content: "" };
+    const assistantMessage: Message = { id: getRandomId(), role: "assistant", content: "" };
     const requestBody = JSON.stringify({ message: userMessage });
     if (new Blob([requestBody]).size > 28 * 1024 * 1024) {
       setError("These attachments exceed the 28 MB request limit. Remove a file and try again.");
@@ -171,59 +234,21 @@ function App() {
       try {
         let chatId = activeChatId;
         if (!chatId) {
-          const createResponse = await fetch("/api/chats", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ title: messageContent.slice(0, 120) || "New conversation" }),
-            signal: controller.signal,
-          });
-          const created = (await createResponse.json()) as { chat?: ChatSummary; error?: string };
-          if (!createResponse.ok || !created.chat) {
-            throw new Error(created.error || "Could not create a conversation.");
-          }
-          const createdChat = created.chat;
+          const { chat: createdChat } = await createChatMutation.mutateAsync(
+            messageContent.slice(0, 120) || "New conversation",
+          );
           chatId = createdChat.id;
           setActiveChatId(chatId);
           setChats((current) => [createdChat, ...current]);
         }
 
-        const response = await fetch(`/api/chats/${chatId}/turns`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: userMessage }),
+        await chatTurnMutation.mutateAsync({
+          chatId,
+          message: userMessage,
           signal: controller.signal,
+          onToken: appendToken,
         });
-
-        if (!response.ok) {
-          const result = (await response.json()) as { error?: string };
-          throw new Error(result.error || "DAZZ could not complete this response.");
-        }
-        if (!response.body) throw new Error("The chat response did not include a readable stream.");
-
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let pending = "";
-        const processLine = (line: string) => {
-          if (!line.trim()) return;
-          const event = JSON.parse(line) as { token?: string; error?: string };
-          if (event.error) throw new Error(event.error);
-          if (typeof event.token === "string") appendToken(event.token);
-        };
-
-        while (true) {
-          const { done, value } = await reader.read();
-          pending += decoder.decode(value, { stream: !done });
-          const lines = pending.split("\n");
-          pending = lines.pop() ?? "";
-          lines.forEach(processLine);
-          if (done) break;
-        }
-        processLine(pending);
-        const chatsResponse = await fetch("/api/chats", { signal: controller.signal });
-        if (chatsResponse.ok) {
-          const result = (await chatsResponse.json()) as { chats: ChatSummary[] };
-          setChats(result.chats);
-        }
+        await queryClient.invalidateQueries({ queryKey: queryKeys.chats });
       } catch (requestError) {
         if (!controller.signal.aborted) {
           setError(
@@ -279,9 +304,11 @@ function App() {
     stopResponse();
     setError("");
     try {
-      const response = await fetch(`/api/chats/${chatId}`);
-      const result = (await response.json()) as { chat?: { id: string; chats: Message[] }; error?: string };
-      if (!response.ok || !result.chat) throw new Error(result.error || "Could not load this conversation.");
+      const result = await queryClient.fetchQuery({
+        queryKey: queryKeys.chat(chatId),
+        queryFn: () =>
+          apiRequest<{ chat: { id: string; chats: Message[] } }>(`/api/chats/${chatId}`),
+      });
       setActiveChatId(result.chat.id);
       setMessages(result.chat.chats);
       setDraft("");
@@ -295,25 +322,20 @@ function App() {
   async function completeSignIn(signedInUser: UserProfile) {
     setUser(signedInUser);
     setAuthError("");
-    try {
-      const response = await fetch("/api/chats");
-      const result = (await response.json()) as { chats?: ChatSummary[]; error?: string };
-      if (!response.ok || !result.chats) throw new Error(result.error || "Could not load saved conversations.");
-      setChats(result.chats);
-      setAuthState("authenticated");
-    } catch (loadError) {
-      setAuthError(loadError instanceof Error ? loadError.message : "Could not load saved conversations.");
-      setAuthState("authenticated");
-    }
+    queryClient.setQueryData(queryKeys.session, { user: signedInUser });
+    setAuthState("authenticated");
+    await queryClient.invalidateQueries({ queryKey: queryKeys.chats });
   }
 
   async function signOut() {
     stopResponse();
     try {
-      await fetch("/api/auth/logout", { method: "POST" });
+      await logoutMutation.mutateAsync();
     } catch {
       setError("Could not confirm sign-out with the server.");
     }
+    queryClient.removeQueries({ queryKey: queryKeys.session });
+    queryClient.removeQueries({ queryKey: queryKeys.chats });
     setUser(null);
     setChats([]);
     setMessages([]);
