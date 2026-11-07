@@ -240,7 +240,6 @@ export function ChatComposer({
           )}
         </div>
       </form>
-      <p className="keyboard-hint"><kbd>Enter</kbd> to send <span>·</span> <kbd>Shift + Enter</kbd> for a new line</p>
     </div>
   );
 }
