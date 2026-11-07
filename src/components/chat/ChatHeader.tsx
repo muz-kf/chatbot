@@ -25,7 +25,7 @@ export function ChatHeader({ sidebarOpen, onToggleSidebar, onScrollLatest }: Cha
         </Button>
         <div className="header-identity">
           <span className="header-logo"><DazzMark /></span>
-          <div><h1>DAZZ</h1><p><span className="status-dot" />Your AI companion</p></div>
+          <div><h1>DAZZ</h1><p><span className="status-dot" />by MZA</p></div>
         </div>
       </div>
       <div className="header-trailing">

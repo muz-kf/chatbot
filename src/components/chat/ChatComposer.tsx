@@ -1,8 +1,9 @@
-import { useRef, type FormEvent, type KeyboardEvent, type RefObject } from "react";
-import { ArrowUp, CircleStop, FileText, Mic, Paperclip, Sparkles, X } from "lucide-react";
+import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent, type RefObject } from "react";
+import { ArrowUp, CircleStop, FileText, Mic, MicOff, Paperclip, Sparkles, X } from "lucide-react";
 import { Button } from "../ui/button";
 import { Textarea } from "../ui/textarea";
 import type { ChatAttachment } from "../../types/chat";
+import { createSpeechRecognition } from "../../lib/speechRecognition";
 
 type ChatComposerProps = {
   value: string;
@@ -10,15 +11,15 @@ type ChatComposerProps = {
   streaming: boolean;
   textareaRef: RefObject<HTMLTextAreaElement>;
   attachments: ChatAttachment[];
-  recording: boolean;
-  recordingTranscript: string;
+  recording?: boolean;
+  recordingTranscript?: string;
   onChange: (value: string) => void;
   onFiles: (files: File[]) => void;
   onRemoveAttachment: (id: string) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onKeyDown: (event: KeyboardEvent<HTMLTextAreaElement>) => void;
   onStop: () => void;
-  onRecord: () => void;
+  onRecord?: () => void;
 };
 
 export function ChatComposer({
@@ -27,23 +28,119 @@ export function ChatComposer({
   streaming,
   textareaRef,
   attachments,
-  recording,
-  recordingTranscript,
   onChange,
   onFiles,
   onRemoveAttachment,
   onSubmit,
   onKeyDown,
   onStop,
-  onRecord,
 }: ChatComposerProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [listening, setListening] = useState(false);
+  const [interimText, setInterimText] = useState("");
+  const [voiceError, setVoiceError] = useState("");
+  const recognitionRef = useRef<ReturnType<typeof createSpeechRecognition> | null>(null);
+
+  // Keep a ref to latest value for speech recognition callbacks
+  const valueRef = useRef(value);
+  valueRef.current = value;
+
+  useEffect(() => {
+    return () => {
+      recognitionRef.current?.abort();
+    };
+  }, []);
+
+  function stopListening() {
+    recognitionRef.current?.stop();
+    recognitionRef.current = null;
+    setListening(false);
+    setInterimText("");
+  }
+
+  function toggleListening() {
+    if (listening) {
+      stopListening();
+      return;
+    }
+
+    setVoiceError("");
+    setInterimText("");
+
+    try {
+      const recognition = createSpeechRecognition(
+        (finalText, interim) => {
+          if (finalText) {
+            const current = valueRef.current;
+            const updated = current
+              ? `${current.trimEnd()} ${finalText.trim()}`
+              : finalText.trim();
+            onChange(updated);
+            if (textareaRef.current) {
+              textareaRef.current.focus();
+            }
+          }
+          setInterimText(interim);
+        },
+        (errorMessage) => {
+          setVoiceError(errorMessage);
+          stopListening();
+        },
+        () => {
+          setListening(false);
+          setInterimText("");
+        },
+      );
+      recognitionRef.current = recognition;
+      recognition.start();
+      setListening(true);
+    } catch (err) {
+      setVoiceError(
+        err instanceof Error
+          ? err.message
+          : "Live voice recognition is not available in this browser. Try Chrome, Edge, or Safari.",
+      );
+    }
+  }
+
+  function handleFormSubmit(event: FormEvent<HTMLFormElement>) {
+    if (listening) {
+      stopListening();
+    }
+    onSubmit(event);
+  }
 
   return (
     <div className="composer-area">
       {error && <div className="chat-error" role="alert">{error}</div>}
-      {recordingTranscript && <div className="recording-transcript" aria-live="polite">{recordingTranscript}</div>}
-      <form onSubmit={onSubmit} className="composer-glass">
+      {voiceError && <div className="chat-error voice-error" role="alert">{voiceError}</div>}
+
+      <form onSubmit={handleFormSubmit} className={`composer-glass ${listening ? "is-listening" : ""}`}>
+        {/* Live Voice-to-Text Recognition Preview Banner */}
+        {listening && (
+          <div className="voice-dictation-banner" aria-live="polite">
+            <div className="dictation-indicator">
+              <span className="dictation-dot" />
+              <span className="dictation-label">Listening</span>
+            </div>
+            <p className="dictation-text">
+              {interimText ? (
+                <span className="dictation-active">"{interimText}"</span>
+              ) : (
+                <span className="dictation-placeholder">Speak now — words will appear directly here...</span>
+              )}
+            </p>
+            <button
+              type="button"
+              className="dictation-done-btn"
+              onClick={stopListening}
+              aria-label="Stop voice recognition"
+            >
+              Done
+            </button>
+          </div>
+        )}
+
         {attachments.length > 0 && (
           <div className="attachment-list" aria-label="Attached files">
             {attachments.map((attachment) => (
@@ -69,18 +166,20 @@ export function ChatComposer({
             ))}
           </div>
         )}
+
         <Textarea
           ref={textareaRef}
           value={value}
           onChange={(event) => onChange(event.target.value)}
           onKeyDown={onKeyDown}
-          placeholder="Message DAZZ..."
+          placeholder={listening ? "Listening... speak now..." : "Message DAZZ..."}
           maxLength={12_000}
           rows={1}
           disabled={streaming}
           aria-label="Message DAZZ"
           className="composer-input"
         />
+
         <div className="composer-footer">
           <div className="composer-tools">
             <input
@@ -105,18 +204,23 @@ export function ChatComposer({
             >
               <Paperclip size={16} />
             </button>
+
+            {/* Voice to text in the chat box */}
             <button
               type="button"
-              className={`composer-tool record-tool ${recording ? "is-recording" : ""}`}
-              aria-label={recording ? "Stop voice recording" : "Record voice message"}
-              title={recording ? "Stop and send voice message" : "Record a voice message"}
+              className={`composer-tool voice-tool ${listening ? "is-listening" : ""}`}
+              aria-label={listening ? "Stop voice to text" : "Voice to text recognition"}
+              title={listening ? "Stop voice recognition" : "Voice to text (speak to write)"}
               disabled={streaming}
-              onClick={onRecord}
+              onClick={toggleListening}
             >
-              {recording ? <CircleStop size={16} /> : <Mic size={16} />}
+              {listening ? <MicOff size={16} /> : <Mic size={16} />}
+              {listening && <span className="mic-pulse-ring" />}
             </button>
+
             <span className="composer-hint">AI can make mistakes. Check important details.</span>
           </div>
+
           {streaming ? (
             <Button size="icon" aria-label="Stop response" onClick={onStop} className="send-button stop-button">
               <CircleStop size={17} />
