@@ -1,4 +1,4 @@
-import { ArrowDown, Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { ArrowDown, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { Button } from "../ui/button";
 import { DazzMark } from "./DazzMark";
 
@@ -15,18 +15,23 @@ export function ChatHeader({ sidebarOpen, onToggleSidebar, onScrollLatest }: Cha
         <Button
           variant="ghost"
           size="icon"
-          className="sidebar-toggle"
+          className="sidebar-toggle desktop-only"
           aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
           aria-expanded={sidebarOpen}
           onClick={onToggleSidebar}
         >
-          <Menu size={19} className="mobile-only" />
-          {sidebarOpen ? <PanelLeftClose size={19} className="desktop-only" /> : <PanelLeftOpen size={19} className="desktop-only" />}
+          {sidebarOpen ? <PanelLeftClose size={19} /> : <PanelLeftOpen size={19} />}
         </Button>
-        <div className="header-identity">
+        <button
+          type="button"
+          className="header-identity header-identity-btn"
+          onClick={onToggleSidebar}
+          aria-label={sidebarOpen ? "Close sidebar menu" : "Open sidebar menu"}
+          title="Toggle sidebar menu"
+        >
           <span className="header-logo"><DazzMark /></span>
           <div><h1>DAZZ</h1><p><span className="status-dot" />by MZA</p></div>
-        </div>
+        </button>
       </div>
       <div className="header-trailing">
         <span className="model-pill"><span /> DAZZ · Smart</span>

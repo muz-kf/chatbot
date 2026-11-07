@@ -26,6 +26,7 @@ type AuthState = "loading" | "authenticated" | "unauthenticated";
 
 function getSavedTheme(): ThemeChoice {
   const savedTheme = window.localStorage.getItem("chat-theme");
+  if (savedTheme === "jarvis") return "dazz";
   return isThemeChoice(savedTheme) ? savedTheme : "purple";
 }
 
@@ -149,10 +150,6 @@ function App() {
   }, [chatsQuery.data, chatsQuery.error, chatsQuery.isError, chatsQuery.isSuccess]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [messages]);
-
-  useEffect(() => {
     document.documentElement.style.setProperty(
       "--chat-font",
       `"${font}", ui-sans-serif, system-ui, sans-serif`,
@@ -163,14 +160,20 @@ function App() {
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     window.localStorage.setItem("chat-theme", theme);
-    const themeColors: Record<ThemeChoice, string> = {
+    const themeColors: Record<string, string> = {
       purple: "#08060c",
       green: "#06110d",
       white: "#f4f6fb",
       gold: "#111208",
+      dazz: "#030a16",
       jarvis: "#030a16",
+      red: "#130507",
+      orange: "#150a04",
+      maroon: "#100408",
+      skyblue: "#05111a",
+      pink: "#14040d",
     };
-    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", themeColors[theme]);
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", themeColors[theme] || "#08060c");
   }, [theme]);
 
   useEffect(() => {
@@ -548,6 +551,10 @@ function App() {
               copiedId={copiedId}
               bottomRef={bottomRef}
               onCopy={(message) => void copyMessage(message)}
+              onEdit={(message) => {
+                setDraft(message.content);
+                draftRef.current?.focus();
+              }}
             />
           )}
         </section>

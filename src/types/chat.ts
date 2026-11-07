@@ -39,6 +39,11 @@ export const fonts = [
   "Orbitron",
   "Rajdhani",
   "Oxanium",
+  "Inter",
+  "Plus Jakarta Sans",
+  "Fira Code",
+  "Cinzel",
+  "Audiowide",
 ] as const;
 export type FontChoice = (typeof fonts)[number];
 
@@ -47,7 +52,12 @@ export const themes = [
   { value: "green", label: "Neon Green" },
   { value: "white", label: "Cloud White" },
   { value: "gold", label: "Midnight Gold" },
-  { value: "jarvis", label: "JARVIS HUD" },
+  { value: "dazz", label: "D.A.Z.Z" },
+  { value: "red", label: "Crimson Red" },
+  { value: "orange", label: "Solar Orange" },
+  { value: "maroon", label: "Velvet Maroon" },
+  { value: "skyblue", label: "Sky Blue" },
+  { value: "pink", label: "Neon Pink" },
 ] as const;
 export type ThemeChoice = (typeof themes)[number]["value"];
 
@@ -56,7 +66,12 @@ export const themeFonts: Record<ThemeChoice, FontChoice> = {
   green: "Rajdhani",
   white: "DM Sans",
   gold: "Oxanium",
-  jarvis: "Orbitron",
+  dazz: "Orbitron",
+  red: "Cinzel",
+  orange: "Plus Jakarta Sans",
+  maroon: "Inter",
+  skyblue: "Outfit",
+  pink: "Audiowide",
 };
 
 export function isFontChoice(value: string | null): value is FontChoice {

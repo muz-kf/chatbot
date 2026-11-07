@@ -606,10 +606,41 @@ button {
   box-shadow: 0 0 9px rgba(212,173,88,.35);
 }
 
+.theme-swatch-dazz,
 .theme-swatch-jarvis {
   border-color: rgba(180, 245, 255, .9);
   background: #00f0ff;
   box-shadow: 0 0 10px rgba(0, 240, 255, .65);
+}
+
+.theme-swatch-red {
+  border-color: rgba(255, 180, 190, .9);
+  background: #ef4444;
+  box-shadow: 0 0 10px rgba(239, 68, 68, .65);
+}
+
+.theme-swatch-orange {
+  border-color: rgba(255, 210, 170, .9);
+  background: #f97316;
+  box-shadow: 0 0 10px rgba(249, 115, 22, .65);
+}
+
+.theme-swatch-maroon {
+  border-color: rgba(255, 170, 200, .9);
+  background: #9f1239;
+  box-shadow: 0 0 10px rgba(159, 18, 57, .65);
+}
+
+.theme-swatch-skyblue {
+  border-color: rgba(180, 230, 255, .9);
+  background: #0ea5e9;
+  box-shadow: 0 0 10px rgba(14, 165, 233, .65);
+}
+
+.theme-swatch-pink {
+  border-color: rgba(255, 190, 230, .9);
+  background: #ec4899;
+  box-shadow: 0 0 10px rgba(236, 72, 153, .65);
 }
 
 .sidebar-profile {
@@ -3249,22 +3280,26 @@ button {
   display: none;
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] {
   --mark-cutout: #022033;
   color: #d4f4ff;
   background: #030a16;
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] ::selection {
   color: #020b17;
   background: #00f0ff;
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .app-shell {
   color: #d4f4ff;
   background: #030a16;
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .cosmic-backdrop {
   background:
     radial-gradient(ellipse at 50% 120%, rgba(0, 240, 255, .24) 0%, rgba(0, 110, 255, .14) 30%, transparent 68%),
@@ -3276,6 +3311,7 @@ button {
   background-size: 100% 100%, 100% 100%, 100% 100%, 36px 36px, 36px 36px, auto;
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .cosmic-backdrop::before {
   opacity: .4;
   background-image:
@@ -3287,6 +3323,7 @@ button {
     radial-gradient(1.5px 1.5px at 92% 65%, #00f0ff 98%, transparent);
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .cosmic-backdrop::after {
   opacity: .2;
   background-image: repeating-linear-gradient(
@@ -3298,16 +3335,19 @@ button {
   );
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .cosmic-glow-violet {
   background: rgba(0, 240, 255, .16);
   filter: blur(120px);
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .cosmic-glow-blue {
   background: rgba(255, 180, 0, .08);
   filter: blur(120px);
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .cosmic-horizon {
   border-top-color: rgba(0, 240, 255, .4);
   background:
@@ -3316,20 +3356,26 @@ button {
   box-shadow: 0 -15px 45px rgba(0, 240, 255, .25);
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .sidebar-glass {
   border-right-color: rgba(0, 240, 255, .22);
   background: linear-gradient(175deg, rgba(3, 14, 28, .95), rgba(2, 8, 18, .92));
   box-shadow: 8px 0 30px rgba(0, 240, 255, .04);
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .brand-period {
   color: #00f0ff;
   text-shadow: 0 0 10px rgba(0, 240, 255, .8);
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .brand-mark,
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .header-logo,
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .assistant-avatar,
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .welcome-orb {
   color: #020b17;
   background: radial-gradient(circle at 35% 35%, #ffffff 0%, #00f0ff 42%, #0088ff 78%, #003a66 100%);
@@ -3337,22 +3383,29 @@ button {
   border: 1px solid rgba(180, 245, 255, .8);
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .sidebar-close,
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .sidebar-toggle,
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .scroll-latest {
   border-color: rgba(0, 240, 255, .25);
   color: #7fe7ff !important;
   background: rgba(0, 240, 255, .06);
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .sidebar-close:hover,
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .sidebar-toggle:hover,
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .scroll-latest:hover {
   border-color: #00f0ff;
   color: #ffffff !important;
   box-shadow: 0 0 12px rgba(0, 240, 255, .4);
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .new-chat-button {
   border: 1px solid rgba(0, 240, 255, .45) !important;
   color: #ffffff !important;
@@ -3362,19 +3415,23 @@ button {
   text-transform: uppercase;
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .new-chat-button:hover {
   border-color: #00f0ff !important;
   background: linear-gradient(120deg, rgba(0, 240, 255, .35), rgba(0, 140, 255, .22)) !important;
   box-shadow: 0 0 24px rgba(0, 240, 255, .4);
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .new-chat-button kbd {
   color: #7fe7ff;
   border-color: rgba(0, 240, 255, .3);
   background: rgba(0, 240, 255, .08);
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .sidebar-section-label,
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .sidebar-empty span {
   color: #5ea8c9;
   letter-spacing: 0.08em;
@@ -3382,6 +3439,7 @@ button {
   font-size: 0.72rem;
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .sidebar-empty-icon {
   color: #00f0ff;
   border-color: rgba(0, 240, 255, .3);
@@ -3389,13 +3447,17 @@ button {
   box-shadow: 0 0 15px rgba(0, 240, 255, .15);
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .conversation-item {
   color: #a8d5e8;
   border: 1px solid transparent;
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .conversation-item:hover,
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .conversation-item:focus-visible,
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .conversation-item.is-active {
   border-color: rgba(0, 240, 255, .4);
   color: #ffffff;
@@ -3403,41 +3465,49 @@ button {
   box-shadow: 0 0 14px rgba(0, 240, 255, .15);
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .setting-select {
   border-color: rgba(0, 240, 255, .28);
   color: #d6f2ff;
   background: rgba(2, 14, 28, .85);
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .setting-select:focus-visible {
   border-color: #00f0ff;
   box-shadow: 0 0 12px rgba(0, 240, 255, .4);
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .sidebar-profile {
   border-color: rgba(0, 240, 255, .2);
   background: rgba(0, 240, 255, .04);
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .profile-copy strong {
   color: #ffffff;
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .profile-copy small {
   color: #6fb0cf;
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .chat-header {
   border-bottom-color: rgba(0, 240, 255, .18);
   background: linear-gradient(180deg, rgba(3, 12, 24, .92), rgba(3, 10, 20, .8));
   box-shadow: 0 4px 20px rgba(0, 240, 255, .05);
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .header-identity h1 {
   color: #ffffff;
   text-shadow: 0 0 12px rgba(0, 240, 255, .4);
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .model-pill {
   border-color: rgba(0, 240, 255, .35);
   color: #7fe7ff;
@@ -3445,63 +3515,74 @@ button {
   box-shadow: 0 0 10px rgba(0, 240, 255, .15);
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .model-pill span {
   background: #00f0ff;
   box-shadow: 0 0 8px #00f0ff;
 }
 
 /* Welcome Orb Arc-Reactor Effect */
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .welcome-orb-wrap::before {
   border: 1px dashed rgba(0, 240, 255, .45);
   box-shadow: 0 0 20px rgba(0, 240, 255, .25);
   animation: jarvisRotate 16s linear infinite;
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .welcome-orb-wrap::after {
   border: 1px solid rgba(0, 240, 255, .25);
   box-shadow: 0 0 35px rgba(0, 240, 255, .3);
   animation: jarvisPulse 3s ease-in-out infinite alternate;
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .welcome-eyebrow {
   color: #00f0ff;
   letter-spacing: 0.16em;
   text-shadow: 0 0 10px rgba(0, 240, 255, .6);
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .welcome-eyebrow span {
   background: #00f0ff;
   box-shadow: 0 0 8px #00f0ff;
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .welcome-screen h2 {
   color: #ffffff;
   text-shadow: 0 0 20px rgba(0, 240, 255, .3);
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .welcome-screen h2 span {
   background: linear-gradient(90deg, #00f0ff 0%, #7fe7ff 50%, #ffbe3b 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .welcome-copy {
   color: #89c5e2;
 }
 
 /* Tactical Suggestion Cards */
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .suggestion-card {
   border: 1px solid rgba(0, 240, 255, .25);
   background: linear-gradient(135deg, rgba(2, 16, 32, .75), rgba(1, 10, 22, .65));
   backdrop-filter: blur(8px);
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .suggestion-card:hover {
   border-color: #00f0ff;
   background: linear-gradient(135deg, rgba(0, 240, 255, .15), rgba(0, 80, 160, .1));
   box-shadow: 0 0 25px rgba(0, 240, 255, .3), inset 0 0 12px rgba(0, 240, 255, .08);
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .suggestion-icon {
   color: #00f0ff;
   border-color: rgba(0, 240, 255, .35);
@@ -3509,16 +3590,20 @@ button {
   box-shadow: 0 0 10px rgba(0, 240, 255, .2);
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .suggestion-text strong {
   color: #ffffff;
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .suggestion-text small,
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .suggestion-arrow {
   color: #6ebad8;
 }
 
 /* Chat Messages */
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .user-bubble {
   color: #ffffff;
   border: 1px solid rgba(0, 240, 255, .45);
@@ -3526,29 +3611,36 @@ button {
   box-shadow: 0 4px 20px rgba(0, 240, 255, .15);
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .markdown-content {
   color: #d6f2ff;
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .markdown-content h1,
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .markdown-content h2,
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .markdown-content h3 {
   color: #ffffff;
   text-shadow: 0 0 12px rgba(0, 240, 255, .45);
   letter-spacing: 0.04em;
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .markdown-content a {
   color: #00f0ff;
   text-shadow: 0 0 8px rgba(0, 240, 255, .5);
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .markdown-content code {
   color: #7fe7ff;
   border: 1px solid rgba(0, 240, 255, .25);
   background: rgba(0, 240, 255, .08);
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .markdown-content pre {
   border: 1px solid rgba(0, 240, 255, .3);
   background: rgba(1, 12, 24, .92);
@@ -3559,6 +3651,7 @@ button {
    JARVIS Live Audio-Optical Vocal Synthesis Visualizer & Streaming Light-up
    ========================================================================== */
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .is-streaming-assistant {
   position: relative;
   border-left: 2px solid #00f0ff;
@@ -3569,6 +3662,7 @@ button {
   animation: jarvisHudGlow 2.5s ease-in-out infinite alternate;
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .jarvis-voice-visualizer {
   display: flex;
   flex-direction: column;
@@ -3581,12 +3675,14 @@ button {
   box-shadow: 0 0 18px rgba(0, 240, 255, .2);
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .jarvis-hud-badge {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .jarvis-pulse-dot {
   width: 7px;
   height: 7px;
@@ -3596,6 +3692,7 @@ button {
   animation: jarvisPulse 1s ease-in-out infinite alternate;
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .jarvis-hud-label {
   font-family: 'Orbitron', monospace;
   font-size: 0.68rem;
@@ -3605,6 +3702,7 @@ button {
   font-weight: 600;
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .jarvis-soundwaves {
   display: flex;
   align-items: center;
@@ -3612,6 +3710,7 @@ button {
   height: 22px;
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .wave-bar {
   flex: 1;
   max-width: 5px;
@@ -3621,17 +3720,28 @@ button {
   animation: jarvisWave 1.2s ease-in-out infinite alternate;
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .bar-1 { animation-delay: 0.05s; height: 35%; }
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .bar-2 { animation-delay: 0.25s; height: 75%; }
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .bar-3 { animation-delay: 0.12s; height: 50%; }
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .bar-4 { animation-delay: 0.35s; height: 95%; }
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .bar-5 { animation-delay: 0.18s; height: 60%; }
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .bar-6 { animation-delay: 0.42s; height: 100%; }
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .bar-7 { animation-delay: 0.08s; height: 70%; }
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .bar-8 { animation-delay: 0.3s;  height: 45%; }
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .bar-9 { animation-delay: 0.15s; height: 85%; }
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .bar-10 { animation-delay: 0.22s; height: 40%; }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .stream-cursor {
   display: inline-block;
   width: 7px;
@@ -3643,41 +3753,49 @@ button {
   animation: jarvisBlink 0.75s steps(2, start) infinite;
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .thinking-dots i {
   background: #00f0ff;
   box-shadow: 0 0 8px #00f0ff;
 }
 
 /* Composer */
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .composer-glass {
   border: 1px solid rgba(0, 240, 255, .32);
   background: linear-gradient(180deg, rgba(2, 16, 32, .92), rgba(1, 9, 20, .96));
   box-shadow: 0 0 25px rgba(0, 240, 255, .1);
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .composer-glass:focus-within {
   border-color: #00f0ff;
   box-shadow: 0 0 30px rgba(0, 240, 255, .3), inset 0 0 14px rgba(0, 240, 255, .08);
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .composer-input {
   color: #ffffff;
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .composer-input::placeholder {
   color: #4f96b7;
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .send-button {
   color: #020b17 !important;
   background: linear-gradient(135deg, #ffffff 0%, #00f0ff 50%, #0088ff 100%) !important;
   box-shadow: 0 0 18px rgba(0, 240, 255, .6);
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .send-button:hover {
   box-shadow: 0 0 28px rgba(0, 240, 255, .9);
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .stop-button {
   border-color: rgba(255, 60, 60, .6);
   color: #ffffff;
@@ -3685,10 +3803,12 @@ button {
   box-shadow: 0 0 15px rgba(255, 60, 60, .4);
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .composer-tool {
   color: #7fe7ff;
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .composer-tool:hover {
   color: #ffffff;
   background: rgba(0, 240, 255, .15);
@@ -3856,39 +3976,46 @@ button {
 }
 
 /* JARVIS Theme Overrides for In-Chat Voice Dictation */
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .voice-dictation-banner {
   background: rgba(0, 240, 255, 0.12);
   border: 1px solid rgba(0, 240, 255, 0.45);
   box-shadow: 0 0 15px rgba(0, 240, 255, 0.15);
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .dictation-dot {
   background: #00f0ff;
   box-shadow: 0 0 10px #00f0ff, 0 0 18px rgba(0, 240, 255, 0.8);
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .dictation-label {
   font-family: 'Orbitron', monospace;
   color: #00f0ff;
   text-shadow: 0 0 8px rgba(0, 240, 255, 0.7);
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .dictation-active {
   color: #00f0ff;
   text-shadow: 0 0 6px rgba(0, 240, 255, 0.5);
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .dictation-done-btn {
   border-color: rgba(0, 240, 255, 0.4);
   background: rgba(0, 240, 255, 0.15);
   color: #00f0ff;
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .dictation-done-btn:hover {
   background: rgba(0, 240, 255, 0.3);
   box-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .voice-tool.is-listening {
   color: #00f0ff !important;
   background: rgba(0, 240, 255, 0.2) !important;
@@ -3896,8 +4023,376 @@ button {
   box-shadow: 0 0 15px rgba(0, 240, 255, 0.5);
 }
 
+:root[data-theme="dazz"],
 :root[data-theme="jarvis"] .mic-pulse-ring {
   border-color: #00f0ff;
+}
+
+/* Header Identity Clickable Trigger */
+.header-identity-btn {
+  background: transparent;
+  border: none;
+  padding: 4px 6px;
+  margin: 0;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font: inherit;
+  color: inherit;
+  border-radius: 12px;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.header-identity-btn:active {
+  transform: scale(0.98);
+  opacity: 0.85;
+}
+
+.header-identity-btn:focus-visible {
+  outline: 2px solid rgba(130, 92, 255, 0.5);
+  outline-offset: 3px;
+}
+
+/* User & Assistant Action Toolbars (Screenshot Layout) */
+.user-action-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 5px;
+  padding-right: 4px;
+}
+
+.assistant-action-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding-left: 2px;
+}
+
+.msg-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: rgba(220, 225, 245, 0.45);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  padding: 0;
+}
+
+.msg-action-btn:hover {
+  color: #f1f5f9;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.msg-action-btn:active {
+  transform: scale(0.92);
+}
+
+.msg-action-btn.is-active {
+  color: #f1f5f9;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* Floating scroll to bottom button (Screenshot Layout) */
+.floating-scroll-btn {
+  position: sticky;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(18, 22, 34, 0.88);
+  backdrop-filter: blur(14px);
+  color: #f8fafc;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.38);
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease;
+  margin-top: 10px;
+}
+
+.floating-scroll-btn:hover {
+  background: rgba(30, 36, 56, 0.95);
+  transform: translateX(-50%) scale(1.08);
+}
+
+/* ==========================================================================
+   New Themes: Red, Orange, Maroon, Sky Blue, Pink
+   ========================================================================== */
+
+/* Red (Crimson) */
+:root[data-theme="red"] {
+  --mark-cutout: #520912;
+  color: #ffebee;
+  background: #100305;
+}
+:root[data-theme="red"] ::selection {
+  color: white;
+  background: #ef4444;
+}
+:root[data-theme="red"] .app-shell {
+  color: #ffebee;
+  background: #100305;
+}
+:root[data-theme="red"] .cosmic-backdrop {
+  background:
+    radial-gradient(ellipse at 50% 112%, rgba(220, 38, 38, .42) 0, rgba(127, 29, 29, .3) 23%, transparent 55%),
+    radial-gradient(ellipse at 80% 82%, rgba(239, 68, 68, .25) 0, transparent 43%),
+    radial-gradient(ellipse at 10% 11%, rgba(185, 28, 28, .2) 0, transparent 40%),
+    #100305;
+}
+:root[data-theme="red"] .cosmic-glow-violet { background: rgba(239, 68, 68, .22); }
+:root[data-theme="red"] .cosmic-glow-blue { background: rgba(185, 28, 28, .22); }
+:root[data-theme="red"] .cosmic-horizon {
+  border-top-color: rgba(239, 68, 68, .35);
+  background:
+    linear-gradient(180deg, rgba(220, 38, 38, .16), transparent 52%),
+    repeating-linear-gradient(90deg, transparent 0 79px, rgba(239, 68, 68, .1) 80px),
+    repeating-linear-gradient(0deg, transparent 0 39px, rgba(239, 68, 68, .11) 40px);
+}
+:root[data-theme="red"] .brand-mark,
+:root[data-theme="red"] .header-logo,
+:root[data-theme="red"] .assistant-avatar,
+:root[data-theme="red"] .welcome-orb {
+  background: linear-gradient(145deg, #ff6b81, #ef4444 64%, #991b1b);
+  box-shadow: 0 0 24px rgba(239, 68, 68, .4), inset 0 1px 0 rgba(255,255,255,.42);
+}
+:root[data-theme="red"] .brand-period,
+:root[data-theme="red"] .markdown-content a { color: #ff526c; }
+:root[data-theme="red"] .send-button {
+  background: linear-gradient(145deg, #ff6b81, #ef4444 62%, #b91c1c) !important;
+  box-shadow: 0 4px 17px rgba(239, 68, 68, .36), inset 0 1px 0 rgba(255,255,255,.31);
+}
+:root[data-theme="red"] .user-bubble {
+  border-color: rgba(239, 68, 68, .3);
+  background: linear-gradient(130deg, rgba(220, 38, 38, .72), rgba(127, 29, 29, .66));
+}
+:root[data-theme="red"] .composer-glass:focus-within,
+:root[data-theme="red"] .new-chat-button:hover {
+  border-color: rgba(239, 68, 68, .45);
+}
+
+/* Orange (Solar) */
+:root[data-theme="orange"] {
+  --mark-cutout: #5a2807;
+  color: #fff7ed;
+  background: #120803;
+}
+:root[data-theme="orange"] ::selection {
+  color: white;
+  background: #f97316;
+}
+:root[data-theme="orange"] .app-shell {
+  color: #fff7ed;
+  background: #120803;
+}
+:root[data-theme="orange"] .cosmic-backdrop {
+  background:
+    radial-gradient(ellipse at 50% 112%, rgba(234, 88, 12, .42) 0, rgba(154, 52, 18, .3) 23%, transparent 55%),
+    radial-gradient(ellipse at 80% 82%, rgba(249, 115, 22, .25) 0, transparent 43%),
+    radial-gradient(ellipse at 10% 11%, rgba(194, 65, 12, .2) 0, transparent 40%),
+    #120803;
+}
+:root[data-theme="orange"] .cosmic-glow-violet { background: rgba(249, 115, 22, .22); }
+:root[data-theme="orange"] .cosmic-glow-blue { background: rgba(194, 65, 12, .22); }
+:root[data-theme="orange"] .cosmic-horizon {
+  border-top-color: rgba(249, 115, 22, .35);
+  background:
+    linear-gradient(180deg, rgba(234, 88, 12, .16), transparent 52%),
+    repeating-linear-gradient(90deg, transparent 0 79px, rgba(249, 115, 22, .1) 80px),
+    repeating-linear-gradient(0deg, transparent 0 39px, rgba(249, 115, 22, .11) 40px);
+}
+:root[data-theme="orange"] .brand-mark,
+:root[data-theme="orange"] .header-logo,
+:root[data-theme="orange"] .assistant-avatar,
+:root[data-theme="orange"] .welcome-orb {
+  background: linear-gradient(145deg, #fb923c, #ea580c 64%, #9a3412);
+  box-shadow: 0 0 24px rgba(249, 115, 22, .4), inset 0 1px 0 rgba(255,255,255,.42);
+}
+:root[data-theme="orange"] .brand-period,
+:root[data-theme="orange"] .markdown-content a { color: #fb923c; }
+:root[data-theme="orange"] .send-button {
+  background: linear-gradient(145deg, #fb923c, #ea580c 62%, #c2410c) !important;
+  box-shadow: 0 4px 17px rgba(249, 115, 22, .36), inset 0 1px 0 rgba(255,255,255,.31);
+}
+:root[data-theme="orange"] .user-bubble {
+  border-color: rgba(249, 115, 22, .3);
+  background: linear-gradient(130deg, rgba(234, 88, 12, .72), rgba(154, 52, 18, .66));
+}
+:root[data-theme="orange"] .composer-glass:focus-within,
+:root[data-theme="orange"] .new-chat-button:hover {
+  border-color: rgba(249, 115, 22, .45);
+}
+
+/* Maroon (Velvet) */
+:root[data-theme="maroon"] {
+  --mark-cutout: #4c0519;
+  color: #ffe4e6;
+  background: #0f0307;
+}
+:root[data-theme="maroon"] ::selection {
+  color: white;
+  background: #be123c;
+}
+:root[data-theme="maroon"] .app-shell {
+  color: #ffe4e6;
+  background: #0f0307;
+}
+:root[data-theme="maroon"] .cosmic-backdrop {
+  background:
+    radial-gradient(ellipse at 50% 112%, rgba(190, 18, 60, .42) 0, rgba(136, 19, 55, .3) 23%, transparent 55%),
+    radial-gradient(ellipse at 80% 82%, rgba(225, 29, 72, .25) 0, transparent 43%),
+    radial-gradient(ellipse at 10% 11%, rgba(159, 18, 57, .2) 0, transparent 40%),
+    #0f0307;
+}
+:root[data-theme="maroon"] .cosmic-glow-violet { background: rgba(225, 29, 72, .22); }
+:root[data-theme="maroon"] .cosmic-glow-blue { background: rgba(159, 18, 57, .22); }
+:root[data-theme="maroon"] .cosmic-horizon {
+  border-top-color: rgba(225, 29, 72, .35);
+  background:
+    linear-gradient(180deg, rgba(190, 18, 60, .16), transparent 52%),
+    repeating-linear-gradient(90deg, transparent 0 79px, rgba(225, 29, 72, .1) 80px),
+    repeating-linear-gradient(0deg, transparent 0 39px, rgba(225, 29, 72, .11) 40px);
+}
+:root[data-theme="maroon"] .brand-mark,
+:root[data-theme="maroon"] .header-logo,
+:root[data-theme="maroon"] .assistant-avatar,
+:root[data-theme="maroon"] .welcome-orb {
+  background: linear-gradient(145deg, #f43f5e, #be123c 64%, #881337);
+  box-shadow: 0 0 24px rgba(190, 18, 60, .4), inset 0 1px 0 rgba(255,255,255,.42);
+}
+:root[data-theme="maroon"] .brand-period,
+:root[data-theme="maroon"] .markdown-content a { color: #fb7185; }
+:root[data-theme="maroon"] .send-button {
+  background: linear-gradient(145deg, #f43f5e, #be123c 62%, #9f1239) !important;
+  box-shadow: 0 4px 17px rgba(190, 18, 60, .36), inset 0 1px 0 rgba(255,255,255,.31);
+}
+:root[data-theme="maroon"] .user-bubble {
+  border-color: rgba(225, 29, 72, .3);
+  background: linear-gradient(130deg, rgba(190, 18, 60, .72), rgba(136, 19, 55, .66));
+}
+:root[data-theme="maroon"] .composer-glass:focus-within,
+:root[data-theme="maroon"] .new-chat-button:hover {
+  border-color: rgba(225, 29, 72, .45);
+}
+
+/* Sky Blue */
+:root[data-theme="skyblue"] {
+  --mark-cutout: #033f63;
+  color: #f0f9ff;
+  background: #030e17;
+}
+:root[data-theme="skyblue"] ::selection {
+  color: #030e17;
+  background: #38bdf8;
+}
+:root[data-theme="skyblue"] .app-shell {
+  color: #f0f9ff;
+  background: #030e17;
+}
+:root[data-theme="skyblue"] .cosmic-backdrop {
+  background:
+    radial-gradient(ellipse at 50% 112%, rgba(14, 165, 233, .42) 0, rgba(3, 105, 161, .3) 23%, transparent 55%),
+    radial-gradient(ellipse at 80% 82%, rgba(56, 189, 248, .25) 0, transparent 43%),
+    radial-gradient(ellipse at 10% 11%, rgba(2, 132, 199, .2) 0, transparent 40%),
+    #030e17;
+}
+:root[data-theme="skyblue"] .cosmic-glow-violet { background: rgba(56, 189, 248, .22); }
+:root[data-theme="skyblue"] .cosmic-glow-blue { background: rgba(2, 132, 199, .22); }
+:root[data-theme="skyblue"] .cosmic-horizon {
+  border-top-color: rgba(56, 189, 248, .35);
+  background:
+    linear-gradient(180deg, rgba(14, 165, 233, .16), transparent 52%),
+    repeating-linear-gradient(90deg, transparent 0 79px, rgba(56, 189, 248, .1) 80px),
+    repeating-linear-gradient(0deg, transparent 0 39px, rgba(56, 189, 248, .11) 40px);
+}
+:root[data-theme="skyblue"] .brand-mark,
+:root[data-theme="skyblue"] .header-logo,
+:root[data-theme="skyblue"] .assistant-avatar,
+:root[data-theme="skyblue"] .welcome-orb {
+  background: linear-gradient(145deg, #7dd3fc, #0284c7 64%, #0369a1);
+  box-shadow: 0 0 24px rgba(14, 165, 233, .45), inset 0 1px 0 rgba(255,255,255,.5);
+}
+:root[data-theme="skyblue"] .brand-period,
+:root[data-theme="skyblue"] .markdown-content a { color: #38bdf8; }
+:root[data-theme="skyblue"] .send-button {
+  background: linear-gradient(145deg, #7dd3fc, #0284c7 62%, #075985) !important;
+  box-shadow: 0 4px 17px rgba(14, 165, 233, .38), inset 0 1px 0 rgba(255,255,255,.31);
+}
+:root[data-theme="skyblue"] .user-bubble {
+  border-color: rgba(56, 189, 248, .3);
+  background: linear-gradient(130deg, rgba(14, 165, 233, .72), rgba(3, 105, 161, .66));
+}
+:root[data-theme="skyblue"] .composer-glass:focus-within,
+:root[data-theme="skyblue"] .new-chat-button:hover {
+  border-color: rgba(56, 189, 248, .45);
+}
+
+/* Pink (Neon) */
+:root[data-theme="pink"] {
+  --mark-cutout: #5b073e;
+  color: #fdf2f8;
+  background: #12030d;
+}
+:root[data-theme="pink"] ::selection {
+  color: white;
+  background: #ec4899;
+}
+:root[data-theme="pink"] .app-shell {
+  color: #fdf2f8;
+  background: #12030d;
+}
+:root[data-theme="pink"] .cosmic-backdrop {
+  background:
+    radial-gradient(ellipse at 50% 112%, rgba(236, 72, 153, .42) 0, rgba(157, 23, 77, .3) 23%, transparent 55%),
+    radial-gradient(ellipse at 80% 82%, rgba(244, 63, 94, .25) 0, transparent 43%),
+    radial-gradient(ellipse at 10% 11%, rgba(219, 39, 119, .2) 0, transparent 40%),
+    #12030d;
+}
+:root[data-theme="pink"] .cosmic-glow-violet { background: rgba(236, 72, 153, .22); }
+:root[data-theme="pink"] .cosmic-glow-blue { background: rgba(219, 39, 119, .22); }
+:root[data-theme="pink"] .cosmic-horizon {
+  border-top-color: rgba(236, 72, 153, .35);
+  background:
+    linear-gradient(180deg, rgba(236, 72, 153, .16), transparent 52%),
+    repeating-linear-gradient(90deg, transparent 0 79px, rgba(236, 72, 153, .1) 80px),
+    repeating-linear-gradient(0deg, transparent 0 39px, rgba(236, 72, 153, .11) 40px);
+}
+:root[data-theme="pink"] .brand-mark,
+:root[data-theme="pink"] .header-logo,
+:root[data-theme="pink"] .assistant-avatar,
+:root[data-theme="pink"] .welcome-orb {
+  background: linear-gradient(145deg, #f472b6, #db2777 64%, #831843);
+  box-shadow: 0 0 24px rgba(236, 72, 153, .4), inset 0 1px 0 rgba(255,255,255,.42);
+}
+:root[data-theme="pink"] .brand-period,
+:root[data-theme="pink"] .markdown-content a { color: #f472b6; }
+:root[data-theme="pink"] .send-button {
+  background: linear-gradient(145deg, #f472b6, #db2777 62%, #9d174d) !important;
+  box-shadow: 0 4px 17px rgba(236, 72, 153, .36), inset 0 1px 0 rgba(255,255,255,.31);
+}
+:root[data-theme="pink"] .user-bubble {
+  border-color: rgba(236, 72, 153, .3);
+  background: linear-gradient(130deg, rgba(236, 72, 153, .72), rgba(157, 23, 77, .66));
+}
+:root[data-theme="pink"] .composer-glass:focus-within,
+:root[data-theme="pink"] .new-chat-button:hover {
+  border-color: rgba(236, 72, 153, .45);
 }
 
 /* ==========================================================================
@@ -3935,6 +4430,11 @@ button {
     flex-shrink: 0;
   }
 
+  /* Hide the top-left menu toggle on mobile UI - tapping the DAZZ logo opens the sidebar */
+  .sidebar-toggle {
+    display: none !important;
+  }
+
   .composer-area {
     padding-bottom: max(12px, env(safe-area-inset-bottom));
     width: calc(100% - 18px);
@@ -3946,6 +4446,56 @@ button {
     padding-bottom: max(18px, env(safe-area-inset-bottom));
   }
 
+  /* Chat alignment matching the mobile screenshot */
+  .message-list {
+    width: 100% !important;
+    padding-left: 14px;
+    padding-right: 14px;
+    padding-top: 16px;
+  }
+
+  .message-row {
+    width: 100%;
+    margin-bottom: 24px;
+    gap: 0;
+  }
+
+  /* Assistant messages: left aligned, full width, no avatar taking horizontal space */
+  .message-row.message-assistant {
+    display: block;
+  }
+
+  .message-row.message-assistant .assistant-avatar {
+    display: none !important;
+  }
+
+  .message-row.message-assistant .assistant-content {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* User messages: right-aligned clean bubble with action row underneath */
+  .message-row.message-user {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .message-row.message-user .user-content {
+    width: fit-content;
+    max-width: 85% !important;
+    margin-left: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+  }
+
+  .user-bubble {
+    border-radius: 20px 20px 5px 20px !important;
+    padding: 12px 16px !important;
+    font-size: 14px !important;
+    line-height: 1.55 !important;
+  }
+
   /* Welcome Screen mobile display without trimming */
   .welcome-screen {
     width: min(100% - 24px, 480px);
@@ -3955,15 +4505,22 @@ button {
     justify-content: flex-start;
   }
 
-  /* Prevent iOS automatic zoom on input focus */
+  /* Prevent iOS automatic zoom on input focus + taller vertical composer textarea */
   .composer-input {
     font-size: 16px !important;
+    min-height: 56px !important;
+    padding: 11px 14px !important;
+    line-height: 1.45 !important;
+  }
+
+  .composer-glass {
+    padding: 10px 12px 8px !important;
+    border-radius: 22px !important;
   }
 
   /* Comfortable touch targets on mobile */
   .composer-tool,
   .send-button,
-  .sidebar-toggle,
   .new-chat-button {
     min-width: 38px;
     min-height: 38px;
