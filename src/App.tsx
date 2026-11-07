@@ -168,6 +168,7 @@ function App() {
       green: "#06110d",
       white: "#f4f6fb",
       gold: "#111208",
+      jarvis: "#030a16",
     };
     document.querySelector('meta[name="theme-color"]')?.setAttribute("content", themeColors[theme]);
   }, [theme]);

@@ -606,6 +606,12 @@ button {
   box-shadow: 0 0 9px rgba(212,173,88,.35);
 }
 
+.theme-swatch-jarvis {
+  border-color: rgba(180, 245, 255, .9);
+  background: #00f0ff;
+  box-shadow: 0 0 10px rgba(0, 240, 255, .65);
+}
+
 .sidebar-profile {
   display: flex;
   min-width: 242px;
@@ -3220,4 +3226,505 @@ button {
   .message-attachment-image {
     max-width: min(100%, 210px);
   }
+}
+
+/* ==========================================================================
+   THEME: JARVIS HUD (Iron Man Futuristic Audio-Optical Interface)
+   ========================================================================== */
+
+/* Universal base for the voice visualizer */
+.jarvis-voice-visualizer {
+  display: none;
+}
+
+:root[data-theme="jarvis"] {
+  --mark-cutout: #022033;
+  color: #d4f4ff;
+  background: #030a16;
+}
+
+:root[data-theme="jarvis"] ::selection {
+  color: #020b17;
+  background: #00f0ff;
+}
+
+:root[data-theme="jarvis"] .app-shell {
+  color: #d4f4ff;
+  background: #030a16;
+}
+
+:root[data-theme="jarvis"] .cosmic-backdrop {
+  background:
+    radial-gradient(ellipse at 50% 120%, rgba(0, 240, 255, .24) 0%, rgba(0, 110, 255, .14) 30%, transparent 68%),
+    radial-gradient(circle at 50% 45%, rgba(0, 240, 255, .08) 0%, transparent 50%),
+    radial-gradient(ellipse at 85% 15%, rgba(255, 180, 0, .08) 0%, transparent 35%),
+    linear-gradient(rgba(0, 240, 255, .03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 240, 255, .03) 1px, transparent 1px),
+    #030a16;
+  background-size: 100% 100%, 100% 100%, 100% 100%, 36px 36px, 36px 36px, auto;
+}
+
+:root[data-theme="jarvis"] .cosmic-backdrop::before {
+  opacity: .4;
+  background-image:
+    radial-gradient(1.5px 1.5px at 10% 20%, #00f0ff 98%, transparent),
+    radial-gradient(1.5px 1.5px at 25% 75%, #7fe7ff 98%, transparent),
+    radial-gradient(2px 2px at 45% 30%, #ffffff 98%, transparent),
+    radial-gradient(1px 1px at 70% 85%, #00f0ff 98%, transparent),
+    radial-gradient(2px 2px at 85% 25%, #ffbe3b 98%, transparent),
+    radial-gradient(1.5px 1.5px at 92% 65%, #00f0ff 98%, transparent);
+}
+
+:root[data-theme="jarvis"] .cosmic-backdrop::after {
+  opacity: .2;
+  background-image: repeating-linear-gradient(
+    0deg,
+    rgba(0, 240, 255, .02) 0px,
+    rgba(0, 240, 255, .02) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+
+:root[data-theme="jarvis"] .cosmic-glow-violet {
+  background: rgba(0, 240, 255, .16);
+  filter: blur(120px);
+}
+
+:root[data-theme="jarvis"] .cosmic-glow-blue {
+  background: rgba(255, 180, 0, .08);
+  filter: blur(120px);
+}
+
+:root[data-theme="jarvis"] .cosmic-horizon {
+  border-top-color: rgba(0, 240, 255, .4);
+  background:
+    linear-gradient(180deg, rgba(0, 240, 255, .16), transparent 60%),
+    repeating-linear-gradient(90deg, transparent 0 59px, rgba(0, 240, 255, .08) 60px);
+  box-shadow: 0 -15px 45px rgba(0, 240, 255, .25);
+}
+
+:root[data-theme="jarvis"] .sidebar-glass {
+  border-right-color: rgba(0, 240, 255, .22);
+  background: linear-gradient(175deg, rgba(3, 14, 28, .95), rgba(2, 8, 18, .92));
+  box-shadow: 8px 0 30px rgba(0, 240, 255, .04);
+}
+
+:root[data-theme="jarvis"] .brand-period {
+  color: #00f0ff;
+  text-shadow: 0 0 10px rgba(0, 240, 255, .8);
+}
+
+:root[data-theme="jarvis"] .brand-mark,
+:root[data-theme="jarvis"] .header-logo,
+:root[data-theme="jarvis"] .assistant-avatar,
+:root[data-theme="jarvis"] .welcome-orb {
+  color: #020b17;
+  background: radial-gradient(circle at 35% 35%, #ffffff 0%, #00f0ff 42%, #0088ff 78%, #003a66 100%);
+  box-shadow: 0 0 25px rgba(0, 240, 255, .65), inset 0 1px 2px rgba(255, 255, 255, .85);
+  border: 1px solid rgba(180, 245, 255, .8);
+}
+
+:root[data-theme="jarvis"] .sidebar-close,
+:root[data-theme="jarvis"] .sidebar-toggle,
+:root[data-theme="jarvis"] .scroll-latest {
+  border-color: rgba(0, 240, 255, .25);
+  color: #7fe7ff !important;
+  background: rgba(0, 240, 255, .06);
+}
+
+:root[data-theme="jarvis"] .sidebar-close:hover,
+:root[data-theme="jarvis"] .sidebar-toggle:hover,
+:root[data-theme="jarvis"] .scroll-latest:hover {
+  border-color: #00f0ff;
+  color: #ffffff !important;
+  box-shadow: 0 0 12px rgba(0, 240, 255, .4);
+}
+
+:root[data-theme="jarvis"] .new-chat-button {
+  border: 1px solid rgba(0, 240, 255, .45) !important;
+  color: #ffffff !important;
+  background: linear-gradient(120deg, rgba(0, 240, 255, .22), rgba(0, 100, 200, .14)) !important;
+  box-shadow: 0 4px 18px rgba(0, 240, 255, .2);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+:root[data-theme="jarvis"] .new-chat-button:hover {
+  border-color: #00f0ff !important;
+  background: linear-gradient(120deg, rgba(0, 240, 255, .35), rgba(0, 140, 255, .22)) !important;
+  box-shadow: 0 0 24px rgba(0, 240, 255, .4);
+}
+
+:root[data-theme="jarvis"] .new-chat-button kbd {
+  color: #7fe7ff;
+  border-color: rgba(0, 240, 255, .3);
+  background: rgba(0, 240, 255, .08);
+}
+
+:root[data-theme="jarvis"] .sidebar-section-label,
+:root[data-theme="jarvis"] .sidebar-empty span {
+  color: #5ea8c9;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+}
+
+:root[data-theme="jarvis"] .sidebar-empty-icon {
+  color: #00f0ff;
+  border-color: rgba(0, 240, 255, .3);
+  background: rgba(0, 240, 255, .08);
+  box-shadow: 0 0 15px rgba(0, 240, 255, .15);
+}
+
+:root[data-theme="jarvis"] .conversation-item {
+  color: #a8d5e8;
+  border: 1px solid transparent;
+}
+
+:root[data-theme="jarvis"] .conversation-item:hover,
+:root[data-theme="jarvis"] .conversation-item:focus-visible,
+:root[data-theme="jarvis"] .conversation-item.is-active {
+  border-color: rgba(0, 240, 255, .4);
+  color: #ffffff;
+  background: linear-gradient(90deg, rgba(0, 240, 255, .15), rgba(0, 120, 220, .08));
+  box-shadow: 0 0 14px rgba(0, 240, 255, .15);
+}
+
+:root[data-theme="jarvis"] .setting-select {
+  border-color: rgba(0, 240, 255, .28);
+  color: #d6f2ff;
+  background: rgba(2, 14, 28, .85);
+}
+
+:root[data-theme="jarvis"] .setting-select:focus-visible {
+  border-color: #00f0ff;
+  box-shadow: 0 0 12px rgba(0, 240, 255, .4);
+}
+
+:root[data-theme="jarvis"] .sidebar-profile {
+  border-color: rgba(0, 240, 255, .2);
+  background: rgba(0, 240, 255, .04);
+}
+
+:root[data-theme="jarvis"] .profile-copy strong {
+  color: #ffffff;
+}
+
+:root[data-theme="jarvis"] .profile-copy small {
+  color: #6fb0cf;
+}
+
+:root[data-theme="jarvis"] .chat-header {
+  border-bottom-color: rgba(0, 240, 255, .18);
+  background: linear-gradient(180deg, rgba(3, 12, 24, .92), rgba(3, 10, 20, .8));
+  box-shadow: 0 4px 20px rgba(0, 240, 255, .05);
+}
+
+:root[data-theme="jarvis"] .header-identity h1 {
+  color: #ffffff;
+  text-shadow: 0 0 12px rgba(0, 240, 255, .4);
+}
+
+:root[data-theme="jarvis"] .model-pill {
+  border-color: rgba(0, 240, 255, .35);
+  color: #7fe7ff;
+  background: rgba(0, 240, 255, .08);
+  box-shadow: 0 0 10px rgba(0, 240, 255, .15);
+}
+
+:root[data-theme="jarvis"] .model-pill span {
+  background: #00f0ff;
+  box-shadow: 0 0 8px #00f0ff;
+}
+
+/* Welcome Orb Arc-Reactor Effect */
+:root[data-theme="jarvis"] .welcome-orb-wrap::before {
+  border: 1px dashed rgba(0, 240, 255, .45);
+  box-shadow: 0 0 20px rgba(0, 240, 255, .25);
+  animation: jarvisRotate 16s linear infinite;
+}
+
+:root[data-theme="jarvis"] .welcome-orb-wrap::after {
+  border: 1px solid rgba(0, 240, 255, .25);
+  box-shadow: 0 0 35px rgba(0, 240, 255, .3);
+  animation: jarvisPulse 3s ease-in-out infinite alternate;
+}
+
+:root[data-theme="jarvis"] .welcome-eyebrow {
+  color: #00f0ff;
+  letter-spacing: 0.16em;
+  text-shadow: 0 0 10px rgba(0, 240, 255, .6);
+}
+
+:root[data-theme="jarvis"] .welcome-eyebrow span {
+  background: #00f0ff;
+  box-shadow: 0 0 8px #00f0ff;
+}
+
+:root[data-theme="jarvis"] .welcome-screen h2 {
+  color: #ffffff;
+  text-shadow: 0 0 20px rgba(0, 240, 255, .3);
+}
+
+:root[data-theme="jarvis"] .welcome-screen h2 span {
+  background: linear-gradient(90deg, #00f0ff 0%, #7fe7ff 50%, #ffbe3b 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+:root[data-theme="jarvis"] .welcome-copy {
+  color: #89c5e2;
+}
+
+/* Tactical Suggestion Cards */
+:root[data-theme="jarvis"] .suggestion-card {
+  border: 1px solid rgba(0, 240, 255, .25);
+  background: linear-gradient(135deg, rgba(2, 16, 32, .75), rgba(1, 10, 22, .65));
+  backdrop-filter: blur(8px);
+}
+
+:root[data-theme="jarvis"] .suggestion-card:hover {
+  border-color: #00f0ff;
+  background: linear-gradient(135deg, rgba(0, 240, 255, .15), rgba(0, 80, 160, .1));
+  box-shadow: 0 0 25px rgba(0, 240, 255, .3), inset 0 0 12px rgba(0, 240, 255, .08);
+}
+
+:root[data-theme="jarvis"] .suggestion-icon {
+  color: #00f0ff;
+  border-color: rgba(0, 240, 255, .35);
+  background: rgba(0, 240, 255, .1);
+  box-shadow: 0 0 10px rgba(0, 240, 255, .2);
+}
+
+:root[data-theme="jarvis"] .suggestion-text strong {
+  color: #ffffff;
+}
+
+:root[data-theme="jarvis"] .suggestion-text small,
+:root[data-theme="jarvis"] .suggestion-arrow {
+  color: #6ebad8;
+}
+
+/* Chat Messages */
+:root[data-theme="jarvis"] .user-bubble {
+  color: #ffffff;
+  border: 1px solid rgba(0, 240, 255, .45);
+  background: linear-gradient(135deg, rgba(0, 200, 255, .2), rgba(0, 80, 180, .25));
+  box-shadow: 0 4px 20px rgba(0, 240, 255, .15);
+}
+
+:root[data-theme="jarvis"] .markdown-content {
+  color: #d6f2ff;
+}
+
+:root[data-theme="jarvis"] .markdown-content h1,
+:root[data-theme="jarvis"] .markdown-content h2,
+:root[data-theme="jarvis"] .markdown-content h3 {
+  color: #ffffff;
+  text-shadow: 0 0 12px rgba(0, 240, 255, .45);
+  letter-spacing: 0.04em;
+}
+
+:root[data-theme="jarvis"] .markdown-content a {
+  color: #00f0ff;
+  text-shadow: 0 0 8px rgba(0, 240, 255, .5);
+}
+
+:root[data-theme="jarvis"] .markdown-content code {
+  color: #7fe7ff;
+  border: 1px solid rgba(0, 240, 255, .25);
+  background: rgba(0, 240, 255, .08);
+}
+
+:root[data-theme="jarvis"] .markdown-content pre {
+  border: 1px solid rgba(0, 240, 255, .3);
+  background: rgba(1, 12, 24, .92);
+  box-shadow: 0 0 18px rgba(0, 240, 255, .1);
+}
+
+/* ==========================================================================
+   JARVIS Live Audio-Optical Vocal Synthesis Visualizer & Streaming Light-up
+   ========================================================================== */
+
+:root[data-theme="jarvis"] .is-streaming-assistant {
+  position: relative;
+  border-left: 2px solid #00f0ff;
+  border-radius: 8px;
+  padding: 8px 12px;
+  background: linear-gradient(90deg, rgba(0, 240, 255, .1) 0%, rgba(0, 140, 255, .04) 50%, transparent 100%);
+  box-shadow: 0 0 30px rgba(0, 240, 255, .25), inset 0 0 15px rgba(0, 240, 255, .08);
+  animation: jarvisHudGlow 2.5s ease-in-out infinite alternate;
+}
+
+:root[data-theme="jarvis"] .jarvis-voice-visualizer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 240, 255, .4);
+  background: rgba(0, 24, 48, .6);
+  box-shadow: 0 0 18px rgba(0, 240, 255, .2);
+}
+
+:root[data-theme="jarvis"] .jarvis-hud-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+:root[data-theme="jarvis"] .jarvis-pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #00f0ff;
+  box-shadow: 0 0 10px #00f0ff, 0 0 18px rgba(0, 240, 255, .8);
+  animation: jarvisPulse 1s ease-in-out infinite alternate;
+}
+
+:root[data-theme="jarvis"] .jarvis-hud-label {
+  font-family: 'Orbitron', monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  color: #00f0ff;
+  text-shadow: 0 0 8px rgba(0, 240, 255, .7);
+  font-weight: 600;
+}
+
+:root[data-theme="jarvis"] .jarvis-soundwaves {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+}
+
+:root[data-theme="jarvis"] .wave-bar {
+  flex: 1;
+  max-width: 5px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #ffffff 0%, #00f0ff 60%, #0077cc 100%);
+  box-shadow: 0 0 8px rgba(0, 240, 255, .7);
+  animation: jarvisWave 1.2s ease-in-out infinite alternate;
+}
+
+:root[data-theme="jarvis"] .bar-1 { animation-delay: 0.05s; height: 35%; }
+:root[data-theme="jarvis"] .bar-2 { animation-delay: 0.25s; height: 75%; }
+:root[data-theme="jarvis"] .bar-3 { animation-delay: 0.12s; height: 50%; }
+:root[data-theme="jarvis"] .bar-4 { animation-delay: 0.35s; height: 95%; }
+:root[data-theme="jarvis"] .bar-5 { animation-delay: 0.18s; height: 60%; }
+:root[data-theme="jarvis"] .bar-6 { animation-delay: 0.42s; height: 100%; }
+:root[data-theme="jarvis"] .bar-7 { animation-delay: 0.08s; height: 70%; }
+:root[data-theme="jarvis"] .bar-8 { animation-delay: 0.3s;  height: 45%; }
+:root[data-theme="jarvis"] .bar-9 { animation-delay: 0.15s; height: 85%; }
+:root[data-theme="jarvis"] .bar-10 { animation-delay: 0.22s; height: 40%; }
+
+:root[data-theme="jarvis"] .stream-cursor {
+  display: inline-block;
+  width: 7px;
+  height: 16px;
+  margin-left: 3px;
+  vertical-align: -2px;
+  background: #00f0ff;
+  box-shadow: 0 0 10px #00f0ff, 0 0 20px rgba(0, 240, 255, .9);
+  animation: jarvisBlink 0.75s steps(2, start) infinite;
+}
+
+:root[data-theme="jarvis"] .thinking-dots i {
+  background: #00f0ff;
+  box-shadow: 0 0 8px #00f0ff;
+}
+
+/* Composer */
+:root[data-theme="jarvis"] .composer-glass {
+  border: 1px solid rgba(0, 240, 255, .32);
+  background: linear-gradient(180deg, rgba(2, 16, 32, .92), rgba(1, 9, 20, .96));
+  box-shadow: 0 0 25px rgba(0, 240, 255, .1);
+}
+
+:root[data-theme="jarvis"] .composer-glass:focus-within {
+  border-color: #00f0ff;
+  box-shadow: 0 0 30px rgba(0, 240, 255, .3), inset 0 0 14px rgba(0, 240, 255, .08);
+}
+
+:root[data-theme="jarvis"] .composer-input {
+  color: #ffffff;
+}
+
+:root[data-theme="jarvis"] .composer-input::placeholder {
+  color: #4f96b7;
+}
+
+:root[data-theme="jarvis"] .send-button {
+  color: #020b17 !important;
+  background: linear-gradient(135deg, #ffffff 0%, #00f0ff 50%, #0088ff 100%) !important;
+  box-shadow: 0 0 18px rgba(0, 240, 255, .6);
+}
+
+:root[data-theme="jarvis"] .send-button:hover {
+  box-shadow: 0 0 28px rgba(0, 240, 255, .9);
+}
+
+:root[data-theme="jarvis"] .stop-button {
+  border-color: rgba(255, 60, 60, .6);
+  color: #ffffff;
+  background: rgba(255, 60, 60, .2);
+  box-shadow: 0 0 15px rgba(255, 60, 60, .4);
+}
+
+:root[data-theme="jarvis"] .composer-tool {
+  color: #7fe7ff;
+}
+
+:root[data-theme="jarvis"] .composer-tool:hover {
+  color: #ffffff;
+  background: rgba(0, 240, 255, .15);
+  box-shadow: 0 0 10px rgba(0, 240, 255, .3);
+}
+
+/* Animations */
+@keyframes jarvisWave {
+  0% {
+    transform: scaleY(0.2);
+    opacity: 0.45;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scaleY(0.35);
+    opacity: 0.6;
+  }
+}
+
+@keyframes jarvisHudGlow {
+  0% {
+    box-shadow: 0 0 15px rgba(0, 240, 255, .15), inset 0 0 8px rgba(0, 240, 255, .04);
+  }
+  100% {
+    box-shadow: 0 0 35px rgba(0, 240, 255, .35), inset 0 0 18px rgba(0, 240, 255, .12);
+  }
+}
+
+@keyframes jarvisPulse {
+  0% {
+    transform: scale(0.96);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(1.04);
+    opacity: 1;
+  }
+}
+
+@keyframes jarvisRotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes jarvisBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
 }
