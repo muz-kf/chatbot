@@ -291,6 +291,13 @@ function App() {
     })();
   }
 
+  function handleDirectSend(text: string) {
+    const trimmed = text.trim();
+    if (!trimmed && attachments.length === 0) return;
+    setDraft("");
+    startChat(trimmed);
+  }
+
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     startChat(draft);
@@ -590,6 +597,7 @@ function App() {
           recording={recording}
           recordingTranscript={recordingTranscript}
           sendOnVoiceEnd={sendOnVoiceEnd}
+          onSendText={handleDirectSend}
           onDismissError={() => setError("")}
           textareaRef={draftRef}
           onChange={setDraft}

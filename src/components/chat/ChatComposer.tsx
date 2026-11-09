@@ -15,6 +15,7 @@ type ChatComposerProps = {
   recording?: boolean;
   recordingTranscript?: string;
   sendOnVoiceEnd?: boolean;
+  onSendText?: (text: string) => void;
   onDismissError?: () => void;
   onChange: (value: string) => void;
   onFiles: (files: File[]) => void;
@@ -31,7 +32,8 @@ export function ChatComposer({
   streaming,
   textareaRef,
   attachments,
-  sendOnVoiceEnd = false,
+  sendOnVoiceEnd = true,
+  onSendText,
   onDismissError,
   onChange,
   onFiles,
@@ -44,7 +46,14 @@ export function ChatComposer({
   const [listening, setListening] = useState(false);
   const [interimText, setInterimText] = useState("");
   const [voiceError, setVoiceError] = useState("");
+  const [isFinishing, setIsFinishing] = useState(false);
   const recognitionRef = useRef<ReturnType<typeof createSpeechRecognition> | null>(null);
+
+  const accumulatedTextRef = useRef("");
+  const interimTextRef = useRef("");
+  const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasSpokenRef = useRef(false);
+  const isSendingRef = useRef(false);
 
   // Keep a ref to latest value for speech recognition callbacks
   const valueRef = useRef(value);
@@ -52,65 +61,130 @@ export function ChatComposer({
 
   useEffect(() => {
     return () => {
+      if (silenceTimerRef.current) {
+        clearTimeout(silenceTimerRef.current);
+      }
       recognitionRef.current?.abort();
     };
   }, []);
 
-  function triggerAutoSend() {
-    if (streaming) return;
-    const currentText = valueRef.current.trim();
-    if (currentText || attachments.length > 0) {
-      onSubmit({ preventDefault: () => {} } as FormEvent<HTMLFormElement>);
+  function completeVoiceNoteAndSend() {
+    if (silenceTimerRef.current) {
+      clearTimeout(silenceTimerRef.current);
+      silenceTimerRef.current = null;
     }
-  }
 
-  function stopListening(autoSubmit = false) {
-    recognitionRef.current?.stop();
+    try {
+      recognitionRef.current?.stop();
+    } catch {
+      // ignore if already stopped
+    }
     recognitionRef.current = null;
     setListening(false);
+    setIsFinishing(false);
+
+    let fullText = accumulatedTextRef.current.trim();
+    const pendingInterim = interimTextRef.current.trim();
+    if (pendingInterim && !fullText.endsWith(pendingInterim)) {
+      fullText = fullText ? `${fullText} ${pendingInterim}` : pendingInterim;
+    }
+
     setInterimText("");
-    if (autoSubmit && sendOnVoiceEnd) {
-      requestAnimationFrame(() => {
-        triggerAutoSend();
-      });
+    interimTextRef.current = "";
+    accumulatedTextRef.current = fullText;
+    onChange(fullText);
+
+    if (sendOnVoiceEnd && fullText) {
+      if (isSendingRef.current || streaming) return;
+      isSendingRef.current = true;
+      hasSpokenRef.current = false;
+
+      if (onSendText) {
+        onSendText(fullText);
+      } else {
+        onSubmit({ preventDefault: () => {} } as FormEvent<HTMLFormElement>);
+      }
+
+      setTimeout(() => {
+        isSendingRef.current = false;
+      }, 600);
     }
   }
 
   function toggleListening() {
     if (listening) {
-      stopListening(true);
+      completeVoiceNoteAndSend();
       return;
     }
 
     setVoiceError("");
     setInterimText("");
+    setIsFinishing(false);
+    accumulatedTextRef.current = valueRef.current.trim();
+    interimTextRef.current = "";
+    hasSpokenRef.current = false;
+    isSendingRef.current = false;
 
     try {
       const recognition = createSpeechRecognition(
         (finalText, interim) => {
           if (finalText) {
-            const current = valueRef.current;
+            hasSpokenRef.current = true;
+            const current = accumulatedTextRef.current;
             const updated = current
               ? `${current.trimEnd()} ${finalText.trim()}`
               : finalText.trim();
+            accumulatedTextRef.current = updated;
             onChange(updated);
             if (textareaRef.current) {
               textareaRef.current.focus();
             }
           }
+
+          if (interim) {
+            hasSpokenRef.current = true;
+          }
+          interimTextRef.current = interim;
           setInterimText(interim);
+
+          // Reset silence timer on every incoming speech chunk
+          if (silenceTimerRef.current) {
+            clearTimeout(silenceTimerRef.current);
+            silenceTimerRef.current = null;
+          }
+
+          // When user speaks and sendOnVoiceEnd is enabled:
+          // Detect completion when the user stops speaking (1.5s of silence)
+          if (hasSpokenRef.current && sendOnVoiceEnd) {
+            silenceTimerRef.current = setTimeout(() => {
+              setIsFinishing(true);
+              completeVoiceNoteAndSend();
+            }, 1500);
+          }
         },
         (errorMessage) => {
           setVoiceError(errorMessage);
-          stopListening(false);
+          if (silenceTimerRef.current) {
+            clearTimeout(silenceTimerRef.current);
+            silenceTimerRef.current = null;
+          }
+          try {
+            recognitionRef.current?.stop();
+          } catch {
+            // ignore
+          }
+          recognitionRef.current = null;
+          setListening(false);
+          setIsFinishing(false);
         },
         () => {
-          setListening(false);
-          setInterimText("");
-          if (sendOnVoiceEnd) {
-            requestAnimationFrame(() => {
-              triggerAutoSend();
-            });
+          // Trigger send on speech end if user spoke something
+          if (hasSpokenRef.current && sendOnVoiceEnd) {
+            completeVoiceNoteAndSend();
+          } else {
+            setListening(false);
+            setIsFinishing(false);
+            setInterimText("");
           }
         },
       );
@@ -128,7 +202,7 @@ export function ChatComposer({
 
   function handleFormSubmit(event: FormEvent<HTMLFormElement>) {
     if (listening) {
-      stopListening(false);
+      completeVoiceNoteAndSend();
     }
     onSubmit(event);
   }
@@ -202,23 +276,33 @@ export function ChatComposer({
           <div className="voice-dictation-banner" aria-live="polite">
             <div className="dictation-header">
               <div className="dictation-indicator">
-                <span className="dictation-dot" />
-                <span className="dictation-label">Live Voice Recognition</span>
+                <span className={`dictation-dot ${isFinishing ? "is-sending" : ""}`} />
+                <span className="dictation-label">
+                  {isFinishing
+                    ? "Sending voice note to DAZZ..."
+                    : sendOnVoiceEnd
+                      ? "Voice Note (auto-sends on pause)"
+                      : "Live Voice Recognition"}
+                </span>
               </div>
               <button
                 type="button"
                 className="dictation-done-btn"
-                onClick={() => stopListening(true)}
-                aria-label="Stop voice recognition"
+                onClick={() => completeVoiceNoteAndSend()}
+                aria-label="Finish and send voice note"
               >
-                Done
+                {sendOnVoiceEnd ? "Done & Send" : "Done"}
               </button>
             </div>
             <p className="dictation-text">
               {interimText ? (
                 <span className="dictation-active">"{interimText}"</span>
               ) : (
-                <span className="dictation-placeholder">Speak now — words will appear directly here...</span>
+                <span className="dictation-placeholder">
+                  {sendOnVoiceEnd
+                    ? "Speak your question — it will send automatically when you pause..."
+                    : "Speak now — words will appear directly here..."}
+                </span>
               )}
             </p>
           </div>
