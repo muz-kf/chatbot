@@ -1,6 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  ArrowDown,
   Check,
   Copy,
   FileAudio2,
@@ -45,7 +44,6 @@ export function MessageList({
 
   const latestUserMsgRef = useRef<HTMLElement | null>(null);
   const lastScrolledTurnIdRef = useRef<string | null>(null);
-  const scrollRafRef = useRef<number | null>(null);
 
   // Identify latest user message id to scroll to start of conversation turn
   const latestUserMessage = [...messages].reverse().find((m) => m.role === "user");
@@ -59,31 +57,10 @@ export function MessageList({
       lastScrolledTurnIdRef.current = latestUserMessageId;
       const timer = setTimeout(() => {
         latestUserMsgRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-      }, 60);
+      }, 50);
       return () => clearTimeout(timer);
     }
   }, [latestUserMessageId, sendOnVoiceEnd]);
-
-  // Case 2: When sendOnVoiceEnd is ON (interactive voice mode):
-  // Auto-scroll all the way down following the AI's reply as it streams
-  useEffect(() => {
-    if (!sendOnVoiceEnd) return;
-
-    if (streaming || messages.length > 0) {
-      if (scrollRafRef.current) {
-        cancelAnimationFrame(scrollRafRef.current);
-      }
-      scrollRafRef.current = requestAnimationFrame(() => {
-        bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-      });
-    }
-
-    return () => {
-      if (scrollRafRef.current) {
-        cancelAnimationFrame(scrollRafRef.current);
-      }
-    };
-  }, [messages, streaming, sendOnVoiceEnd, bottomRef]);
 
   function handleLike(id: string) {
     setLikedIds((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -114,14 +91,6 @@ export function MessageList({
     utterance.onerror = () => setSpeakingId(null);
     setSpeakingId(message.id);
     window.speechSynthesis.speak(utterance);
-  }
-
-  function handleShare(message: Message) {
-    if (navigator.share) {
-      navigator.share({ text: message.content }).catch(() => {});
-    } else {
-      onCopy(message);
-    }
   }
 
   return (
@@ -204,10 +173,9 @@ export function MessageList({
                       </button>
                       <button
                         type="button"
-                        className="msg-action-btn"
+                        className="msg-action-btn is-dummy"
                         aria-label="Share message"
-                        title="Share message"
-                        onClick={() => handleShare(message)}
+                        title="Share"
                       >
                         <Share2 size={14} />
                       </button>
@@ -313,19 +281,17 @@ export function MessageList({
                         </button>
                         <button
                           type="button"
-                          className="msg-action-btn"
+                          className="msg-action-btn is-dummy"
                           aria-label="Share response"
-                          title="Share response"
-                          onClick={() => handleShare(message)}
+                          title="Share"
                         >
                           <Share2 size={14} />
                         </button>
                         <button
                           type="button"
-                          className="msg-action-btn"
+                          className="msg-action-btn is-dummy"
                           aria-label="More options"
                           title="More options"
-                          onClick={() => onCopy(message)}
                         >
                           <MoreHorizontal size={14} />
                         </button>
@@ -339,20 +305,7 @@ export function MessageList({
         })}
       </AnimatePresence>
 
-      {/* Floating scroll to bottom button (as visible in the screenshot) */}
-      {messages.length > 2 && (
-        <button
-          type="button"
-          className="floating-scroll-btn"
-          aria-label="Scroll to bottom"
-          title="Scroll to latest messages"
-          onClick={() => bottomRef.current?.scrollIntoView({ behavior: "smooth" })}
-        >
-          <ArrowDown size={16} />
-        </button>
-      )}
-
-      <div ref={bottomRef} />
+      <div ref={bottomRef} className="scroll-anchor" style={{ height: 1, minHeight: 1 }} />
     </div>
   );
 }

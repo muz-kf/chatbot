@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, LogOut, MessageSquare, PanelLeftClose, Plus, Settings2, Sparkles, X } from "lucide-react";
 import { Button } from "../ui/button";
+import { ThemedScrollArea } from "../ui/ThemedScrollArea";
 import { DazzMark } from "./DazzMark";
 import { VoiceToTextWidget } from "./VoiceToTextWidget";
 import {
@@ -96,7 +97,7 @@ export function ChatSidebar({
         <div className="sidebar-section-label">YOUR SPACE</div>
         {/* VoiceToTextWidget reserved for future expansion */}
         {/* <VoiceToTextWidget /> */}
-        <div className="conversation-list" aria-label="Saved conversations">
+        <ThemedScrollArea className="conversation-list" aria-label="Saved conversations">
           {chats.length === 0 ? (
             <div className="sidebar-empty">
               <div className="sidebar-empty-icon"><Sparkles size={17} /></div>
@@ -115,7 +116,7 @@ export function ChatSidebar({
               <span>{chat.title}</span>
             </button>
           ))}
-        </div>
+        </ThemedScrollArea>
 
         <div className="sidebar-voice-option">
           <label className="voice-sender-toggle" htmlFor="voice-auto-send">
@@ -143,8 +144,15 @@ export function ChatSidebar({
             aria-expanded={settingsOpen}
             onClick={onToggleSettings}
           >
-            <Settings2 size={16} />
-            Settings
+            <span className="settings-toggle-label">
+              <Settings2 size={16} />
+              <span>Settings</span>
+            </span>
+            <ChevronDown
+              size={15}
+              className={`settings-chevron ${settingsOpen ? "is-expanded" : ""}`}
+              aria-hidden="true"
+            />
           </Button>
           <AnimatePresence initial={false}>
             {settingsOpen && (

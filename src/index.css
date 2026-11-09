@@ -5,6 +5,10 @@
 :root {
   --mark-cutout: #5532b4;
   --chat-font: "Poppins", ui-sans-serif, system-ui, sans-serif;
+  --scrollbar-thumb: rgba(168, 85, 247, 0.45);
+  --scrollbar-thumb-hover: rgba(168, 85, 247, 0.8);
+  --scrollbar-thumb-glow: rgba(168, 85, 247, 0.25);
+  --scrollbar-track: rgba(255, 255, 255, 0.04);
   font-family: var(--chat-font);
   color: #f5f3ff;
   background: #070812;
@@ -18,6 +22,92 @@
 
 * {
   box-sizing: border-box;
+}
+
+/* Global Themed Scrollbars Fallback */
+*::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--scrollbar-track, transparent);
+  border-radius: 99px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb, rgba(255, 255, 255, 0.22));
+  border-radius: 99px;
+  box-shadow: 0 0 6px var(--scrollbar-thumb-glow, transparent);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover, rgba(255, 255, 255, 0.4));
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb, rgba(255, 255, 255, 0.22)) var(--scrollbar-track, transparent);
+}
+
+/* Reusable Themed Scroll Area Component */
+.themed-scroll-area {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  width: 100%;
+}
+
+.themed-scroll-viewport {
+  width: 100%;
+  height: 100%;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.themed-scroll-viewport::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.themed-scroll-track {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  right: 2px;
+  width: 5px;
+  border-radius: 99px;
+  background: var(--scrollbar-track, rgba(255, 255, 255, 0.05));
+  opacity: 0.85;
+  transition: opacity 0.2s ease, background 0.2s ease;
+  pointer-events: auto;
+  cursor: pointer;
+  z-index: 10;
+}
+
+.themed-scroll-thumb {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  border-radius: 99px;
+  background: var(--scrollbar-thumb, rgba(160, 210, 255, 0.4));
+  box-shadow: 0 0 8px var(--scrollbar-thumb-glow, transparent);
+  cursor: pointer;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.themed-scroll-thumb:hover,
+.themed-scroll-thumb.is-dragging {
+  background: var(--scrollbar-thumb-hover, rgba(160, 210, 255, 0.75));
+  box-shadow: 0 0 12px var(--scrollbar-thumb-glow, transparent);
 }
 
 html,
@@ -448,10 +538,25 @@ button {
   min-width: 242px;
   flex: 1;
   flex-direction: column;
-  gap: 4px;
   margin-top: 6px;
-  overflow-y: auto;
-  scrollbar-width: thin;
+  overflow: hidden;
+}
+
+.conversation-list.themed-scroll-area {
+  display: flex;
+  min-height: 0;
+  min-width: 242px;
+  flex: 1;
+  flex-direction: column;
+  margin-top: 6px;
+  overflow: hidden;
+}
+
+.conversation-list .themed-scroll-viewport {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-right: 6px;
 }
 
 .conversation-item {
@@ -584,11 +689,48 @@ button {
 }
 
 .settings-toggle {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
   width: 100%;
-  justify-content: flex-start;
   padding: 0 11px !important;
   color: #aaa7c0 !important;
   font-size: 12px !important;
+}
+
+.settings-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-chevron {
+  transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 0.8;
+  flex-shrink: 0;
+}
+
+.settings-chevron.is-expanded {
+  transform: rotate(180deg);
+}
+
+.send-button.is-loading-pause {
+  opacity: 0.9 !important;
+  cursor: wait !important;
+  background: var(--send-btn-loading-bg, rgba(168, 85, 247, 0.4)) !important;
+  border-color: var(--send-btn-loading-border, rgba(168, 85, 247, 0.6)) !important;
+  box-shadow: 0 0 16px var(--scrollbar-thumb-glow, rgba(168, 85, 247, 0.4)) !important;
+  animation: pulse-glow 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes pulse-glow {
+  0% { transform: scale(0.96); opacity: 0.85; }
+  100% { transform: scale(1.04); opacity: 1; }
+}
+
+.msg-action-btn.is-dummy {
+  cursor: default;
+  opacity: 0.7;
 }
 
 .sidebar-settings .settings-toggle:hover,
@@ -1474,6 +1616,7 @@ button {
 }
 
 .composer-area {
+  position: relative;
   z-index: 2;
   width: min(100% - 48px, 790px);
   align-self: center;
@@ -2071,6 +2214,10 @@ button {
 
 :root[data-theme="gold"] {
   --mark-cutout: #46330a;
+  --scrollbar-thumb: rgba(234, 179, 8, 0.45);
+  --scrollbar-thumb-hover: rgba(234, 179, 8, 0.8);
+  --scrollbar-thumb-glow: rgba(234, 179, 8, 0.3);
+  --scrollbar-track: rgba(234, 179, 8, 0.08);
   color: #fefce8;
   background: #171304;
 }
@@ -2503,6 +2650,10 @@ button {
 
 :root[data-theme="green"] {
   --mark-cutout: #075336;
+  --scrollbar-thumb: rgba(34, 197, 94, 0.45);
+  --scrollbar-thumb-hover: rgba(34, 197, 94, 0.8);
+  --scrollbar-thumb-glow: rgba(34, 197, 94, 0.3);
+  --scrollbar-track: rgba(34, 197, 94, 0.08);
   color: #e9fff5;
   background: #03170e;
 }
@@ -2867,6 +3018,10 @@ button {
 
 :root[data-theme="white"] {
   --mark-cutout: #364268;
+  --scrollbar-thumb: rgba(148, 163, 184, 0.45);
+  --scrollbar-thumb-hover: rgba(100, 116, 139, 0.75);
+  --scrollbar-thumb-glow: transparent;
+  --scrollbar-track: rgba(0, 0, 0, 0.05);
   color: #252b3c;
   background: #f3f6fc;
 }
@@ -3519,6 +3674,10 @@ button {
 
 :is(:root[data-theme="dazz"], :root[data-theme="jarvis"]) {
   --mark-cutout: #022033;
+  --scrollbar-thumb: rgba(0, 229, 255, 0.55);
+  --scrollbar-thumb-hover: rgba(0, 229, 255, 0.85);
+  --scrollbar-thumb-glow: rgba(0, 229, 255, 0.4);
+  --scrollbar-track: rgba(0, 229, 255, 0.08);
   color: #d4f4ff;
   background: #020e1a;
 }
@@ -4304,16 +4463,16 @@ button {
 
 /* Floating scroll to bottom button (Screenshot Layout) */
 .floating-scroll-btn {
-  position: sticky;
-  bottom: 14px;
+  position: absolute;
+  top: -46px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 10;
+  z-index: 30;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   border: 1px solid rgba(255, 255, 255, 0.22);
   background: rgba(18, 22, 34, 0.88);
@@ -4322,7 +4481,6 @@ button {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.38);
   cursor: pointer;
   transition: transform 0.15s ease, background 0.15s ease;
-  margin-top: 10px;
 }
 
 .floating-scroll-btn:hover {
@@ -4339,6 +4497,10 @@ button {
    ========================================================================== */
 :root[data-theme="red"] {
   --mark-cutout: #83111b;
+  --scrollbar-thumb: rgba(248, 113, 113, 0.5);
+  --scrollbar-thumb-hover: rgba(248, 113, 113, 0.85);
+  --scrollbar-thumb-glow: rgba(248, 113, 113, 0.35);
+  --scrollbar-track: rgba(239, 68, 68, 0.1);
   color: #ffffff;
   background: #991b1b;
 }
@@ -4561,6 +4723,10 @@ button {
    ========================================================================== */
 :root[data-theme="skyblue"] {
   --mark-cutout: #0284c7;
+  --scrollbar-thumb: rgba(14, 165, 233, 0.45);
+  --scrollbar-thumb-hover: rgba(14, 165, 233, 0.8);
+  --scrollbar-thumb-glow: rgba(14, 165, 233, 0.25);
+  --scrollbar-track: rgba(14, 165, 233, 0.08);
   color: #0c2340;
   background: #f0f7ff;
 }
@@ -4769,6 +4935,10 @@ button {
    ========================================================================== */
 :root[data-theme="orange"] {
   --mark-cutout: #7c2d12;
+  --scrollbar-thumb: rgba(251, 146, 60, 0.5);
+  --scrollbar-thumb-hover: rgba(251, 146, 60, 0.85);
+  --scrollbar-thumb-glow: rgba(251, 146, 60, 0.35);
+  --scrollbar-track: rgba(249, 115, 22, 0.1);
   color: #ffffff;
   background: #c2410c;
 }
@@ -4991,6 +5161,10 @@ button {
    ========================================================================== */
 :root[data-theme="maroon"] {
   --mark-cutout: #2a020d;
+  --scrollbar-thumb: rgba(251, 113, 133, 0.5);
+  --scrollbar-thumb-hover: rgba(251, 113, 133, 0.85);
+  --scrollbar-thumb-glow: rgba(251, 113, 133, 0.35);
+  --scrollbar-track: rgba(225, 29, 72, 0.1);
   color: #ffffff;
   background: #50071c;
 }
@@ -5213,6 +5387,10 @@ button {
    ========================================================================== */
 :root[data-theme="pink"] {
   --mark-cutout: #700c40;
+  --scrollbar-thumb: rgba(244, 114, 182, 0.5);
+  --scrollbar-thumb-hover: rgba(244, 114, 182, 0.85);
+  --scrollbar-thumb-glow: rgba(244, 114, 182, 0.35);
+  --scrollbar-track: rgba(236, 72, 153, 0.1);
   color: #ffffff;
   background: #b81d6d;
 }
@@ -5435,6 +5613,10 @@ button {
    ========================================================================== */
 :root[data-theme="zyricon"] {
   --mark-cutout: #1b1028;
+  --scrollbar-thumb: rgba(192, 132, 252, 0.45);
+  --scrollbar-thumb-hover: rgba(192, 132, 252, 0.8);
+  --scrollbar-thumb-glow: rgba(192, 132, 252, 0.3);
+  --scrollbar-track: rgba(168, 85, 247, 0.08);
   color: #f3e8ff;
   background: #120b1c;
 }
@@ -5575,6 +5757,10 @@ button {
    ========================================================================== */
 :root[data-theme="miracle"] {
   --mark-cutout: #8b5cf6;
+  --scrollbar-thumb: rgba(147, 51, 234, 0.4);
+  --scrollbar-thumb-hover: rgba(147, 51, 234, 0.75);
+  --scrollbar-thumb-glow: rgba(147, 51, 234, 0.25);
+  --scrollbar-track: rgba(147, 51, 234, 0.08);
   color: #1e1338;
   background: #f4f0ff;
 }

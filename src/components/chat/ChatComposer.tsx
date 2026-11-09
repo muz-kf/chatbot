@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent, type RefObject } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { AlertTriangle, ArrowUp, CircleStop, FileText, Mic, MicOff, Paperclip, Sparkles, X } from "lucide-react";
+import { AlertTriangle, ArrowDown, ArrowUp, CircleStop, FileText, Loader2, Mic, MicOff, Paperclip, Sparkles, X } from "lucide-react";
 import { Button } from "../ui/button";
 import { Textarea } from "../ui/textarea";
 import type { ChatAttachment } from "../../types/chat";
@@ -15,6 +15,8 @@ type ChatComposerProps = {
   recording?: boolean;
   recordingTranscript?: string;
   sendOnVoiceEnd?: boolean;
+  showScrollBottom?: boolean;
+  onScrollBottom?: () => void;
   onSendText?: (text: string) => void;
   onDismissError?: () => void;
   onChange: (value: string) => void;
@@ -33,6 +35,8 @@ export function ChatComposer({
   textareaRef,
   attachments,
   sendOnVoiceEnd = true,
+  showScrollBottom = false,
+  onScrollBottom,
   onSendText,
   onDismissError,
   onChange,
@@ -91,13 +95,19 @@ export function ChatComposer({
 
     setInterimText("");
     interimTextRef.current = "";
-    accumulatedTextRef.current = fullText;
-    onChange(fullText);
 
     if (sendOnVoiceEnd && fullText) {
       if (isSendingRef.current || streaming) return;
       isSendingRef.current = true;
       hasSpokenRef.current = false;
+
+      // Clear the composer input immediately so previous voice transcript never lingers
+      accumulatedTextRef.current = "";
+      valueRef.current = "";
+      onChange("");
+      if (textareaRef.current) {
+        textareaRef.current.value = "";
+      }
 
       if (onSendText) {
         onSendText(fullText);
@@ -108,6 +118,10 @@ export function ChatComposer({
       setTimeout(() => {
         isSendingRef.current = false;
       }, 600);
+    } else {
+      // Manual mode: retain the transcript in the input box for user editing/review
+      accumulatedTextRef.current = fullText;
+      onChange(fullText);
     }
   }
 
@@ -147,17 +161,18 @@ export function ChatComposer({
           interimTextRef.current = interim;
           setInterimText(interim);
 
-          // Reset silence timer on every incoming speech chunk
+          // Reset silence timer and finish state on every incoming speech chunk
           if (silenceTimerRef.current) {
             clearTimeout(silenceTimerRef.current);
             silenceTimerRef.current = null;
+            setIsFinishing(false);
           }
 
           // When user speaks and sendOnVoiceEnd is enabled:
-          // Detect completion when the user stops speaking (1.5s of silence)
+          // Immediately show loading indicator on the send button during the 1.5s silence delay
           if (hasSpokenRef.current && sendOnVoiceEnd) {
+            setIsFinishing(true);
             silenceTimerRef.current = setTimeout(() => {
-              setIsFinishing(true);
               completeVoiceNoteAndSend();
             }, 1500);
           }
@@ -209,6 +224,25 @@ export function ChatComposer({
 
   return (
     <div className="composer-area">
+      {/* Floating scroll to bottom button (ChatGPT Reference Layout) */}
+      <AnimatePresence>
+        {showScrollBottom && onScrollBottom && (
+          <motion.button
+            type="button"
+            className="floating-scroll-btn"
+            aria-label="Scroll to latest messages"
+            title="Scroll to latest messages"
+            initial={{ opacity: 0, scale: 0.8, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.8, y: 10 }}
+            transition={{ duration: 0.16 }}
+            onClick={onScrollBottom}
+          >
+            <ArrowDown size={17} />
+          </motion.button>
+        )}
+      </AnimatePresence>
+
       <AnimatePresence>
         {error && (
           <motion.div
@@ -391,6 +425,16 @@ export function ChatComposer({
           {streaming ? (
             <Button size="icon" aria-label="Stop response" onClick={onStop} className="send-button stop-button">
               <CircleStop size={17} />
+            </Button>
+          ) : isFinishing ? (
+            <Button
+              size="icon"
+              disabled
+              aria-label="Sending voice note..."
+              title="Sending voice note automatically..."
+              className="send-button is-loading-pause"
+            >
+              <Loader2 size={17} className="animate-spin" />
             </Button>
           ) : (
             <Button

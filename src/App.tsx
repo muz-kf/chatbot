@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AuthGate } from "./components/chat/AuthGate";
 import { ChatComposer } from "./components/chat/ChatComposer";
@@ -134,6 +134,9 @@ function App() {
       apiRequest<void>("/api/auth/logout", { method: "POST" }),
   });
   const bottomRef = useRef<HTMLDivElement>(null);
+  const viewportRef = useRef<HTMLElement | null>(null);
+  const [showScrollBottom, setShowScrollBottom] = useState(false);
+  const userScrolledUpRef = useRef(false);
   const requestRef = useRef<AbortController | null>(null);
   const draftRef = useRef<HTMLTextAreaElement>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
@@ -200,6 +203,54 @@ function App() {
     return () => desktopQuery.removeEventListener("change", syncSidebar);
   }, []);
 
+  const scrollToBottom = useCallback((smooth = true) => {
+    userScrolledUpRef.current = false;
+    setShowScrollBottom(false);
+    if (viewportRef.current) {
+      viewportRef.current.scrollTo({
+        top: viewportRef.current.scrollHeight,
+        behavior: smooth ? "smooth" : "auto",
+      });
+    } else {
+      bottomRef.current?.scrollIntoView({
+        behavior: smooth ? "smooth" : "auto",
+        block: "end",
+      });
+    }
+  }, []);
+
+  // Monitor scroll position on the conversation viewport
+  useEffect(() => {
+    const el = viewportRef.current;
+    if (!el) return;
+
+    const handleScroll = () => {
+      const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+      const isUp = distanceFromBottom > 80;
+      setShowScrollBottom(isUp);
+      userScrolledUpRef.current = isUp;
+    };
+
+    el.addEventListener("scroll", handleScroll, { passive: true });
+    return () => el.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Auto-scroll when sendOnVoiceEnd is ON:
+  // Glides down to the bottom as new tokens arrive without animation stutter
+  useEffect(() => {
+    if (!sendOnVoiceEnd || !streaming) return;
+
+    if (!userScrolledUpRef.current && viewportRef.current) {
+      viewportRef.current.scrollTop = viewportRef.current.scrollHeight;
+    }
+  }, [messages, streaming, sendOnVoiceEnd]);
+
+  useEffect(() => {
+    if (!streaming && sendOnVoiceEnd && !userScrolledUpRef.current && viewportRef.current) {
+      viewportRef.current.scrollTop = viewportRef.current.scrollHeight;
+    }
+  }, [streaming, sendOnVoiceEnd]);
+
   useEffect(
     () => () => {
       requestRef.current?.abort();
@@ -239,6 +290,14 @@ function App() {
     requestRef.current?.abort();
     const controller = new AbortController();
     requestRef.current = controller;
+
+    if (sendOnVoiceEnd) {
+      userScrolledUpRef.current = false;
+      setShowScrollBottom(false);
+      setTimeout(() => {
+        scrollToBottom(true);
+      }, 50);
+    }
 
     void (async () => {
       const appendToken = (token: string) => {
@@ -346,6 +405,7 @@ function App() {
       setDraft("");
       setAttachments([]);
       if (window.matchMedia("(max-width: 767px)").matches) setSidebarOpen(false);
+      setTimeout(() => scrollToBottom(false), 60);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Could not load this conversation.");
     }
@@ -570,9 +630,9 @@ function App() {
         <ChatHeader
           sidebarOpen={sidebarOpen}
           onToggleSidebar={() => setSidebarOpen((open) => !open)}
-          onScrollLatest={() => bottomRef.current?.scrollIntoView({ behavior: "smooth" })}
+          onScrollLatest={() => scrollToBottom(true)}
         />
-        <section className="conversation-viewport" aria-label="Conversation with DAZZ">
+        <section ref={viewportRef} className="conversation-viewport" aria-label="Conversation with DAZZ">
           {messages.length === 0 ? (
             <WelcomeScreen onPrompt={startChat} />
           ) : (
@@ -598,6 +658,8 @@ function App() {
           recording={recording}
           recordingTranscript={recordingTranscript}
           sendOnVoiceEnd={sendOnVoiceEnd}
+          showScrollBottom={showScrollBottom}
+          onScrollBottom={() => scrollToBottom(true)}
           onSendText={handleDirectSend}
           onDismissError={() => setError("")}
           textareaRef={draftRef}
