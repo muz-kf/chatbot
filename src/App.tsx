@@ -579,6 +579,7 @@ function App() {
             <MessageList
               messages={messages}
               streaming={streaming}
+              sendOnVoiceEnd={sendOnVoiceEnd}
               copiedId={copiedId}
               bottomRef={bottomRef}
               onCopy={(message) => void copyMessage(message)}

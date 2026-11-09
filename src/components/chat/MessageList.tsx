@@ -15,7 +15,7 @@ import {
   Volume2,
   VolumeX,
 } from "lucide-react";
-import { useState, type RefObject } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { Message } from "../../types/chat";
@@ -23,6 +23,7 @@ import type { Message } from "../../types/chat";
 type MessageListProps = {
   messages: Message[];
   streaming: boolean;
+  sendOnVoiceEnd?: boolean;
   copiedId: string;
   bottomRef: RefObject<HTMLDivElement>;
   onCopy: (message: Message) => void;
@@ -32,6 +33,7 @@ type MessageListProps = {
 export function MessageList({
   messages,
   streaming,
+  sendOnVoiceEnd = true,
   copiedId,
   bottomRef,
   onCopy,
@@ -40,6 +42,48 @@ export function MessageList({
   const [likedIds, setLikedIds] = useState<Record<string, boolean>>({});
   const [dislikedIds, setDislikedIds] = useState<Record<string, boolean>>({});
   const [speakingId, setSpeakingId] = useState<string | null>(null);
+
+  const latestUserMsgRef = useRef<HTMLElement | null>(null);
+  const lastScrolledTurnIdRef = useRef<string | null>(null);
+  const scrollRafRef = useRef<number | null>(null);
+
+  // Identify latest user message id to scroll to start of conversation turn
+  const latestUserMessage = [...messages].reverse().find((m) => m.role === "user");
+  const latestUserMessageId = latestUserMessage?.id;
+
+  // Case 1: When sendOnVoiceEnd is OFF (manual mode):
+  // Scroll to the start of the convo turn, then let content grow naturally downward without auto-scrolling
+  useEffect(() => {
+    if (sendOnVoiceEnd) return;
+    if (latestUserMessageId && latestUserMessageId !== lastScrolledTurnIdRef.current) {
+      lastScrolledTurnIdRef.current = latestUserMessageId;
+      const timer = setTimeout(() => {
+        latestUserMsgRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 60);
+      return () => clearTimeout(timer);
+    }
+  }, [latestUserMessageId, sendOnVoiceEnd]);
+
+  // Case 2: When sendOnVoiceEnd is ON (interactive voice mode):
+  // Auto-scroll all the way down following the AI's reply as it streams
+  useEffect(() => {
+    if (!sendOnVoiceEnd) return;
+
+    if (streaming || messages.length > 0) {
+      if (scrollRafRef.current) {
+        cancelAnimationFrame(scrollRafRef.current);
+      }
+      scrollRafRef.current = requestAnimationFrame(() => {
+        bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+      });
+    }
+
+    return () => {
+      if (scrollRafRef.current) {
+        cancelAnimationFrame(scrollRafRef.current);
+      }
+    };
+  }, [messages, streaming, sendOnVoiceEnd, bottomRef]);
 
   function handleLike(id: string) {
     setLikedIds((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -86,10 +130,12 @@ export function MessageList({
         {messages.map((message, index) => {
           const isLast = index === messages.length - 1;
           const isStreamingAssistant = message.role === "assistant" && streaming && isLast;
+          const isLatestUserTurn = message.id === latestUserMessageId;
 
           return (
             <motion.article
               key={message.id}
+              ref={isLatestUserTurn ? (latestUserMsgRef as RefObject<HTMLElement>) : undefined}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.25 }}
