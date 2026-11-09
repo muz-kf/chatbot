@@ -312,11 +312,19 @@ export function ChatComposer({
               <div className="dictation-indicator">
                 <span className={`dictation-dot ${isFinishing ? "is-sending" : ""}`} />
                 <span className="dictation-label">
-                  {isFinishing
-                    ? "Sending voice note to DAZZ..."
-                    : sendOnVoiceEnd
-                      ? "Voice Note (auto-sends on pause)"
-                      : "Live Voice Recognition"}
+                  {isFinishing ? (
+                    "Sending..."
+                  ) : sendOnVoiceEnd ? (
+                    <>
+                      <span>Voice Note</span>
+                      <span className="dictation-label-sub"> (auto-sends on pause)</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Live Voice</span>
+                      <span className="dictation-label-sub"> Recognition</span>
+                    </>
+                  )}
                 </span>
               </div>
               <button

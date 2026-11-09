@@ -4185,6 +4185,8 @@ button {
   flex-direction: column;
   gap: 8px;
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   padding: 10px 14px;
   margin-bottom: 8px;
   border-radius: 12px;
@@ -4192,20 +4194,26 @@ button {
   border: 1px solid rgba(115, 84, 245, 0.35);
   max-height: 180px;
   animation: fadeIn 0.2s ease-out;
+  overflow: hidden;
 }
 
 .dictation-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
   width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .dictation-indicator {
   display: flex;
   align-items: center;
   gap: 6px;
-  flex-shrink: 0;
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
 }
 
 .dictation-dot {
@@ -4229,6 +4237,10 @@ button {
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: #ff5544;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .dictation-text {
@@ -4255,16 +4267,18 @@ button {
 }
 
 .dictation-done-btn {
-  flex-shrink: 0;
-  padding: 3px 10px;
+  flex: 0 0 auto;
+  white-space: nowrap;
+  padding: 4px 10px;
   border-radius: 6px;
   border: 1px solid rgba(255, 255, 255, 0.25);
   background: rgba(255, 255, 255, 0.12);
   color: #ffffff;
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.15s ease;
+  box-sizing: border-box;
 }
 
 .dictation-done-btn:hover {
@@ -6098,6 +6112,43 @@ button {
   .voice-dictation-banner {
     font-size: 12px;
     padding: 8px 10px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  .dictation-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .dictation-indicator {
+    min-width: 0;
+    flex: 1 1 auto;
+    overflow: hidden;
+  }
+
+  .dictation-label {
+    font-size: 10.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .dictation-label-sub {
+    display: none;
+  }
+
+  .dictation-done-btn {
+    flex-shrink: 0;
+    padding: 3px 8px;
+    font-size: 10.5px;
+    white-space: nowrap;
   }
 
   .dictation-text {
