@@ -1,6 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  ArrowDown,
   Check,
   Copy,
   FileAudio2,
@@ -15,7 +14,7 @@ import {
   Volume2,
   VolumeX,
 } from "lucide-react";
-import { useState, type RefObject } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { Message } from "../../types/chat";
@@ -23,6 +22,7 @@ import type { Message } from "../../types/chat";
 type MessageListProps = {
   messages: Message[];
   streaming: boolean;
+  sendOnVoiceEnd?: boolean;
   copiedId: string;
   bottomRef: RefObject<HTMLDivElement>;
   onCopy: (message: Message) => void;
@@ -32,6 +32,7 @@ type MessageListProps = {
 export function MessageList({
   messages,
   streaming,
+  sendOnVoiceEnd = true,
   copiedId,
   bottomRef,
   onCopy,
@@ -40,6 +41,26 @@ export function MessageList({
   const [likedIds, setLikedIds] = useState<Record<string, boolean>>({});
   const [dislikedIds, setDislikedIds] = useState<Record<string, boolean>>({});
   const [speakingId, setSpeakingId] = useState<string | null>(null);
+
+  const latestUserMsgRef = useRef<HTMLElement | null>(null);
+  const lastScrolledTurnIdRef = useRef<string | null>(null);
+
+  // Identify latest user message id to scroll to start of conversation turn
+  const latestUserMessage = [...messages].reverse().find((m) => m.role === "user");
+  const latestUserMessageId = latestUserMessage?.id;
+
+  // Case 1: When sendOnVoiceEnd is OFF (manual mode):
+  // Scroll to the start of the convo turn, then let content grow naturally downward without auto-scrolling
+  useEffect(() => {
+    if (sendOnVoiceEnd) return;
+    if (latestUserMessageId && latestUserMessageId !== lastScrolledTurnIdRef.current) {
+      lastScrolledTurnIdRef.current = latestUserMessageId;
+      const timer = setTimeout(() => {
+        latestUserMsgRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [latestUserMessageId, sendOnVoiceEnd]);
 
   function handleLike(id: string) {
     setLikedIds((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -72,24 +93,18 @@ export function MessageList({
     window.speechSynthesis.speak(utterance);
   }
 
-  function handleShare(message: Message) {
-    if (navigator.share) {
-      navigator.share({ text: message.content }).catch(() => {});
-    } else {
-      onCopy(message);
-    }
-  }
-
   return (
     <div className="message-list">
       <AnimatePresence initial={false}>
         {messages.map((message, index) => {
           const isLast = index === messages.length - 1;
           const isStreamingAssistant = message.role === "assistant" && streaming && isLast;
+          const isLatestUserTurn = message.id === latestUserMessageId;
 
           return (
             <motion.article
               key={message.id}
+              ref={isLatestUserTurn ? (latestUserMsgRef as RefObject<HTMLElement>) : undefined}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.25 }}
@@ -158,10 +173,9 @@ export function MessageList({
                       </button>
                       <button
                         type="button"
-                        className="msg-action-btn"
+                        className="msg-action-btn is-dummy"
                         aria-label="Share message"
-                        title="Share message"
-                        onClick={() => handleShare(message)}
+                        title="Share"
                       >
                         <Share2 size={14} />
                       </button>
@@ -267,19 +281,17 @@ export function MessageList({
                         </button>
                         <button
                           type="button"
-                          className="msg-action-btn"
+                          className="msg-action-btn is-dummy"
                           aria-label="Share response"
-                          title="Share response"
-                          onClick={() => handleShare(message)}
+                          title="Share"
                         >
                           <Share2 size={14} />
                         </button>
                         <button
                           type="button"
-                          className="msg-action-btn"
+                          className="msg-action-btn is-dummy"
                           aria-label="More options"
                           title="More options"
-                          onClick={() => onCopy(message)}
                         >
                           <MoreHorizontal size={14} />
                         </button>
@@ -293,20 +305,7 @@ export function MessageList({
         })}
       </AnimatePresence>
 
-      {/* Floating scroll to bottom button (as visible in the screenshot) */}
-      {messages.length > 2 && (
-        <button
-          type="button"
-          className="floating-scroll-btn"
-          aria-label="Scroll to bottom"
-          title="Scroll to latest messages"
-          onClick={() => bottomRef.current?.scrollIntoView({ behavior: "smooth" })}
-        >
-          <ArrowDown size={16} />
-        </button>
-      )}
-
-      <div ref={bottomRef} />
+      <div ref={bottomRef} className="scroll-anchor" style={{ height: 1, minHeight: 1 }} />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AuthGate } from "./components/chat/AuthGate";
 import { ChatComposer } from "./components/chat/ChatComposer";
@@ -54,6 +54,15 @@ function App() {
     window.matchMedia("(min-width: 768px)").matches,
   );
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [sendOnVoiceEnd, setSendOnVoiceEnd] = useState<boolean>(() => {
+    const saved = window.localStorage.getItem("chat-send-on-voice-sender");
+    return saved !== null ? saved === "true" : true;
+  });
+
+  const handleSendOnVoiceEndChange = (enabled: boolean) => {
+    setSendOnVoiceEnd(enabled);
+    window.localStorage.setItem("chat-send-on-voice-sender", String(enabled));
+  };
   const [theme, setTheme] = useState<ThemeChoice>(getSavedTheme);
   const [font, setFont] = useState<FontChoice>(() => getSavedFont(theme));
   const sessionQuery = useQuery({
@@ -89,8 +98,14 @@ function App() {
         signal: input.signal,
       });
       if (!response.ok) {
-        const result = (await response.json()) as { error?: string };
-        throw new ApiError(result.error || "DAZZ could not complete this response.", response.status);
+        let errorMessage = "DAZZ could not complete this response.";
+        try {
+          const result = (await response.json()) as { error?: string };
+          if (result?.error) errorMessage = result.error;
+        } catch {
+          errorMessage = `Server error (${response.status} ${response.statusText || "Error"}). Please try again later.`;
+        }
+        throw new ApiError(errorMessage, response.status);
       }
       if (!response.body) throw new Error("The chat response did not include a readable stream.");
 
@@ -119,6 +134,9 @@ function App() {
       apiRequest<void>("/api/auth/logout", { method: "POST" }),
   });
   const bottomRef = useRef<HTMLDivElement>(null);
+  const viewportRef = useRef<HTMLElement | null>(null);
+  const [showScrollBottom, setShowScrollBottom] = useState(false);
+  const userScrolledUpRef = useRef(false);
   const requestRef = useRef<AbortController | null>(null);
   const draftRef = useRef<HTMLTextAreaElement>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
@@ -185,6 +203,54 @@ function App() {
     return () => desktopQuery.removeEventListener("change", syncSidebar);
   }, []);
 
+  const scrollToBottom = useCallback((smooth = true) => {
+    userScrolledUpRef.current = false;
+    setShowScrollBottom(false);
+    if (viewportRef.current) {
+      viewportRef.current.scrollTo({
+        top: viewportRef.current.scrollHeight,
+        behavior: smooth ? "smooth" : "auto",
+      });
+    } else {
+      bottomRef.current?.scrollIntoView({
+        behavior: smooth ? "smooth" : "auto",
+        block: "end",
+      });
+    }
+  }, []);
+
+  // Monitor scroll position on the conversation viewport
+  useEffect(() => {
+    const el = viewportRef.current;
+    if (!el) return;
+
+    const handleScroll = () => {
+      const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+      const isUp = distanceFromBottom > 80;
+      setShowScrollBottom(isUp);
+      userScrolledUpRef.current = isUp;
+    };
+
+    el.addEventListener("scroll", handleScroll, { passive: true });
+    return () => el.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Auto-scroll when sendOnVoiceEnd is ON:
+  // Glides down to the bottom as new tokens arrive without animation stutter
+  useEffect(() => {
+    if (!sendOnVoiceEnd || !streaming) return;
+
+    if (!userScrolledUpRef.current && viewportRef.current) {
+      viewportRef.current.scrollTop = viewportRef.current.scrollHeight;
+    }
+  }, [messages, streaming, sendOnVoiceEnd]);
+
+  useEffect(() => {
+    if (!streaming && sendOnVoiceEnd && !userScrolledUpRef.current && viewportRef.current) {
+      viewportRef.current.scrollTop = viewportRef.current.scrollHeight;
+    }
+  }, [streaming, sendOnVoiceEnd]);
+
   useEffect(
     () => () => {
       requestRef.current?.abort();
@@ -225,6 +291,14 @@ function App() {
     const controller = new AbortController();
     requestRef.current = controller;
 
+    if (sendOnVoiceEnd) {
+      userScrolledUpRef.current = false;
+      setShowScrollBottom(false);
+      setTimeout(() => {
+        scrollToBottom(true);
+      }, 50);
+    }
+
     void (async () => {
       const appendToken = (token: string) => {
         setMessages((current) =>
@@ -256,6 +330,11 @@ function App() {
         await queryClient.invalidateQueries({ queryKey: queryKeys.chats });
       } catch (requestError) {
         if (!controller.signal.aborted) {
+          setMessages((current) =>
+            current.filter(
+              (msg) => msg.id !== assistantMessage.id || msg.content.trim().length > 0,
+            ),
+          );
           setError(
             requestError instanceof Error
               ? requestError.message
@@ -269,6 +348,13 @@ function App() {
         }
       }
     })();
+  }
+
+  function handleDirectSend(text: string) {
+    const trimmed = text.trim();
+    if (!trimmed && attachments.length === 0) return;
+    setDraft("");
+    startChat(trimmed);
   }
 
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -319,6 +405,7 @@ function App() {
       setDraft("");
       setAttachments([]);
       if (window.matchMedia("(max-width: 767px)").matches) setSidebarOpen(false);
+      setTimeout(() => scrollToBottom(false), 60);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Could not load this conversation.");
     }
@@ -529,6 +616,8 @@ function App() {
         chats={chats}
         activeChatId={activeChatId}
         user={user ?? { email: "", name: "" }}
+        sendOnVoiceEnd={sendOnVoiceEnd}
+        onSendOnVoiceEndChange={handleSendOnVoiceEndChange}
         onClose={() => setSidebarOpen(false)}
         onNewChat={newChat}
         onSelectChat={(chatId) => void openChat(chatId)}
@@ -541,15 +630,16 @@ function App() {
         <ChatHeader
           sidebarOpen={sidebarOpen}
           onToggleSidebar={() => setSidebarOpen((open) => !open)}
-          onScrollLatest={() => bottomRef.current?.scrollIntoView({ behavior: "smooth" })}
+          onScrollLatest={() => scrollToBottom(true)}
         />
-        <section className="conversation-viewport" aria-label="Conversation with DAZZ">
+        <section ref={viewportRef} className="conversation-viewport" aria-label="Conversation with DAZZ">
           {messages.length === 0 ? (
             <WelcomeScreen onPrompt={startChat} />
           ) : (
             <MessageList
               messages={messages}
               streaming={streaming}
+              sendOnVoiceEnd={sendOnVoiceEnd}
               copiedId={copiedId}
               bottomRef={bottomRef}
               onCopy={(message) => void copyMessage(message)}
@@ -567,6 +657,11 @@ function App() {
           attachments={attachments}
           recording={recording}
           recordingTranscript={recordingTranscript}
+          sendOnVoiceEnd={sendOnVoiceEnd}
+          showScrollBottom={showScrollBottom}
+          onScrollBottom={() => scrollToBottom(true)}
+          onSendText={handleDirectSend}
+          onDismissError={() => setError("")}
           textareaRef={draftRef}
           onChange={setDraft}
           onFiles={(files) => void addFiles(files)}
