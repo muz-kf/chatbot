@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent, type RefObject } from "react";
-import { ArrowUp, CircleStop, FileText, Mic, MicOff, Paperclip, Sparkles, X } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { AlertTriangle, ArrowUp, CircleStop, FileText, Mic, MicOff, Paperclip, Sparkles, X } from "lucide-react";
 import { Button } from "../ui/button";
 import { Textarea } from "../ui/textarea";
 import type { ChatAttachment } from "../../types/chat";
@@ -13,6 +14,8 @@ type ChatComposerProps = {
   attachments: ChatAttachment[];
   recording?: boolean;
   recordingTranscript?: string;
+  sendOnVoiceEnd?: boolean;
+  onDismissError?: () => void;
   onChange: (value: string) => void;
   onFiles: (files: File[]) => void;
   onRemoveAttachment: (id: string) => void;
@@ -28,6 +31,8 @@ export function ChatComposer({
   streaming,
   textareaRef,
   attachments,
+  sendOnVoiceEnd = false,
+  onDismissError,
   onChange,
   onFiles,
   onRemoveAttachment,
@@ -51,16 +56,29 @@ export function ChatComposer({
     };
   }, []);
 
-  function stopListening() {
+  function triggerAutoSend() {
+    if (streaming) return;
+    const currentText = valueRef.current.trim();
+    if (currentText || attachments.length > 0) {
+      onSubmit({ preventDefault: () => {} } as FormEvent<HTMLFormElement>);
+    }
+  }
+
+  function stopListening(autoSubmit = false) {
     recognitionRef.current?.stop();
     recognitionRef.current = null;
     setListening(false);
     setInterimText("");
+    if (autoSubmit && sendOnVoiceEnd) {
+      requestAnimationFrame(() => {
+        triggerAutoSend();
+      });
+    }
   }
 
   function toggleListening() {
     if (listening) {
-      stopListening();
+      stopListening(true);
       return;
     }
 
@@ -84,11 +102,16 @@ export function ChatComposer({
         },
         (errorMessage) => {
           setVoiceError(errorMessage);
-          stopListening();
+          stopListening(false);
         },
         () => {
           setListening(false);
           setInterimText("");
+          if (sendOnVoiceEnd) {
+            requestAnimationFrame(() => {
+              triggerAutoSend();
+            });
+          }
         },
       );
       recognitionRef.current = recognition;
@@ -105,15 +128,73 @@ export function ChatComposer({
 
   function handleFormSubmit(event: FormEvent<HTMLFormElement>) {
     if (listening) {
-      stopListening();
+      stopListening(false);
     }
     onSubmit(event);
   }
 
   return (
     <div className="composer-area">
-      {error && <div className="chat-error" role="alert">{error}</div>}
-      {voiceError && <div className="chat-error voice-error" role="alert">{voiceError}</div>}
+      <AnimatePresence>
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: 6, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -4, scale: 0.98 }}
+            transition={{ duration: 0.18 }}
+            className="chat-error-card"
+            role="alert"
+          >
+            <div className="chat-error-badge" aria-hidden="true">
+              <AlertTriangle size={15} />
+            </div>
+            <div className="chat-error-body">
+              <div className="chat-error-title-row">
+                <span className="chat-error-title">Server Error</span>
+                {onDismissError && (
+                  <button
+                    type="button"
+                    className="chat-error-close"
+                    onClick={onDismissError}
+                    aria-label="Dismiss error"
+                  >
+                    <X size={13} />
+                  </button>
+                )}
+              </div>
+              <div className="chat-error-desc">{error}</div>
+            </div>
+          </motion.div>
+        )}
+        {voiceError && (
+          <motion.div
+            initial={{ opacity: 0, y: 6, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -4, scale: 0.98 }}
+            transition={{ duration: 0.18 }}
+            className="chat-error-card voice-error-card"
+            role="alert"
+          >
+            <div className="chat-error-badge" aria-hidden="true">
+              <MicOff size={15} />
+            </div>
+            <div className="chat-error-body">
+              <div className="chat-error-title-row">
+                <span className="chat-error-title">Voice Recognition Notice</span>
+                <button
+                  type="button"
+                  className="chat-error-close"
+                  onClick={() => setVoiceError("")}
+                  aria-label="Dismiss voice notice"
+                >
+                  <X size={13} />
+                </button>
+              </div>
+              <div className="chat-error-desc">{voiceError}</div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <form onSubmit={handleFormSubmit} className={`composer-glass ${listening ? "is-listening" : ""}`}>
         {/* Live Voice-to-Text Recognition Preview Banner */}
@@ -127,7 +208,7 @@ export function ChatComposer({
               <button
                 type="button"
                 className="dictation-done-btn"
-                onClick={stopListening}
+                onClick={() => stopListening(true)}
                 aria-label="Stop voice recognition"
               >
                 Done

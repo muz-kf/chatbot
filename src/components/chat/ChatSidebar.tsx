@@ -21,6 +21,8 @@ type ChatSidebarProps = {
   chats: ChatSummary[];
   activeChatId: string | null;
   user: UserProfile;
+  sendOnVoiceEnd: boolean;
+  onSendOnVoiceEndChange: (enabled: boolean) => void;
   onClose: () => void;
   onNewChat: () => void;
   onSelectChat: (chatId: string) => void;
@@ -38,6 +40,8 @@ export function ChatSidebar({
   chats,
   activeChatId,
   user,
+  sendOnVoiceEnd,
+  onSendOnVoiceEndChange,
   onClose,
   onNewChat,
   onSelectChat,
@@ -111,6 +115,25 @@ export function ChatSidebar({
               <span>{chat.title}</span>
             </button>
           ))}
+        </div>
+
+        <div className="sidebar-voice-option">
+          <label className="voice-sender-toggle" htmlFor="voice-auto-send">
+            <input
+              type="checkbox"
+              id="voice-auto-send"
+              checked={sendOnVoiceEnd}
+              onChange={(e) => onSendOnVoiceEndChange(e.target.checked)}
+              className="voice-sender-checkbox"
+            />
+            <span className="voice-sender-info">
+              <span className="voice-sender-label">Send on voice sender</span>
+              <span className="voice-sender-sub">Auto-send transcript on finish</span>
+            </span>
+            <span className={`voice-sender-switch ${sendOnVoiceEnd ? "is-checked" : ""}`} aria-hidden="true">
+              <span className="voice-sender-knob" />
+            </span>
+          </label>
         </div>
 
         <div className="sidebar-settings">

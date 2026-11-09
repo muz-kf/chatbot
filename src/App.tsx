@@ -54,6 +54,15 @@ function App() {
     window.matchMedia("(min-width: 768px)").matches,
   );
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [sendOnVoiceEnd, setSendOnVoiceEnd] = useState<boolean>(() => {
+    const saved = window.localStorage.getItem("chat-send-on-voice-sender");
+    return saved !== null ? saved === "true" : true;
+  });
+
+  const handleSendOnVoiceEndChange = (enabled: boolean) => {
+    setSendOnVoiceEnd(enabled);
+    window.localStorage.setItem("chat-send-on-voice-sender", String(enabled));
+  };
   const [theme, setTheme] = useState<ThemeChoice>(getSavedTheme);
   const [font, setFont] = useState<FontChoice>(() => getSavedFont(theme));
   const sessionQuery = useQuery({
@@ -89,8 +98,14 @@ function App() {
         signal: input.signal,
       });
       if (!response.ok) {
-        const result = (await response.json()) as { error?: string };
-        throw new ApiError(result.error || "DAZZ could not complete this response.", response.status);
+        let errorMessage = "DAZZ could not complete this response.";
+        try {
+          const result = (await response.json()) as { error?: string };
+          if (result?.error) errorMessage = result.error;
+        } catch {
+          errorMessage = `Server error (${response.status} ${response.statusText || "Error"}). Please try again later.`;
+        }
+        throw new ApiError(errorMessage, response.status);
       }
       if (!response.body) throw new Error("The chat response did not include a readable stream.");
 
@@ -256,6 +271,11 @@ function App() {
         await queryClient.invalidateQueries({ queryKey: queryKeys.chats });
       } catch (requestError) {
         if (!controller.signal.aborted) {
+          setMessages((current) =>
+            current.filter(
+              (msg) => msg.id !== assistantMessage.id || msg.content.trim().length > 0,
+            ),
+          );
           setError(
             requestError instanceof Error
               ? requestError.message
@@ -529,6 +549,8 @@ function App() {
         chats={chats}
         activeChatId={activeChatId}
         user={user ?? { email: "", name: "" }}
+        sendOnVoiceEnd={sendOnVoiceEnd}
+        onSendOnVoiceEndChange={handleSendOnVoiceEndChange}
         onClose={() => setSidebarOpen(false)}
         onNewChat={newChat}
         onSelectChat={(chatId) => void openChat(chatId)}
@@ -567,6 +589,8 @@ function App() {
           attachments={attachments}
           recording={recording}
           recordingTranscript={recordingTranscript}
+          sendOnVoiceEnd={sendOnVoiceEnd}
+          onDismissError={() => setError("")}
           textareaRef={draftRef}
           onChange={setDraft}
           onFiles={(files) => void addFiles(files)}
