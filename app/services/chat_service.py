@@ -245,119 +245,152 @@ class ChatService:
                 if await request.is_disconnected():
                     return
 
-                # If the model supports native tools, attempt tool resolution
-                if supports_native_tools and tools:
-                    try:
-                        completion = await client.chat.completions.create(
-                            model=resolved_model,
-                            messages=messages,
-                            tools=tools,
-                            tool_choice="auto",
-                            stream=False,
-                        )
-                    except Exception as exc:
-                        exc_str = str(exc).lower()
-                        provider_name = "Groq" if active_provider == "groq" else "OpenRouter"
-                        key_name = "GROQ_API_KEY" if active_provider == "groq" else "OPENROUTER_API_KEY"
-                        if "429" in exc_str or "rate limit" in exc_str:
-                            logger.warning("%s rate limit 429 encountered: %s", provider_name, exc)
-                            yield json.dumps({
-                                "error": f"{provider_name} rate limit reached. Please wait a few seconds and try again."
-                            }) + "\n"
-                            return
-                        if "401" in exc_str or "auth" in exc_str or "invalid token" in exc_str:
-                            logger.error("%s auth error: %s", provider_name, exc)
-                            yield json.dumps({
-                                "error": f"{provider_name} authentication failed. Please verify your {key_name}."
-                            }) + "\n"
-                            return
-                        # If model fails on tools parameter (400 or unsupported), fall back to non-tool call
-                        if "tool" in exc_str or "unsupported" in exc_str or "400" in exc_str:
-                            logger.warning("Model '%s' does not support native tools (%s). Switching to fallback.", resolved_model, exc)
-                            supports_native_tools = False
-                            continue
-                        raise
+                tool_calls_acc: dict[int, dict[str, str]] = {}
+                text_acc = ""
 
-                    choice = completion.choices[0]
-                    msg = choice.message
-                    tool_calls = getattr(msg, "tool_calls", None)
-
-                    if tool_calls:
-                        # Append assistant message with tool calls to conversation history
-                        tool_call_dicts = [
-                            {
-                                "id": tc.id,
-                                "type": "function",
-                                "function": {
-                                    "name": tc.function.name,
-                                    "arguments": tc.function.arguments,
-                                },
-                            }
-                            for tc in tool_calls
-                        ]
-                        messages.append({
-                            "role": "assistant",
-                            "content": msg.content or "",
-                            "tool_calls": tool_call_dicts,
-                        })
-
-                        # Execute all requested tools
-                        for tc in tool_calls:
-                            func_name = tc.function.name
-                            func_args = tc.function.arguments
-                            logger.info("Executing tool '%s' with args: %s", func_name, func_args)
-                            tool_output = await tool_registry.execute_tool(func_name, func_args)
-                            messages.append({
-                                "role": "tool",
-                                "tool_call_id": tc.id,
-                                "content": json.dumps(tool_output),
-                            })
-                        # Continue next loop turn to let model synthesize tool outputs
-                        continue
-
-                    # If no native tool calls, check for text-formatted tool calls
-                    text_content = msg.content or ""
-                    parsed = parse_text_tool_call(text_content)
-                    if parsed:
-                        tool_name, tool_args = parsed
-                        logger.info("Executing text-parsed tool '%s' with args: %s", tool_name, tool_args)
-                        tool_output = await tool_registry.execute_tool(tool_name, tool_args)
-                        messages.append({"role": "assistant", "content": text_content})
-                        messages.append({
-                            "role": "user",
-                            "content": (
-                                f"[Tool Result for '{tool_name}']:\n{json.dumps(tool_output)}\n\n"
-                                "Please answer my original question using this information."
-                            ),
-                        })
-                        continue
-
-                    # Model provided final natural language response without further tool calls
-                    assistant_content = text_content
-                    # Stream tokens in small chunks to frontend
-                    chunk_size = 12
-                    for i in range(0, len(assistant_content), chunk_size):
-                        if await request.is_disconnected():
-                            return
-                        token = assistant_content[i : i + chunk_size]
-                        yield json.dumps({"token": token}) + "\n"
-                    break
-
-                else:
-                    # Native tools disabled or fallback path: stream completion directly
+                try:
                     stream = await client.chat.completions.create(
                         model=resolved_model,
                         messages=messages,
+                        tools=tools if (supports_native_tools and tools) else None,
+                        tool_choice="auto" if (supports_native_tools and tools) else None,
                         stream=True,
                     )
+                except Exception as exc:
+                    exc_str = str(exc).lower()
+                    provider_name = "Groq" if active_provider == "groq" else "OpenRouter"
+                    key_name = "GROQ_API_KEY" if active_provider == "groq" else "OPENROUTER_API_KEY"
+                    if "429" in exc_str or "rate limit" in exc_str:
+                        logger.warning("%s rate limit 429 encountered: %s", provider_name, exc)
+                        yield json.dumps({
+                            "error": f"{provider_name} rate limit reached. Please wait a few seconds and try again."
+                        }) + "\n"
+                        return
+                    if "401" in exc_str or "auth" in exc_str or "invalid token" in exc_str:
+                        logger.error("%s auth error: %s", provider_name, exc)
+                        yield json.dumps({
+                            "error": f"{provider_name} authentication failed. Please verify your {key_name}."
+                        }) + "\n"
+                        return
+                    # If model fails on tools parameter (400 or unsupported), fall back to non-tool call
+                    if "tool" in exc_str or "unsupported" in exc_str or "400" in exc_str:
+                        logger.warning("Model '%s' does not support native tools (%s). Switching to fallback.", resolved_model, exc)
+                        supports_native_tools = False
+                        continue
+                    raise
+
+                if hasattr(stream, "choices") and stream.choices:
+                    # Non-streaming response (e.g. unit test mock)
+                    choice = stream.choices[0]
+                    msg = choice.message
+                    if getattr(msg, "tool_calls", None):
+                        for idx, tc in enumerate(msg.tool_calls):
+                            tool_calls_acc[idx] = {
+                                "id": tc.id or "",
+                                "name": tc.function.name or "",
+                                "arguments": tc.function.arguments or "",
+                            }
+                    if getattr(msg, "content", None):
+                        text_acc = msg.content
+                        if not tool_calls_acc:
+                            assistant_content = text_acc
+                            yield json.dumps({"token": text_acc}) + "\n"
+                else:
+                    # Streaming chunks from AsyncStream
                     async for chunk in stream:
                         if await request.is_disconnected():
                             return
-                        token = chunk.choices[0].delta.content
-                        if isinstance(token, str) and token:
-                            assistant_content += token
-                            yield json.dumps({"token": token}) + "\n"
-                    break
+                        if not chunk.choices:
+                            continue
+                        delta = chunk.choices[0].delta
+                        if not delta:
+                            continue
+
+                        # Handle native tool calls in stream chunks
+                        if getattr(delta, "tool_calls", None):
+                            for tc in delta.tool_calls:
+                                idx = getattr(tc, "index", 0)
+                                fn = getattr(tc, "function", None)
+                                fn_name = getattr(fn, "name", "") or ""
+                                fn_args = getattr(fn, "arguments", "") or ""
+                                tc_id = getattr(tc, "id", "") or ""
+                                if idx not in tool_calls_acc:
+                                    tool_calls_acc[idx] = {
+                                        "id": tc_id,
+                                        "name": fn_name,
+                                        "arguments": fn_args,
+                                    }
+                                else:
+                                    if tc_id:
+                                        tool_calls_acc[idx]["id"] += tc_id
+                                    if fn_name:
+                                        tool_calls_acc[idx]["name"] += fn_name
+                                    if fn_args:
+                                        tool_calls_acc[idx]["arguments"] += fn_args
+
+                        # Handle text content in stream chunks
+                        content = getattr(delta, "content", None)
+                        if content:
+                            text_acc += content
+                            # Stream live token to UI if no tool calls detected
+                            if not tool_calls_acc:
+                                assistant_content += content
+                                yield json.dumps({"token": content}) + "\n"
+
+                # If native tool calls were received, execute them and continue to next turn
+                if tool_calls_acc:
+                    tool_call_dicts = [
+                        {
+                            "id": tc["id"] or str(uuid4()),
+                            "type": "function",
+                            "function": {
+                                "name": tc["name"],
+                                "arguments": tc["arguments"],
+                            },
+                        }
+                        for tc in tool_calls_acc.values()
+                    ]
+                    messages.append({
+                        "role": "assistant",
+                        "content": text_acc or "",
+                        "tool_calls": tool_call_dicts,
+                    })
+
+                    # Execute all tools
+                    for tc in tool_calls_acc.values():
+                        func_name = tc["name"]
+                        func_args = tc["arguments"]
+                        logger.info("Executing tool '%s' with args: %s", func_name, func_args)
+                        tool_output = await tool_registry.execute_tool(func_name, func_args)
+                        messages.append({
+                            "role": "tool",
+                            "tool_call_id": tc["id"],
+                            "content": json.dumps(tool_output),
+                        })
+
+                    # Reset assistant_content in case any partial text was buffered before tool call
+                    assistant_content = ""
+                    continue
+
+                # Check if model produced a text-formatted tool call (fallback format)
+                parsed = parse_text_tool_call(text_acc)
+                if parsed:
+                    tool_name, tool_args = parsed
+                    logger.info("Executing text-parsed tool '%s' with args: %s", tool_name, tool_args)
+                    tool_output = await tool_registry.execute_tool(tool_name, tool_args)
+                    messages.append({"role": "assistant", "content": text_acc})
+                    messages.append({
+                        "role": "user",
+                        "content": (
+                            f"[Tool Result for '{tool_name}']:\n{json.dumps(tool_output)}\n\n"
+                            "Please answer my original question using this information."
+                        ),
+                    })
+                    assistant_content = ""
+                    continue
+
+                # Generation is complete and already streamed to the frontend
+                break
 
             # Save the final assistant response to the database
             if SessionLocal is None:

@@ -345,6 +345,7 @@ def test_chat_service_groq_provider_resolution(monkeypatch) -> None:
 
     monkeypatch.setattr(config, "GROQ_API_KEY", "gsk_test_key_123")
     monkeypatch.setattr(config, "AI_PROVIDER", "auto")
+    monkeypatch.setattr(config, "GROQ_MODEL", "llama-3.3-70b-versatile")
 
     service = ChatService()
     provider, base_url, api_key, model = service.get_provider_config()
