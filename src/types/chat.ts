@@ -3,6 +3,7 @@ export type Message = {
   role: "user" | "assistant";
   content: string;
   attachments?: ChatAttachment[];
+  isError?: boolean;
 };
 
 export type ChatAttachment = {

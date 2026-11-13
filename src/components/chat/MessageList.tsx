@@ -251,7 +251,21 @@ export function MessageList({
                     )}
 
                     <div className="markdown-content">
-                      {message.content ? (
+                      {message.isError ? (
+                        <div className="fancy-error-card in-chat-error" role="alert">
+                          <div className="fancy-error-header">
+                            <AlertTriangle size={18} className="fancy-error-icon" />
+                            <h4 className="fancy-error-title">DAZZ is temporarily unavailable</h4>
+                          </div>
+                          <p className="fancy-error-description">
+                            {message.content || "I couldn't complete this response right now due to a service interruption or provider limit. Please wait a moment and try asking again."}
+                          </p>
+                          <div className="fancy-error-badge-row">
+                            <span className="fancy-error-chip">AI Service Interruption</span>
+                            <span className="fancy-error-hint">Please wait a moment and try asking again</span>
+                          </div>
+                        </div>
+                      ) : message.content ? (
                         renderMessageParts(message.content).map((part, pIdx) => {
                           if (part.type === "iframe") {
                             const osmLink = part.content.replace("/export/embed.html", "");
@@ -341,21 +355,25 @@ export function MessageList({
                           </div>
                         </div>
                       ) : (
-                        <div className="fancy-error-card" role="alert">
+                        <div className="fancy-error-card in-chat-error" role="alert">
                           <div className="fancy-error-header">
                             <AlertTriangle size={18} className="fancy-error-icon" />
-                            <h4 className="fancy-error-title">No data received from AI</h4>
+                            <h4 className="fancy-error-title">DAZZ is temporarily unavailable</h4>
                           </div>
                           <p className="fancy-error-description">
                             DAZZ did not generate a response. The AI provider may be temporarily busy, experiencing rate limits, or encountered a network timeout.
                           </p>
+                          <div className="fancy-error-badge-row">
+                            <span className="fancy-error-chip">AI Service Interruption</span>
+                            <span className="fancy-error-hint">Please wait a moment and try asking again</span>
+                          </div>
                         </div>
                       )}
                       {isStreamingAssistant && Boolean(message.content) && <span className="stream-cursor" />}
                     </div>
 
                     {/* Action row underneath assistant message (Screenshot alignment) */}
-                    {message.content && !streaming && (
+                    {message.content && !streaming && !message.isError && (
                       <div className="assistant-action-row" aria-label="Response options">
                         <button
                           type="button"

@@ -3708,34 +3708,6 @@ button {
   background: rgba(0,0,0,.15);
 }
 
-:root[data-theme="green"] .conversation-item:hover,
-:root[data-theme="green"] .conversation-item:focus-visible,
-:root[data-theme="green"] .conversation-item.is-active {
-  border-color: rgba(100, 229, 164, .14);
-  color: #e2ffeb;
-  background: rgba(24, 154, 87, .12);
-}
-
-:root[data-theme="gold"] .conversation-item:hover,
-:root[data-theme="gold"] .conversation-item:focus-visible,
-:root[data-theme="gold"] .conversation-item.is-active {
-  border-color: rgba(213, 177, 86, .15);
-  color: #f1e3ba;
-  background: rgba(159, 120, 37, .12);
-}
-
-:root[data-theme="white"] .conversation-item {
-  color: #68738d;
-}
-
-:root[data-theme="white"] .conversation-item:hover,
-:root[data-theme="white"] .conversation-item:focus-visible,
-:root[data-theme="white"] .conversation-item.is-active {
-  border-color: rgba(82, 101, 157, .14);
-  color: #38476c;
-  background: rgba(93, 112, 169, .1);
-}
-
 :root[data-theme="white"] .auth-overlay {
   background: rgba(227, 232, 244, .74);
 }
@@ -7151,4 +7123,404 @@ button {
 :root[data-theme="white"] .chat-map-link {
   color: #4f46e5;
 }
+
+/* ==========================================================================
+   FANCY IN-CHAT ERROR RESPONSE & BADGES
+   ========================================================================== */
+
+.fancy-error-card.in-chat-error {
+  max-width: 540px;
+  margin: 10px 0;
+  padding: 16px 20px;
+  border-radius: 14px;
+}
+
+.fancy-error-badge-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 6px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(244, 63, 94, 0.18);
+}
+
+.fancy-error-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  background: rgba(244, 63, 94, 0.18);
+  border: 1px solid rgba(244, 63, 94, 0.35);
+  color: #fecdd3;
+}
+
+.fancy-error-hint {
+  font-size: 11.5px;
+  color: #fda4af;
+  opacity: 0.9;
+}
+
+/* Light Mode Overrides for In-Chat Error Card */
+:is(:root[data-theme="white"], :root[data-theme="skyblue"], :root[data-theme="miracle"]) .fancy-error-card {
+  background: #fff1f2 !important;
+  border-color: rgba(225, 29, 72, 0.35) !important;
+  box-shadow: 0 4px 18px rgba(225, 29, 72, 0.12) !important;
+}
+
+:is(:root[data-theme="white"], :root[data-theme="skyblue"], :root[data-theme="miracle"]) .fancy-error-title {
+  color: #9f1239 !important;
+}
+
+:is(:root[data-theme="white"], :root[data-theme="skyblue"], :root[data-theme="miracle"]) .fancy-error-description {
+  color: #be123c !important;
+}
+
+:is(:root[data-theme="white"], :root[data-theme="skyblue"], :root[data-theme="miracle"]) .fancy-error-badge-row {
+  border-top-color: rgba(225, 29, 72, 0.15) !important;
+}
+
+:is(:root[data-theme="white"], :root[data-theme="skyblue"], :root[data-theme="miracle"]) .fancy-error-chip {
+  background: rgba(225, 29, 72, 0.12) !important;
+  border-color: rgba(225, 29, 72, 0.28) !important;
+  color: #9f1239 !important;
+}
+
+:is(:root[data-theme="white"], :root[data-theme="skyblue"], :root[data-theme="miracle"]) .fancy-error-hint {
+  color: #881337 !important;
+}
+
+
+/* ==========================================================================
+   SIDEBAR CHAT LIST: PERFECT MATCHING COLORS FOR ALL 12 THEMES
+   (Eliminates greyed out or unmatching text & icons across the app)
+   ========================================================================== */
+
+/* 1. Neon Purple */
+:root[data-theme="purple"] .sidebar-section-label { color: #c084fc !important; }
+:root[data-theme="purple"] .conversation-item {
+  color: #e2d9fc !important;
+  font-weight: 500;
+}
+:root[data-theme="purple"] .conversation-item-icon {
+  color: #c084fc !important;
+  opacity: 0.85;
+}
+:root[data-theme="purple"] .conversation-item:hover,
+:root[data-theme="purple"] .conversation-item:focus-visible {
+  color: #ffffff !important;
+  background: rgba(168, 85, 247, 0.18) !important;
+  border-color: rgba(168, 85, 247, 0.35) !important;
+}
+:root[data-theme="purple"] .conversation-item.is-active {
+  color: #ffffff !important;
+  background: rgba(168, 85, 247, 0.28) !important;
+  border-color: rgba(168, 85, 247, 0.55) !important;
+  font-weight: 600;
+}
+:root[data-theme="purple"] .conversation-item.is-active .conversation-item-icon {
+  color: #e9d5ff !important;
+  opacity: 1;
+}
+
+/* 2. Neon Green */
+:root[data-theme="green"] .sidebar-section-label { color: #34d399 !important; }
+:root[data-theme="green"] .conversation-item {
+  color: #bbf7d0 !important;
+  font-weight: 500;
+}
+:root[data-theme="green"] .conversation-item-icon {
+  color: #34d399 !important;
+  opacity: 0.85;
+}
+:root[data-theme="green"] .conversation-item:hover,
+:root[data-theme="green"] .conversation-item:focus-visible {
+  color: #ffffff !important;
+  background: rgba(16, 185, 129, 0.18) !important;
+  border-color: rgba(16, 185, 129, 0.35) !important;
+}
+:root[data-theme="green"] .conversation-item.is-active {
+  color: #ffffff !important;
+  background: rgba(16, 185, 129, 0.28) !important;
+  border-color: rgba(16, 185, 129, 0.55) !important;
+  font-weight: 600;
+}
+:root[data-theme="green"] .conversation-item.is-active .conversation-item-icon {
+  color: #6ee7b7 !important;
+  opacity: 1;
+}
+
+/* 3. Cloud White (Light Mode) */
+:root[data-theme="white"] .sidebar-section-label { color: #4f46e5 !important; }
+:root[data-theme="white"] .conversation-item {
+  color: #1e293b !important;
+  font-weight: 500;
+}
+:root[data-theme="white"] .conversation-item-icon {
+  color: #4f46e5 !important;
+  opacity: 0.9;
+}
+:root[data-theme="white"] .conversation-item:hover,
+:root[data-theme="white"] .conversation-item:focus-visible {
+  color: #0f172a !important;
+  background: rgba(79, 70, 229, 0.1) !important;
+  border-color: rgba(79, 70, 229, 0.25) !important;
+}
+:root[data-theme="white"] .conversation-item.is-active {
+  color: #0f172a !important;
+  background: rgba(79, 70, 229, 0.18) !important;
+  border-color: rgba(79, 70, 229, 0.45) !important;
+  font-weight: 600;
+}
+:root[data-theme="white"] .conversation-item.is-active .conversation-item-icon {
+  color: #4338ca !important;
+  opacity: 1;
+}
+
+/* 4. Midnight Gold */
+:root[data-theme="gold"] .sidebar-section-label { color: #fbbf24 !important; }
+:root[data-theme="gold"] .conversation-item {
+  color: #fde68a !important;
+  font-weight: 500;
+}
+:root[data-theme="gold"] .conversation-item-icon {
+  color: #fbbf24 !important;
+  opacity: 0.85;
+}
+:root[data-theme="gold"] .conversation-item:hover,
+:root[data-theme="gold"] .conversation-item:focus-visible {
+  color: #fffbeb !important;
+  background: rgba(245, 158, 11, 0.18) !important;
+  border-color: rgba(245, 158, 11, 0.35) !important;
+}
+:root[data-theme="gold"] .conversation-item.is-active {
+  color: #ffffff !important;
+  background: rgba(245, 158, 11, 0.28) !important;
+  border-color: rgba(245, 158, 11, 0.55) !important;
+  font-weight: 600;
+}
+:root[data-theme="gold"] .conversation-item.is-active .conversation-item-icon {
+  color: #fef08a !important;
+  opacity: 1;
+}
+
+/* 5. D.A.Z.Z & Jarvis (Electric Cyan) */
+:is([data-theme="dazz"], [data-theme="jarvis"]) .sidebar-section-label { color: #38bdf8 !important; }
+:is([data-theme="dazz"], [data-theme="jarvis"]) .conversation-item {
+  color: #bae6fd !important;
+  font-weight: 500;
+}
+:is([data-theme="dazz"], [data-theme="jarvis"]) .conversation-item-icon {
+  color: #00f0ff !important;
+  opacity: 0.85;
+}
+:is([data-theme="dazz"], [data-theme="jarvis"]) .conversation-item:hover,
+:is([data-theme="dazz"], [data-theme="jarvis"]) .conversation-item:focus-visible {
+  color: #ffffff !important;
+  background: rgba(0, 240, 255, 0.16) !important;
+  border-color: rgba(0, 240, 255, 0.35) !important;
+}
+:is([data-theme="dazz"], [data-theme="jarvis"]) .conversation-item.is-active {
+  color: #ffffff !important;
+  background: rgba(0, 240, 255, 0.28) !important;
+  border-color: rgba(0, 240, 255, 0.6) !important;
+  font-weight: 600;
+}
+:is([data-theme="dazz"], [data-theme="jarvis"]) .conversation-item.is-active .conversation-item-icon {
+  color: #e0f2fe !important;
+  opacity: 1;
+}
+
+/* 6. Crimson Red */
+:root[data-theme="red"] .sidebar-section-label { color: #f87171 !important; }
+:root[data-theme="red"] .conversation-item {
+  color: #fecaca !important;
+  font-weight: 500;
+}
+:root[data-theme="red"] .conversation-item-icon {
+  color: #f87171 !important;
+  opacity: 0.85;
+}
+:root[data-theme="red"] .conversation-item:hover,
+:root[data-theme="red"] .conversation-item:focus-visible {
+  color: #ffffff !important;
+  background: rgba(239, 68, 68, 0.22) !important;
+  border-color: rgba(239, 68, 68, 0.4) !important;
+}
+:root[data-theme="red"] .conversation-item.is-active {
+  color: #ffffff !important;
+  background: rgba(239, 68, 68, 0.34) !important;
+  border-color: rgba(239, 68, 68, 0.65) !important;
+  font-weight: 600;
+}
+:root[data-theme="red"] .conversation-item.is-active .conversation-item-icon {
+  color: #fee2e2 !important;
+  opacity: 1;
+}
+
+/* 7. Solar Orange */
+:root[data-theme="orange"] .sidebar-section-label { color: #fb923c !important; }
+:root[data-theme="orange"] .conversation-item {
+  color: #fed7aa !important;
+  font-weight: 500;
+}
+:root[data-theme="orange"] .conversation-item-icon {
+  color: #fb923c !important;
+  opacity: 0.85;
+}
+:root[data-theme="orange"] .conversation-item:hover,
+:root[data-theme="orange"] .conversation-item:focus-visible {
+  color: #ffffff !important;
+  background: rgba(249, 115, 22, 0.22) !important;
+  border-color: rgba(249, 115, 22, 0.4) !important;
+}
+:root[data-theme="orange"] .conversation-item.is-active {
+  color: #ffffff !important;
+  background: rgba(249, 115, 22, 0.34) !important;
+  border-color: rgba(249, 115, 22, 0.65) !important;
+  font-weight: 600;
+}
+:root[data-theme="orange"] .conversation-item.is-active .conversation-item-icon {
+  color: #ffedd5 !important;
+  opacity: 1;
+}
+
+/* 8. Velvet Maroon */
+:root[data-theme="maroon"] .sidebar-section-label { color: #fb7185 !important; }
+:root[data-theme="maroon"] .conversation-item {
+  color: #fecdd3 !important;
+  font-weight: 500;
+}
+:root[data-theme="maroon"] .conversation-item-icon {
+  color: #fb7185 !important;
+  opacity: 0.85;
+}
+:root[data-theme="maroon"] .conversation-item:hover,
+:root[data-theme="maroon"] .conversation-item:focus-visible {
+  color: #ffffff !important;
+  background: rgba(225, 29, 72, 0.22) !important;
+  border-color: rgba(225, 29, 72, 0.4) !important;
+}
+:root[data-theme="maroon"] .conversation-item.is-active {
+  color: #ffffff !important;
+  background: rgba(225, 29, 72, 0.34) !important;
+  border-color: rgba(225, 29, 72, 0.65) !important;
+  font-weight: 600;
+}
+:root[data-theme="maroon"] .conversation-item.is-active .conversation-item-icon {
+  color: #ffe4e6 !important;
+  opacity: 1;
+}
+
+/* 9. Sky Blue (Light Mode) */
+:root[data-theme="skyblue"] .sidebar-section-label { color: #0284c7 !important; }
+:root[data-theme="skyblue"] .conversation-item {
+  color: #072b4a !important;
+  font-weight: 500;
+}
+:root[data-theme="skyblue"] .conversation-item-icon {
+  color: #0284c7 !important;
+  opacity: 0.9;
+}
+:root[data-theme="skyblue"] .conversation-item:hover,
+:root[data-theme="skyblue"] .conversation-item:focus-visible {
+  color: #021a2f !important;
+  background: rgba(2, 132, 199, 0.12) !important;
+  border-color: rgba(2, 132, 199, 0.28) !important;
+}
+:root[data-theme="skyblue"] .conversation-item.is-active {
+  color: #011627 !important;
+  background: rgba(2, 132, 199, 0.22) !important;
+  border-color: rgba(2, 132, 199, 0.5) !important;
+  font-weight: 600;
+}
+:root[data-theme="skyblue"] .conversation-item.is-active .conversation-item-icon {
+  color: #0369a1 !important;
+  opacity: 1;
+}
+
+/* 10. Neon Pink */
+:root[data-theme="pink"] .sidebar-section-label { color: #f472b6 !important; }
+:root[data-theme="pink"] .conversation-item {
+  color: #fbcfe8 !important;
+  font-weight: 500;
+}
+:root[data-theme="pink"] .conversation-item-icon {
+  color: #f472b6 !important;
+  opacity: 0.85;
+}
+:root[data-theme="pink"] .conversation-item:hover,
+:root[data-theme="pink"] .conversation-item:focus-visible {
+  color: #ffffff !important;
+  background: rgba(236, 72, 153, 0.22) !important;
+  border-color: rgba(236, 72, 153, 0.4) !important;
+}
+:root[data-theme="pink"] .conversation-item.is-active {
+  color: #ffffff !important;
+  background: rgba(236, 72, 153, 0.34) !important;
+  border-color: rgba(236, 72, 153, 0.65) !important;
+  font-weight: 600;
+}
+:root[data-theme="pink"] .conversation-item.is-active .conversation-item-icon {
+  color: #fce7f3 !important;
+  opacity: 1;
+}
+
+/* 11. Zyricon Night */
+:root[data-theme="zyricon"] .sidebar-section-label { color: #c084fc !important; }
+:root[data-theme="zyricon"] .conversation-item {
+  color: #e9d5ff !important;
+  font-weight: 500;
+}
+:root[data-theme="zyricon"] .conversation-item-icon {
+  color: #c084fc !important;
+  opacity: 0.85;
+}
+:root[data-theme="zyricon"] .conversation-item:hover,
+:root[data-theme="zyricon"] .conversation-item:focus-visible {
+  color: #ffffff !important;
+  background: rgba(168, 85, 247, 0.2) !important;
+  border-color: rgba(168, 85, 247, 0.4) !important;
+}
+:root[data-theme="zyricon"] .conversation-item.is-active {
+  color: #ffffff !important;
+  background: rgba(168, 85, 247, 0.32) !important;
+  border-color: rgba(168, 85, 247, 0.65) !important;
+  font-weight: 600;
+}
+:root[data-theme="zyricon"] .conversation-item.is-active .conversation-item-icon {
+  color: #f3e8ff !important;
+  opacity: 1;
+}
+
+/* 12. Miracle Lilac (Light Mode) */
+:root[data-theme="miracle"] .sidebar-section-label { color: #7c3aed !important; }
+:root[data-theme="miracle"] .conversation-item {
+  color: #2e1065 !important;
+  font-weight: 500;
+}
+:root[data-theme="miracle"] .conversation-item-icon {
+  color: #7c3aed !important;
+  opacity: 0.9;
+}
+:root[data-theme="miracle"] .conversation-item:hover,
+:root[data-theme="miracle"] .conversation-item:focus-visible {
+  color: #1e0845 !important;
+  background: rgba(124, 58, 237, 0.12) !important;
+  border-color: rgba(124, 58, 237, 0.28) !important;
+}
+:root[data-theme="miracle"] .conversation-item.is-active {
+  color: #100329 !important;
+  background: rgba(124, 58, 237, 0.2) !important;
+  border-color: rgba(124, 58, 237, 0.5) !important;
+  font-weight: 600;
+}
+:root[data-theme="miracle"] .conversation-item.is-active .conversation-item-icon {
+  color: #6d28d9 !important;
+  opacity: 1;
+}
+
 

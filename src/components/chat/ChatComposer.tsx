@@ -264,7 +264,7 @@ export function ChatComposer({
             </div>
             <div className="chat-error-body">
               <div className="chat-error-title-row">
-                <span className="chat-error-title">Server Error</span>
+                <span className="chat-error-title">DAZZ Service Notice</span>
                 {onDismissError && (
                   <button
                     type="button"

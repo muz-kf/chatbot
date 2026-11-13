@@ -355,16 +355,27 @@ function App() {
         await queryClient.invalidateQueries({ queryKey: queryKeys.chats });
       } catch (requestError) {
         if (!controller.signal.aborted) {
-          setMessages((current) =>
-            current.filter(
-              (msg) => msg.id !== assistantMessage.id || msg.content.trim().length > 0,
-            ),
-          );
-          setError(
+          const rawError =
             requestError instanceof Error
               ? requestError.message
-              : "DAZZ could not complete this response. Please try again.",
+              : "DAZZ could not complete this response. Please try again.";
+
+          setMessages((current) =>
+            current.map((msg) => {
+              if (msg.id === assistantMessage.id) {
+                return {
+                  ...msg,
+                  isError: true,
+                  content:
+                    msg.content.trim().length > 0
+                      ? `${msg.content}\n\n⚠️ *Response interrupted: ${rawError}*`
+                      : rawError,
+                };
+              }
+              return msg;
+            }),
           );
+          setError(rawError);
         }
       } finally {
         if (requestRef.current === controller) {
