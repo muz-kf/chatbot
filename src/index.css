@@ -7523,4 +7523,49 @@ button {
   opacity: 1;
 }
 
+/* Voice Dictation Enhancements for Gold & Purple */
+:root[data-theme="gold"] .voice-dictation-banner {
+  background: rgba(166, 126, 42, 0.15) !important;
+  border-color: rgba(245, 158, 11, 0.35) !important;
+}
+:root[data-theme="gold"] .dictation-dot {
+  background: #fbbf24 !important;
+  box-shadow: 0 0 10px #fbbf24 !important;
+}
+:root[data-theme="gold"] .dictation-label {
+  color: #fbbf24 !important;
+}
+:root[data-theme="gold"] .dictation-active {
+  color: #fde68a !important;
+}
+:root[data-theme="gold"] .dictation-done-btn {
+  background: rgba(245, 158, 11, 0.2) !important;
+  border-color: rgba(245, 158, 11, 0.4) !important;
+  color: #fde68a !important;
+}
+
+:root[data-theme="purple"] .voice-dictation-banner {
+  background: rgba(168, 85, 247, 0.15) !important;
+  border-color: rgba(168, 85, 247, 0.35) !important;
+}
+:root[data-theme="purple"] .dictation-dot {
+  background: #c084fc !important;
+  box-shadow: 0 0 10px #c084fc !important;
+}
+:root[data-theme="purple"] .dictation-label {
+  color: #c084fc !important;
+}
+:root[data-theme="purple"] .dictation-active {
+  color: #e9d5ff !important;
+}
+:root[data-theme="purple"] .dictation-done-btn {
+  background: rgba(168, 85, 247, 0.2) !important;
+  border-color: rgba(168, 85, 247, 0.4) !important;
+  color: #f3e8ff !important;
+}
+
+:is(:root[data-theme="white"], :root[data-theme="skyblue"], :root[data-theme="miracle"]) .voice-interim {
+  color: #475569 !important;
+}
+
 

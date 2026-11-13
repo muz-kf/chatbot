@@ -96,13 +96,24 @@ async def create_turn(
 ):
     if str(data.chatId) != chat_id:
         raise HTTPException(status_code=400, detail="Invalid chat message.")
-    if not OPENROUTER_API_KEY:
-        raise HTTPException(
-            status_code=500,
-            detail="OPENROUTER_API_KEY is missing from the server environment.",
-        )
 
     user_message = data.message
+    uses_attachments = any(
+        attachment.data or attachment.frames
+        for attachment in user_message.attachments
+    )
+    provider, base_url, api_key, model = chat_service.get_provider_config(
+        requested_provider=data.provider,
+        requested_model=data.model,
+        uses_attachments=uses_attachments,
+    )
+    if not api_key:
+        key_name = "GROQ_API_KEY" if provider == "groq" else "OPENROUTER_API_KEY"
+        raise HTTPException(
+            status_code=500,
+            detail=f"{key_name} is missing from the server environment.",
+        )
+
     chat = (
         db.query(PublicChat)
         .filter(PublicChat.id == chat_id, PublicChat.email == email)
@@ -123,8 +134,6 @@ async def create_turn(
         for message in current_messages
         for attachment in message.attachments
     )
-    model = OPENROUTER_MULTIMODAL_MODEL if uses_attachments else OPENROUTER_MODEL
-
     return StreamingResponse(
         chat_service.stream_chat_turn(
             request=request,
@@ -134,6 +143,7 @@ async def create_turn(
             model=model,
             client_timezone=data.clientTimezone,
             client_location=data.clientLocation,
+            provider=provider,
         ),
         media_type="application/x-ndjson",
         headers={

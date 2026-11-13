@@ -27,6 +27,30 @@ import { getRandomId } from "./lib/utils";
 
 type AuthState = "loading" | "authenticated" | "unauthenticated";
 
+function normalizeChatMessages(rawMessages: Message[]): Message[] {
+  if (!rawMessages || rawMessages.length === 0) return [];
+  const normalized = [...rawMessages];
+  const lastIndex = normalized.length - 1;
+  const lastMsg = normalized[lastIndex];
+
+  if (lastMsg.role === "user") {
+    normalized.push({
+      id: `interrupted-${lastMsg.id || Date.now()}`,
+      role: "assistant",
+      content: "⚠️ This chat got interrupted due to service disruption. Please try asking again.",
+      isError: true,
+    });
+  } else if (lastMsg.role === "assistant" && !lastMsg.content.trim()) {
+    normalized[lastIndex] = {
+      ...lastMsg,
+      content: "⚠️ This chat got interrupted due to service disruption. Please try asking again.",
+      isError: true,
+    };
+  }
+
+  return normalized;
+}
+
 function getSavedTheme(): ThemeChoice {
   const savedTheme = window.localStorage.getItem("chat-theme");
   if (savedTheme === "jarvis") return "dazz";
@@ -468,7 +492,7 @@ function App() {
           apiRequest<{ chat: { id: string; chats: Message[] } }>(`/api/chats/${chatId}`),
       });
       setActiveChatId(result.chat.id);
-      setMessages(result.chat.chats);
+      setMessages(normalizeChatMessages(result.chat.chats));
       setDraft("");
       setAttachments([]);
       const newUrl = `${window.location.pathname}?chatId=${encodeURIComponent(result.chat.id)}`;

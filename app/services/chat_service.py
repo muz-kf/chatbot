@@ -7,12 +7,7 @@ from uuid import uuid4
 from fastapi import Request
 from openai import AsyncOpenAI
 
-from ..core.config import (
-    DEFAULT_TIMEZONE,
-    OPENROUTER_API_KEY,
-    OPENROUTER_MODEL,
-    OPENROUTER_MULTIMODAL_MODEL,
-)
+from ..core import config
 from ..core.time_utils import get_system_datetime_context
 from ..db.models import PublicChat
 from ..db.session import SessionLocal
@@ -117,8 +112,40 @@ class ChatService:
     """Service to orchestrate chat turns, tool calling execution loop, and response streaming."""
 
     def __init__(self, api_key: str | None = None) -> None:
-        self.api_key = api_key or OPENROUTER_API_KEY
+        self.api_key = api_key or config.OPENROUTER_API_KEY
         self.base_url = "https://openrouter.ai/api/v1"
+
+    def get_provider_config(
+        self,
+        requested_provider: str | None = None,
+        requested_model: str | None = None,
+        uses_attachments: bool = False,
+    ) -> tuple[str, str, str, str]:
+        """Return (provider_name, base_url, api_key, resolved_model)."""
+        active_provider = (requested_provider or config.AI_PROVIDER or "auto").strip().lower()
+        if active_provider == "auto":
+            active_provider = "groq" if config.GROQ_API_KEY else "openrouter"
+
+        if active_provider == "groq":
+            default_model = (
+                config.GROQ_MULTIMODAL_MODEL if uses_attachments else config.GROQ_MODEL
+            )
+            return (
+                "groq",
+                config.GROQ_BASE_URL,
+                config.GROQ_API_KEY,
+                requested_model or default_model,
+            )
+
+        default_model = (
+            config.OPENROUTER_MULTIMODAL_MODEL if uses_attachments else config.OPENROUTER_MODEL
+        )
+        return (
+            "openrouter",
+            self.base_url,
+            self.api_key or config.OPENROUTER_API_KEY,
+            requested_model or default_model,
+        )
 
     def build_system_prompt(
         self,
@@ -126,7 +153,7 @@ class ChatService:
         client_location: Any | None = None,
     ) -> str:
         """Inject current system date, time, weekday, timezone, live location, and tool instructions into system prompt."""
-        tz_to_use = client_timezone or DEFAULT_TIMEZONE or None
+        tz_to_use = client_timezone or config.DEFAULT_TIMEZONE or None
         time_context = get_system_datetime_context(tz_to_use)
         tools = tool_registry.get_all()
         tool_descriptions = "\n".join(
@@ -170,18 +197,34 @@ class ChatService:
         chat_id: str,
         email: str,
         current_messages: list[ChatMessage],
-        model: str,
+        model: str | None = None,
         client_timezone: str | None = None,
         client_location: Any | None = None,
+        provider: str | None = None,
     ) -> AsyncGenerator[str, None]:
         """Execute chat turn with multi-turn tool calling loop and stream NDJSON response to client."""
-        client = AsyncOpenAI(
-            base_url=self.base_url,
-            api_key=self.api_key,
-            default_headers={
+        uses_attachments = any(
+            attachment.data or attachment.frames
+            for message in current_messages
+            for attachment in message.attachments
+        )
+        active_provider, base_url, api_key, resolved_model = self.get_provider_config(
+            requested_provider=provider,
+            requested_model=model,
+            uses_attachments=uses_attachments,
+        )
+
+        headers: dict[str, str] = {}
+        if active_provider == "openrouter":
+            headers = {
                 "HTTP-Referer": "http://localhost:5173",
                 "X-Title": "DAZZ",
-            },
+            }
+
+        client = AsyncOpenAI(
+            base_url=base_url,
+            api_key=api_key,
+            default_headers=headers if headers else None,
         )
         assistant_content = ""
 
@@ -206,7 +249,7 @@ class ChatService:
                 if supports_native_tools and tools:
                     try:
                         completion = await client.chat.completions.create(
-                            model=model,
+                            model=resolved_model,
                             messages=messages,
                             tools=tools,
                             tool_choice="auto",
@@ -214,21 +257,23 @@ class ChatService:
                         )
                     except Exception as exc:
                         exc_str = str(exc).lower()
+                        provider_name = "Groq" if active_provider == "groq" else "OpenRouter"
+                        key_name = "GROQ_API_KEY" if active_provider == "groq" else "OPENROUTER_API_KEY"
                         if "429" in exc_str or "rate limit" in exc_str:
-                            logger.warning("OpenRouter rate limit 429 encountered: %s", exc)
+                            logger.warning("%s rate limit 429 encountered: %s", provider_name, exc)
                             yield json.dumps({
-                                "error": "OpenRouter free-tier rate limit reached. Please wait a few seconds and try again."
+                                "error": f"{provider_name} rate limit reached. Please wait a few seconds and try again."
                             }) + "\n"
                             return
                         if "401" in exc_str or "auth" in exc_str or "invalid token" in exc_str:
-                            logger.error("OpenRouter auth error: %s", exc)
+                            logger.error("%s auth error: %s", provider_name, exc)
                             yield json.dumps({
-                                "error": "OpenRouter authentication failed. Please verify your OPENROUTER_API_KEY."
+                                "error": f"{provider_name} authentication failed. Please verify your {key_name}."
                             }) + "\n"
                             return
                         # If model fails on tools parameter (400 or unsupported), fall back to non-tool call
                         if "tool" in exc_str or "unsupported" in exc_str or "400" in exc_str:
-                            logger.warning("Model '%s' does not support native tools (%s). Switching to fallback.", model, exc)
+                            logger.warning("Model '%s' does not support native tools (%s). Switching to fallback.", resolved_model, exc)
                             supports_native_tools = False
                             continue
                         raise
@@ -301,7 +346,7 @@ class ChatService:
                 else:
                     # Native tools disabled or fallback path: stream completion directly
                     stream = await client.chat.completions.create(
-                        model=model,
+                        model=resolved_model,
                         messages=messages,
                         stream=True,
                     )
@@ -342,14 +387,16 @@ class ChatService:
 
         except Exception as e:
             logger.exception("Chat turn processing failed: %s", e)
+            provider_name = "Groq" if active_provider == "groq" else "OpenRouter"
+            key_name = "GROQ_API_KEY" if active_provider == "groq" else "OPENROUTER_API_KEY"
             error_text = "The assistant could not complete this response. Please try again."
             e_str = str(e).lower()
             if "429" in e_str or "rate limit" in e_str:
-                error_text = "Rate limit reached from the AI provider. Please wait a moment before trying again."
+                error_text = f"Rate limit reached from {provider_name}. Please wait a moment before trying again."
             elif "401" in e_str or "auth" in e_str or "invalid token" in e_str:
-                error_text = "AI provider authentication failed. Please verify the OPENROUTER_API_KEY."
+                error_text = f"{provider_name} authentication failed. Please verify the {key_name}."
             elif "timeout" in e_str or "timed out" in e_str:
-                error_text = "Request timed out while waiting for a response. Please try again."
+                error_text = f"Request timed out while waiting for a response from {provider_name}. Please try again."
 
             yield json.dumps({"error": error_text}) + "\n"
 

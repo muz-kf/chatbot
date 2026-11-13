@@ -251,14 +251,18 @@ export function MessageList({
                     )}
 
                     <div className="markdown-content">
-                      {message.isError ? (
+                      {message.isError ||
+                      (message.role === "assistant" &&
+                        (message.content.startsWith("⚠️ This chat got interrupted") ||
+                          message.content.includes("⚠️ *Response interrupted"))) ? (
                         <div className="fancy-error-card in-chat-error" role="alert">
                           <div className="fancy-error-header">
                             <AlertTriangle size={18} className="fancy-error-icon" />
                             <h4 className="fancy-error-title">DAZZ is temporarily unavailable</h4>
                           </div>
                           <p className="fancy-error-description">
-                            {message.content || "I couldn't complete this response right now due to a service interruption or provider limit. Please wait a moment and try asking again."}
+                            {message.content.replace(/^⚠️\s*/, "") ||
+                              "This chat got interrupted due to service disruption. Please try asking again."}
                           </p>
                           <div className="fancy-error-badge-row">
                             <span className="fancy-error-chip">AI Service Interruption</span>
@@ -435,6 +439,37 @@ export function MessageList({
             </motion.article>
           );
         })}
+        {/* Fallback if user's chat is the last turn and there's no AI response */}
+        {!streaming && messages.length > 0 && messages[messages.length - 1].role === "user" && (
+          <motion.article
+            key="interrupted-fallback-turn"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25 }}
+            className="message-row message-assistant"
+          >
+            <div className="assistant-avatar">
+              <Sparkles size={16} />
+            </div>
+            <div className="message-content assistant-content">
+              <div className="markdown-content">
+                <div className="fancy-error-card in-chat-error" role="alert">
+                  <div className="fancy-error-header">
+                    <AlertTriangle size={18} className="fancy-error-icon" />
+                    <h4 className="fancy-error-title">DAZZ is temporarily unavailable</h4>
+                  </div>
+                  <p className="fancy-error-description">
+                    This chat got interrupted due to service disruption. Please try asking again.
+                  </p>
+                  <div className="fancy-error-badge-row">
+                    <span className="fancy-error-chip">AI Service Interruption</span>
+                    <span className="fancy-error-hint">Please wait a moment and try asking again</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.article>
+        )}
       </AnimatePresence>
 
       <div ref={bottomRef} className="scroll-anchor" style={{ height: 1, minHeight: 1 }} />

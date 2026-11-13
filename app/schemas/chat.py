@@ -86,6 +86,8 @@ class ChatTurnRequest(BaseModel):
     message: ChatMessage
     clientTimezone: str | None = None
     clientLocation: ClientLocation | None = None
+    provider: str | None = None
+    model: str | None = None
 
     @field_validator("message")
     @classmethod

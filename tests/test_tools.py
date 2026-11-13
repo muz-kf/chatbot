@@ -338,3 +338,31 @@ def test_client_location_and_timezone_in_system_prompt() -> None:
     assert "JST" in prompt or "+0900" in prompt
     assert "get_route_or_map" in prompt
 
+
+def test_chat_service_groq_provider_resolution(monkeypatch) -> None:
+    from app.core import config
+    from app.services.chat_service import ChatService
+
+    monkeypatch.setattr(config, "GROQ_API_KEY", "gsk_test_key_123")
+    monkeypatch.setattr(config, "AI_PROVIDER", "auto")
+
+    service = ChatService()
+    provider, base_url, api_key, model = service.get_provider_config()
+
+    assert provider == "groq"
+    assert "groq.com" in base_url
+    assert api_key == "gsk_test_key_123"
+    assert "llama" in model.lower()
+
+    # Explicit provider override
+    provider2, base_url2, api_key2, model2 = service.get_provider_config(
+        requested_provider="openrouter",
+        requested_model="mistralai/mistral-7b",
+    )
+    assert provider2 == "openrouter"
+    assert "openrouter.ai" in base_url2
+    assert model2 == "mistralai/mistral-7b"
+
+
+
+
