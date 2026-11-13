@@ -13,6 +13,9 @@ OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "openrouter/free").strip()
 OPENROUTER_MULTIMODAL_MODEL = os.getenv(
     "OPENROUTER_MULTIMODAL_MODEL", "google/gemini-2.5-flash"
 ).strip()
+ENABLE_TAVILY = os.getenv("ENABLE_TAVILY", "false").lower() in ("true", "1", "yes")
+TAVILY_API_KEY = os.getenv("TAVILY_API_KEY", "").strip()
+DEFAULT_TIMEZONE = os.getenv("DEFAULT_TIMEZONE", "").strip()
 APP_ENV = os.getenv("APP_ENV", os.getenv("NODE_ENV", "development")).lower()
 IS_PRODUCTION = APP_ENV == "production"
 
