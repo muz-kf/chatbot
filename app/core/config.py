@@ -13,6 +13,16 @@ OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "openrouter/free").strip()
 OPENROUTER_MULTIMODAL_MODEL = os.getenv(
     "OPENROUTER_MULTIMODAL_MODEL", "google/gemini-2.5-flash"
 ).strip()
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "").strip()
+GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b").strip()
+GROQ_MULTIMODAL_MODEL = os.getenv(
+    "GROQ_MULTIMODAL_MODEL", "llama-3.2-11b-vision-preview"
+).strip()
+GROQ_BASE_URL = os.getenv("GROQ_BASE_URL", "https://api.groq.com/openai/v1").strip()
+AI_PROVIDER = os.getenv("AI_PROVIDER", "auto").strip().lower()
+ENABLE_TAVILY = os.getenv("ENABLE_TAVILY", "false").lower() in ("true", "1", "yes")
+TAVILY_API_KEY = os.getenv("TAVILY_API_KEY", "").strip()
+DEFAULT_TIMEZONE = os.getenv("DEFAULT_TIMEZONE", "").strip()
 APP_ENV = os.getenv("APP_ENV", os.getenv("NODE_ENV", "development")).lower()
 IS_PRODUCTION = APP_ENV == "production"
 

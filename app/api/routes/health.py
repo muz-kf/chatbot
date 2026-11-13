@@ -6,7 +6,14 @@ from typing import Any
 from fastapi import APIRouter, Response
 from openai import AsyncOpenAI
 
-from ...core.config import OPENROUTER_API_KEY, OPENROUTER_MODEL
+from ...core.config import (
+    AI_PROVIDER,
+    GROQ_API_KEY,
+    GROQ_BASE_URL,
+    GROQ_MODEL,
+    OPENROUTER_API_KEY,
+    OPENROUTER_MODEL,
+)
 from ...core.time_utils import get_current_time
 from ...schemas.health import AgentHealthRequest, AgentHealthResponse, HealthResponse
 
@@ -63,25 +70,35 @@ async def agent_health(
     if not prompt.strip():
         prompt = secrets.choice(AGENT_HEALTH_PROMPTS)
 
-    if not OPENROUTER_API_KEY:
+    active_provider = AI_PROVIDER if AI_PROVIDER != "auto" else ("groq" if GROQ_API_KEY else "openrouter")
+    api_key = GROQ_API_KEY if active_provider == "groq" else OPENROUTER_API_KEY
+    base_url = GROQ_BASE_URL if active_provider == "groq" else "https://openrouter.ai/api/v1"
+    model = GROQ_MODEL if active_provider == "groq" else OPENROUTER_MODEL
+
+    if not api_key:
         response.status_code = 503
+        key_name = "GROQ_API_KEY" if active_provider == "groq" else "OPENROUTER_API_KEY"
         return AgentHealthResponse(
             server_time=get_current_time(),
             healthy=False,
-            message="Agent is unavailable: OPENROUTER_API_KEY is not configured.",
+            message=f"Agent is unavailable: {key_name} is not configured.",
         )
 
-    client = AsyncOpenAI(
-        base_url="https://openrouter.ai/api/v1",
-        api_key=OPENROUTER_API_KEY,
-        default_headers={
+    headers = {}
+    if active_provider == "openrouter":
+        headers = {
             "HTTP-Referer": "http://muz.postman.com",
             "X-Title": "DAZZ",
-        },
+        }
+
+    client = AsyncOpenAI(
+        base_url=base_url,
+        api_key=api_key,
+        default_headers=headers if headers else None,
     )
     try:
         completion = await client.chat.completions.create(
-            model=OPENROUTER_MODEL,
+            model=model,
             messages=[
                 {"role": "system", "content": "You are a rare AI who specializes in rare contents of online platforms."},
                 {"role": "user", "content": prompt},

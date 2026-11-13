@@ -1,10 +1,12 @@
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  AlertTriangle,
   Check,
   Copy,
   FileAudio2,
   FileText,
   Film,
+  MapPin,
   MoreHorizontal,
   Pencil,
   Share2,
@@ -28,6 +30,39 @@ type MessageListProps = {
   onCopy: (message: Message) => void;
   onEdit?: (message: Message) => void;
 };
+
+const IFRAME_REGEX = /<iframe[\s\S]*?src=["']([^"']+)["'][\s\S]*?(?:<\/iframe>|\/>)/gi;
+
+function renderMessageParts(content: string) {
+  IFRAME_REGEX.lastIndex = 0;
+  const parts: Array<{ type: "text" | "iframe"; content: string }> = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = IFRAME_REGEX.exec(content)) !== null) {
+    if (match.index > lastIndex) {
+      const textChunk = content.slice(lastIndex, match.index);
+      if (textChunk.trim()) {
+        parts.push({ type: "text", content: textChunk });
+      }
+    }
+    parts.push({ type: "iframe", content: match[1] });
+    lastIndex = IFRAME_REGEX.lastIndex;
+  }
+
+  if (lastIndex < content.length) {
+    const remaining = content.slice(lastIndex);
+    if (remaining.trim()) {
+      parts.push({ type: "text", content: remaining });
+    }
+  }
+
+  if (parts.length === 0) {
+    parts.push({ type: "text", content });
+  }
+
+  return parts;
+}
 
 export function MessageList({
   messages,
@@ -216,32 +251,133 @@ export function MessageList({
                     )}
 
                     <div className="markdown-content">
-                      {message.content ? (
-                        <ReactMarkdown
-                          remarkPlugins={[remarkGfm]}
-                          components={{
-                            p: ({ children }) => <p>{children}</p>,
-                            h1: ({ children }) => <h1>{children}</h1>,
-                            h2: ({ children }) => <h2>{children}</h2>,
-                            h3: ({ children }) => <h3>{children}</h3>,
-                            ul: ({ children }) => <ul>{children}</ul>,
-                            ol: ({ children }) => <ol>{children}</ol>,
-                            blockquote: ({ children }) => <blockquote>{children}</blockquote>,
-                            pre: ({ children }) => <pre>{children}</pre>,
-                            code: ({ children }) => <code>{children}</code>,
-                            a: ({ children, href }) => <a href={href} target="_blank" rel="noreferrer">{children}</a>,
-                            hr: () => <hr />,
-                            table: ({ children }) => <div className="markdown-table"><table>{children}</table></div>,
-                          }}
-                        >
-                          {message.content}
-                        </ReactMarkdown>
-                      ) : (isStreamingAssistant ? <span className="thinking-dots" aria-label="DAZZ is thinking"><i /><i /><i /></span> : null)}
+                      {message.isError ||
+                      (message.role === "assistant" &&
+                        (message.content.startsWith("⚠️ This chat got interrupted") ||
+                          message.content.includes("⚠️ *Response interrupted"))) ? (
+                        <div className="fancy-error-card in-chat-error" role="alert">
+                          <div className="fancy-error-header">
+                            <AlertTriangle size={18} className="fancy-error-icon" />
+                            <h4 className="fancy-error-title">DAZZ is temporarily unavailable</h4>
+                          </div>
+                          <p className="fancy-error-description">
+                            {message.content.replace(/^⚠️\s*/, "") ||
+                              "This chat got interrupted due to service disruption. Please try asking again."}
+                          </p>
+                          <div className="fancy-error-badge-row">
+                            <span className="fancy-error-chip">AI Service Interruption</span>
+                            <span className="fancy-error-hint">Please wait a moment and try asking again</span>
+                          </div>
+                        </div>
+                      ) : message.content ? (
+                        renderMessageParts(message.content).map((part, pIdx) => {
+                          if (part.type === "iframe") {
+                            const osmLink = part.content.replace("/export/embed.html", "");
+                            return (
+                              <div className="chat-map-card" key={`iframe-${pIdx}`}>
+                                <iframe
+                                  src={part.content}
+                                  className="chat-map-iframe"
+                                  title="Interactive Route Map"
+                                  loading="lazy"
+                                  allowFullScreen
+                                />
+                                <div className="chat-map-caption">
+                                  <div className="chat-map-caption-left">
+                                    <MapPin size={13} className="text-emerald-400" />
+                                    <span>Interactive OpenStreetMap</span>
+                                  </div>
+                                  <a
+                                    href={osmLink}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="chat-map-link"
+                                  >
+                                    View full screen ↗
+                                  </a>
+                                </div>
+                              </div>
+                            );
+                          }
+                          return (
+                            <ReactMarkdown
+                              key={`md-${pIdx}`}
+                              remarkPlugins={[remarkGfm]}
+                              components={{
+                                p: ({ children }) => <p>{children}</p>,
+                                h1: ({ children }) => <h1>{children}</h1>,
+                                h2: ({ children }) => <h2>{children}</h2>,
+                                h3: ({ children }) => <h3>{children}</h3>,
+                                ul: ({ children }) => <ul>{children}</ul>,
+                                ol: ({ children }) => <ol>{children}</ol>,
+                                blockquote: ({ children }) => <blockquote>{children}</blockquote>,
+                                pre: ({ children }) => <pre>{children}</pre>,
+                                code: ({ children }) => <code>{children}</code>,
+                                a: ({ children, href }) => {
+                                  if (href && (href.includes("openstreetmap.org/export/embed.html") || href.includes("layer=mapnik"))) {
+                                    return (
+                                      <div className="chat-map-card">
+                                        <iframe
+                                          src={href}
+                                          className="chat-map-iframe"
+                                          title="OpenStreetMap Location"
+                                          loading="lazy"
+                                          allowFullScreen
+                                        />
+                                        <div className="chat-map-caption">
+                                          <div className="chat-map-caption-left">
+                                            <MapPin size={13} className="text-emerald-400" />
+                                            <span>Interactive OpenStreetMap</span>
+                                          </div>
+                                          <a href={href.replace("/export/embed.html", "")} target="_blank" rel="noreferrer" className="chat-map-link">
+                                            View in OSM ↗
+                                          </a>
+                                        </div>
+                                      </div>
+                                    );
+                                  }
+                                  return <a href={href} target="_blank" rel="noreferrer">{children}</a>;
+                                },
+                                hr: () => <hr />,
+                                table: ({ children }) => <div className="markdown-table"><table>{children}</table></div>,
+                              }}
+                            >
+                              {part.content}
+                            </ReactMarkdown>
+                          );
+                        })
+                      ) : isStreamingAssistant ? (
+                        <div className="asking-dazz-container" role="status" aria-label="Asking DAZZ">
+                          <div className="asking-dazz-hud">
+                            <span className="asking-radar-ring" />
+                            <Sparkles size={15} className="asking-dazz-sparkles animate-pulse" />
+                            <span className="asking-dazz-label">Asking DAZZ...</span>
+                          </div>
+                          <div className="asking-dazz-details">
+                            <span className="asking-pulse-dot" />
+                            <span>Consulting real-time intelligence & tools</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="fancy-error-card in-chat-error" role="alert">
+                          <div className="fancy-error-header">
+                            <AlertTriangle size={18} className="fancy-error-icon" />
+                            <h4 className="fancy-error-title">DAZZ is temporarily unavailable</h4>
+                          </div>
+                          <p className="fancy-error-description">
+                            DAZZ did not generate a response. The AI provider may be temporarily busy, experiencing rate limits, or encountered a network timeout.
+                          </p>
+                          <div className="fancy-error-badge-row">
+                            <span className="fancy-error-chip">AI Service Interruption</span>
+                            <span className="fancy-error-hint">Please wait a moment and try asking again</span>
+                          </div>
+                        </div>
+                      )}
                       {isStreamingAssistant && Boolean(message.content) && <span className="stream-cursor" />}
                     </div>
 
                     {/* Action row underneath assistant message (Screenshot alignment) */}
-                    {message.content && !streaming && (
+                    {message.content && !streaming && !message.isError && (
                       <div className="assistant-action-row" aria-label="Response options">
                         <button
                           type="button"
@@ -303,6 +439,37 @@ export function MessageList({
             </motion.article>
           );
         })}
+        {/* Fallback if user's chat is the last turn and there's no AI response */}
+        {!streaming && messages.length > 0 && messages[messages.length - 1].role === "user" && (
+          <motion.article
+            key="interrupted-fallback-turn"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25 }}
+            className="message-row message-assistant"
+          >
+            <div className="assistant-avatar">
+              <Sparkles size={16} />
+            </div>
+            <div className="message-content assistant-content">
+              <div className="markdown-content">
+                <div className="fancy-error-card in-chat-error" role="alert">
+                  <div className="fancy-error-header">
+                    <AlertTriangle size={18} className="fancy-error-icon" />
+                    <h4 className="fancy-error-title">DAZZ is temporarily unavailable</h4>
+                  </div>
+                  <p className="fancy-error-description">
+                    This chat got interrupted due to service disruption. Please try asking again.
+                  </p>
+                  <div className="fancy-error-badge-row">
+                    <span className="fancy-error-chip">AI Service Interruption</span>
+                    <span className="fancy-error-hint">Please wait a moment and try asking again</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.article>
+        )}
       </AnimatePresence>
 
       <div ref={bottomRef} className="scroll-anchor" style={{ height: 1, minHeight: 1 }} />

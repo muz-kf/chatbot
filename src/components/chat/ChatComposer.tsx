@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent, type RefObject } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { AlertTriangle, ArrowDown, ArrowUp, CircleStop, FileText, Loader2, Mic, MicOff, Paperclip, Sparkles, X } from "lucide-react";
+import { AlertTriangle, ArrowDown, ArrowUp, CircleStop, FileText, Loader2, MapPin, Mic, MicOff, Paperclip, Sparkles, X } from "lucide-react";
 import { Button } from "../ui/button";
 import { Textarea } from "../ui/textarea";
-import type { ChatAttachment } from "../../types/chat";
+import type { ChatAttachment, UserLocation } from "../../types/chat";
 import { createSpeechRecognition } from "../../lib/speechRecognition";
 
 type ChatComposerProps = {
@@ -12,12 +12,15 @@ type ChatComposerProps = {
   streaming: boolean;
   textareaRef: RefObject<HTMLTextAreaElement>;
   attachments: ChatAttachment[];
+  userLocation?: UserLocation | null;
+  locationLoading?: boolean;
   recording?: boolean;
   recordingTranscript?: string;
   sendOnVoiceEnd?: boolean;
   showScrollBottom?: boolean;
   onScrollBottom?: () => void;
   onSendText?: (text: string) => void;
+  onToggleLocation?: () => void;
   onDismissError?: () => void;
   onChange: (value: string) => void;
   onFiles: (files: File[]) => void;
@@ -34,10 +37,13 @@ export function ChatComposer({
   streaming,
   textareaRef,
   attachments,
+  userLocation,
+  locationLoading = false,
   sendOnVoiceEnd = true,
   showScrollBottom = false,
   onScrollBottom,
   onSendText,
+  onToggleLocation,
   onDismissError,
   onChange,
   onFiles,
@@ -258,7 +264,7 @@ export function ChatComposer({
             </div>
             <div className="chat-error-body">
               <div className="chat-error-title-row">
-                <span className="chat-error-title">Server Error</span>
+                <span className="chat-error-title">DAZZ Service Notice</span>
                 {onDismissError && (
                   <button
                     type="button"
@@ -376,6 +382,25 @@ export function ChatComposer({
           </div>
         )}
 
+        {userLocation && (
+          <div className="composer-location-badge" aria-label="Live location attached">
+            <span className="location-pulse-dot" />
+            <MapPin size={12} className="location-icon" />
+            <span>Live Location: {userLocation.latitude.toFixed(3)}, {userLocation.longitude.toFixed(3)}</span>
+            {onToggleLocation && (
+              <button
+                type="button"
+                onClick={onToggleLocation}
+                className="location-remove-btn"
+                title="Remove location"
+                aria-label="Remove location"
+              >
+                <X size={12} />
+              </button>
+            )}
+          </div>
+        )}
+
         <Textarea
           ref={textareaRef}
           value={value}
@@ -426,6 +451,28 @@ export function ChatComposer({
               {listening ? <MicOff size={16} /> : <Mic size={16} />}
               {listening && <span className="mic-pulse-ring" />}
             </button>
+
+            {/* Live Location Toggle */}
+            {onToggleLocation && (
+              <button
+                type="button"
+                className={`composer-tool location-tool ${userLocation ? "is-active text-emerald-400" : ""}`}
+                aria-label={userLocation ? "Live location active" : "Share live location"}
+                title={
+                  userLocation
+                    ? `Live location active (${userLocation.latitude.toFixed(2)}, ${userLocation.longitude.toFixed(2)}). Click to disable.`
+                    : "Share live location for location-aware routing and maps"
+                }
+                disabled={streaming || locationLoading}
+                onClick={onToggleLocation}
+              >
+                {locationLoading ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <MapPin size={16} />
+                )}
+              </button>
+            )}
 
             <span className="composer-hint">AI can make mistakes. Check important details.</span>
           </div>

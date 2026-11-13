@@ -112,8 +112,8 @@ export function ChatSidebar({
               onClick={() => onSelectChat(chat.id)}
               title={chat.title}
             >
-              <MessageSquare size={14} />
-              <span>{chat.title}</span>
+              <MessageSquare size={16} className="conversation-item-icon shrink-0" />
+              <span className="conversation-item-title">{chat.title}</span>
             </button>
           ))}
         </ThemedScrollArea>

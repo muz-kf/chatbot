@@ -30,7 +30,9 @@ export function ChatHeader({ sidebarOpen, onToggleSidebar, onScrollLatest }: Cha
           title="Toggle sidebar menu"
         >
           <span className="header-logo"><DazzMark /></span>
-          <div><h1>DAZZ</h1><p><span className="status-dot" />by MZA</p></div>
+          <div><h1>DAZZ</h1>
+            {/* <p><span className="status-dot" />by MZA</p> */}
+          </div>
         </button>
       </div>
       <div className="header-trailing">

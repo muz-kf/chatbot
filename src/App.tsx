@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { MessageSquareDashed, Plus } from "lucide-react";
+import { Button } from "./components/ui/button";
 import { AuthGate } from "./components/chat/AuthGate";
 import { ChatComposer } from "./components/chat/ChatComposer";
 import { ChatHeader } from "./components/chat/ChatHeader";
@@ -18,11 +20,36 @@ import {
   type ChatSummary,
   type Message,
   type ThemeChoice,
+  type UserLocation,
   type UserProfile,
 } from "./types/chat";
 import { getRandomId } from "./lib/utils";
 
 type AuthState = "loading" | "authenticated" | "unauthenticated";
+
+function normalizeChatMessages(rawMessages: Message[]): Message[] {
+  if (!rawMessages || rawMessages.length === 0) return [];
+  const normalized = [...rawMessages];
+  const lastIndex = normalized.length - 1;
+  const lastMsg = normalized[lastIndex];
+
+  if (lastMsg.role === "user") {
+    normalized.push({
+      id: `interrupted-${lastMsg.id || Date.now()}`,
+      role: "assistant",
+      content: "⚠️ This chat got interrupted due to service disruption. Please try asking again.",
+      isError: true,
+    });
+  } else if (lastMsg.role === "assistant" && !lastMsg.content.trim()) {
+    normalized[lastIndex] = {
+      ...lastMsg,
+      content: "⚠️ This chat got interrupted due to service disruption. Please try asking again.",
+      isError: true,
+    };
+  }
+
+  return normalized;
+}
 
 function getSavedTheme(): ThemeChoice {
   const savedTheme = window.localStorage.getItem("chat-theme");
@@ -40,6 +67,10 @@ function App() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [chats, setChats] = useState<ChatSummary[]>([]);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
+  const [chatNotFound, setChatNotFound] = useState(false);
+  const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
+  const [locationLoading, setLocationLoading] = useState(false);
+  const initialLoadAttemptedRef = useRef(false);
   const [user, setUser] = useState<UserProfile | null>(null);
   const [authState, setAuthState] = useState<AuthState>("loading");
   const [authError, setAuthError] = useState("");
@@ -91,10 +122,16 @@ function App() {
       signal: AbortSignal;
       onToken: (token: string) => void;
     }) => {
+      const clientTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
       const response = await fetch(`/api/chats/${input.chatId}/turns`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chatId: input.chatId, message: input.message }),
+        body: JSON.stringify({
+          chatId: input.chatId,
+          message: input.message,
+          clientTimezone,
+          clientLocation: userLocation,
+        }),
         signal: input.signal,
       });
       if (!response.ok) {
@@ -166,6 +203,16 @@ function App() {
       setAuthError(chatsQuery.error.message || "Could not load saved conversations.");
     }
   }, [chatsQuery.data, chatsQuery.error, chatsQuery.isError, chatsQuery.isSuccess]);
+
+  useEffect(() => {
+    if (authState === "authenticated" && !initialLoadAttemptedRef.current) {
+      initialLoadAttemptedRef.current = true;
+      const urlChatId = new URLSearchParams(window.location.search).get("chatId");
+      if (urlChatId) {
+        void openChat(urlChatId);
+      }
+    }
+  }, [authState]);
 
   useEffect(() => {
     document.documentElement.style.setProperty(
@@ -319,6 +366,8 @@ function App() {
           chatId = createdChat.id;
           setActiveChatId(chatId);
           setChats((current) => [createdChat, ...current]);
+          const newUrl = `${window.location.pathname}?chatId=${encodeURIComponent(createdChat.id)}`;
+          window.history.replaceState({ chatId: createdChat.id }, "", newUrl);
         }
 
         await chatTurnMutation.mutateAsync({
@@ -330,16 +379,27 @@ function App() {
         await queryClient.invalidateQueries({ queryKey: queryKeys.chats });
       } catch (requestError) {
         if (!controller.signal.aborted) {
-          setMessages((current) =>
-            current.filter(
-              (msg) => msg.id !== assistantMessage.id || msg.content.trim().length > 0,
-            ),
-          );
-          setError(
+          const rawError =
             requestError instanceof Error
               ? requestError.message
-              : "DAZZ could not complete this response. Please try again.",
+              : "DAZZ could not complete this response. Please try again.";
+
+          setMessages((current) =>
+            current.map((msg) => {
+              if (msg.id === assistantMessage.id) {
+                return {
+                  ...msg,
+                  isError: true,
+                  content:
+                    msg.content.trim().length > 0
+                      ? `${msg.content}\n\n⚠️ *Response interrupted: ${rawError}*`
+                      : rawError,
+                };
+              }
+              return msg;
+            }),
           );
+          setError(rawError);
         }
       } finally {
         if (requestRef.current === controller) {
@@ -348,6 +408,34 @@ function App() {
         }
       }
     })();
+  }
+
+  function toggleLocation() {
+    if (userLocation) {
+      setUserLocation(null);
+      return;
+    }
+    if (!navigator.geolocation) {
+      setError("Geolocation is not supported by your browser.");
+      return;
+    }
+    setLocationLoading(true);
+    setError("");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setUserLocation({
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+          accuracy: pos.coords.accuracy,
+        });
+        setLocationLoading(false);
+      },
+      (err) => {
+        setLocationLoading(false);
+        setError(`Could not access live location: ${err.message}`);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
+    );
   }
 
   function handleDirectSend(text: string) {
@@ -380,9 +468,11 @@ function App() {
     cancelVoiceRecording();
     setMessages([]);
     setActiveChatId(null);
+    setChatNotFound(false);
     setDraft("");
     setAttachments([]);
     setError("");
+    window.history.replaceState({}, "", window.location.pathname);
     if (window.matchMedia("(max-width: 767px)").matches) setSidebarOpen(false);
     draftRef.current?.focus();
   }
@@ -394,6 +484,7 @@ function App() {
     }
     stopResponse();
     setError("");
+    setChatNotFound(false);
     try {
       const result = await queryClient.fetchQuery({
         queryKey: queryKeys.chat(chatId),
@@ -401,13 +492,18 @@ function App() {
           apiRequest<{ chat: { id: string; chats: Message[] } }>(`/api/chats/${chatId}`),
       });
       setActiveChatId(result.chat.id);
-      setMessages(result.chat.chats);
+      setMessages(normalizeChatMessages(result.chat.chats));
       setDraft("");
       setAttachments([]);
+      const newUrl = `${window.location.pathname}?chatId=${encodeURIComponent(result.chat.id)}`;
+      window.history.replaceState({ chatId: result.chat.id }, "", newUrl);
       if (window.matchMedia("(max-width: 767px)").matches) setSidebarOpen(false);
       setTimeout(() => scrollToBottom(false), 60);
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "Could not load this conversation.");
+      setActiveChatId(null);
+      setMessages([]);
+      setChatNotFound(true);
+      setError(loadError instanceof Error ? loadError.message : "Conversation not found.");
     }
   }
 
@@ -633,7 +729,23 @@ function App() {
           onScrollLatest={() => scrollToBottom(true)}
         />
         <section ref={viewportRef} className="conversation-viewport" aria-label="Conversation with DAZZ">
-          {messages.length === 0 ? (
+          {chatNotFound ? (
+            <div className="chat-not-found-screen" role="alert">
+              <div className="chat-not-found-card">
+                <div className="not-found-icon-wrap">
+                  <MessageSquareDashed size={34} className="not-found-icon" />
+                </div>
+                <h3 className="not-found-title">No chats found</h3>
+                <p className="not-found-desc">
+                  The requested conversation could not be found or may have been deleted.
+                </p>
+                <Button variant="default" className="not-found-button" onClick={newChat}>
+                  <Plus size={16} />
+                  <span>Start a new conversation</span>
+                </Button>
+              </div>
+            </div>
+          ) : messages.length === 0 ? (
             <WelcomeScreen onPrompt={startChat} />
           ) : (
             <MessageList
@@ -655,6 +767,9 @@ function App() {
           error={error}
           streaming={streaming}
           attachments={attachments}
+          userLocation={userLocation}
+          locationLoading={locationLoading}
+          onToggleLocation={toggleLocation}
           recording={recording}
           recordingTranscript={recordingTranscript}
           sendOnVoiceEnd={sendOnVoiceEnd}

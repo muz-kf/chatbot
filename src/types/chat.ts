@@ -3,6 +3,7 @@ export type Message = {
   role: "user" | "assistant";
   content: string;
   attachments?: ChatAttachment[];
+  isError?: boolean;
 };
 
 export type ChatAttachment = {
@@ -27,6 +28,12 @@ export type ChatSummary = {
   id: string;
   title: string;
   updatedAt: string;
+};
+
+export type UserLocation = {
+  latitude: number;
+  longitude: number;
+  accuracy?: number;
 };
 
 export const fonts = [
