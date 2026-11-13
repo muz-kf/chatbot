@@ -365,5 +365,84 @@ def test_chat_service_groq_provider_resolution(monkeypatch) -> None:
     assert model2 == "mistralai/mistral-7b"
 
 
+@pytest.mark.anyio
+async def test_mapping_tool_with_live_client_location() -> None:
+    from app.services.tools.mapping import MappingAndRoutingTool
+
+    tool = MappingAndRoutingTool()
+
+    mock_dest_geo = MagicMock(status_code=200)
+    mock_dest_geo.json.return_value = {
+        "results": [{"name": "Central Park", "latitude": 40.78509, "longitude": -73.96828}]
+    }
+
+    mock_osrm = MagicMock(status_code=200)
+    mock_osrm.raise_for_status.return_value = None
+    mock_osrm.json.return_value = {
+        "code": "Ok",
+        "routes": [
+            {
+                "distance": 3200,
+                "duration": 600,
+                "legs": [{"steps": []}],
+            }
+        ],
+    }
+
+    with patch("httpx.AsyncClient.get", side_effect=[mock_dest_geo, mock_osrm]):
+        result = await tool.execute(
+            destination="directions to Central Park",
+            origin="current_location",
+            client_location={"latitude": 40.7580, "longitude": -73.9855},
+        )
+        assert result["type"] == "route"
+        assert result["origin"] == "Current Location"
+        assert "3.2 km" in result["distance_km"]
+
+
+@pytest.mark.anyio
+async def test_weather_tool_with_live_client_location() -> None:
+    from app.services.tools.weather import WeatherTool
+
+    tool = WeatherTool()
+
+    mock_weather_resp = MagicMock(status_code=200)
+    mock_weather_resp.raise_for_status.return_value = None
+    mock_weather_resp.json.return_value = {
+        "current": {
+            "temperature_2m": 24.5,
+            "relative_humidity_2m": 60,
+            "apparent_temperature": 25.0,
+            "precipitation": 0.0,
+            "weather_code": 0,
+            "wind_speed_10m": 12.0,
+        }
+    }
+
+    with patch("httpx.AsyncClient.get", return_value=mock_weather_resp):
+        result = await tool.execute(
+            location="current_location",
+            client_location={"latitude": 13.0827, "longitude": 80.2707},
+        )
+        assert result["location"] == "Current Location"
+        assert "24.5" in result["temperature"]
+
+
+@pytest.mark.anyio
+async def test_mapping_tool_unresolved_destination_soft_handling() -> None:
+    from app.services.tools.mapping import MappingAndRoutingTool
+
+    tool = MappingAndRoutingTool()
+
+    mock_empty_resp = MagicMock(status_code=200)
+    mock_empty_resp.json.return_value = {"results": []}
+
+    with patch("httpx.AsyncClient.get", return_value=mock_empty_resp):
+        result = await tool.execute(destination="non_existent_imaginary_place_12345")
+        assert result["status"] == "unresolved"
+        assert "Please answer the user conversationally" in result["error"]
+
+
+
 
 

@@ -175,6 +175,18 @@ function App() {
   const [showScrollBottom, setShowScrollBottom] = useState(false);
   const userScrolledUpRef = useRef(false);
   const requestRef = useRef<AbortController | null>(null);
+  const activeChatIdRef = useRef<string | null>(null);
+  activeChatIdRef.current = activeChatId;
+
+  interface InFlightTurn {
+    chatId: string;
+    controller: AbortController;
+    userMessage: Message;
+    assistantMessage: Message;
+    historyBeforeTurn: Message[];
+  }
+  const inFlightRef = useRef<InFlightTurn | null>(null);
+
   const draftRef = useRef<HTMLTextAreaElement>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
@@ -329,11 +341,13 @@ function App() {
       return;
     }
 
+    const currentHistory = [...messages];
     setMessages((current) => [...current, userMessage, assistantMessage]);
     setDraft("");
     setAttachments([]);
     setError("");
     setStreaming(true);
+
     requestRef.current?.abort();
     const controller = new AbortController();
     requestRef.current = controller;
@@ -347,18 +361,8 @@ function App() {
     }
 
     void (async () => {
-      const appendToken = (token: string) => {
-        setMessages((current) =>
-          current.map((message) =>
-            message.id === assistantMessage.id
-              ? { ...message, content: message.content + token }
-              : message,
-          ),
-        );
-      };
-
+      let chatId = activeChatId;
       try {
-        let chatId = activeChatId;
         if (!chatId) {
           const { chat: createdChat } = await createChatMutation.mutateAsync(
             messageContent.slice(0, 120) || "New conversation",
@@ -370,13 +374,38 @@ function App() {
           window.history.replaceState({ chatId: createdChat.id }, "", newUrl);
         }
 
+        inFlightRef.current = {
+          chatId,
+          controller,
+          userMessage,
+          assistantMessage,
+          historyBeforeTurn: currentHistory,
+        };
+
+        const appendToken = (token: string) => {
+          if (inFlightRef.current && inFlightRef.current.chatId === chatId) {
+            inFlightRef.current.assistantMessage.content += token;
+          }
+          if (activeChatIdRef.current === chatId) {
+            setMessages((current) =>
+              current.map((message) =>
+                message.id === assistantMessage.id
+                  ? { ...message, content: message.content + token }
+                  : message,
+              ),
+            );
+          }
+        };
+
         await chatTurnMutation.mutateAsync({
           chatId,
           message: userMessage,
           signal: controller.signal,
           onToken: appendToken,
         });
+
         await queryClient.invalidateQueries({ queryKey: queryKeys.chats });
+        await queryClient.invalidateQueries({ queryKey: queryKeys.chat(chatId) });
       } catch (requestError) {
         if (!controller.signal.aborted) {
           const rawError =
@@ -384,24 +413,29 @@ function App() {
               ? requestError.message
               : "DAZZ could not complete this response. Please try again.";
 
-          setMessages((current) =>
-            current.map((msg) => {
-              if (msg.id === assistantMessage.id) {
-                return {
-                  ...msg,
-                  isError: true,
-                  content:
-                    msg.content.trim().length > 0
-                      ? `${msg.content}\n\n⚠️ *Response interrupted: ${rawError}*`
-                      : rawError,
-                };
-              }
-              return msg;
-            }),
-          );
-          setError(rawError);
+          if (activeChatIdRef.current === chatId) {
+            setMessages((current) =>
+              current.map((msg) => {
+                if (msg.id === assistantMessage.id) {
+                  return {
+                    ...msg,
+                    isError: true,
+                    content:
+                      msg.content.trim().length > 0
+                        ? `${msg.content}\n\n⚠️ *Response interrupted: ${rawError}*`
+                        : rawError,
+                  };
+                }
+                return msg;
+              }),
+            );
+            setError(rawError);
+          }
         }
       } finally {
+        if (inFlightRef.current?.controller === controller) {
+          inFlightRef.current = null;
+        }
         if (requestRef.current === controller) {
           requestRef.current = null;
           setStreaming(false);
@@ -458,13 +492,17 @@ function App() {
   }
 
   function stopResponse() {
+    inFlightRef.current?.controller.abort();
+    inFlightRef.current = null;
     requestRef.current?.abort();
     requestRef.current = null;
     setStreaming(false);
   }
 
   function newChat() {
-    stopResponse();
+    // When navigating to a new chat, do NOT abort in-flight generation of the previous chat.
+    // The previous chat will continue in the background and commit cleanly to the database.
+    setStreaming(false);
     cancelVoiceRecording();
     setMessages([]);
     setActiveChatId(null);
@@ -482,9 +520,29 @@ function App() {
       if (window.matchMedia("(max-width: 767px)").matches) setSidebarOpen(false);
       return;
     }
-    stopResponse();
     setError("");
     setChatNotFound(false);
+
+    // If returning to a chat that is actively generating in the background,
+    // seamlessly restore its streaming view without waiting or triggering interrupted state
+    if (inFlightRef.current && inFlightRef.current.chatId === chatId) {
+      setActiveChatId(chatId);
+      setMessages([
+        ...inFlightRef.current.historyBeforeTurn,
+        inFlightRef.current.userMessage,
+        { ...inFlightRef.current.assistantMessage },
+      ]);
+      setStreaming(true);
+      setDraft("");
+      setAttachments([]);
+      const newUrl = `${window.location.pathname}?chatId=${encodeURIComponent(chatId)}`;
+      window.history.replaceState({ chatId }, "", newUrl);
+      if (window.matchMedia("(max-width: 767px)").matches) setSidebarOpen(false);
+      setTimeout(() => scrollToBottom(false), 60);
+      return;
+    }
+
+    setStreaming(false);
     try {
       const result = await queryClient.fetchQuery({
         queryKey: queryKeys.chat(chatId),

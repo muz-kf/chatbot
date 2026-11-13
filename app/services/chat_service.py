@@ -184,11 +184,12 @@ class ChatService:
             "You have access to real-time tools:\n"
             f"{tool_descriptions}\n\n"
             "Guidelines:\n"
-            "1. When answering questions regarding current weather, conditions, or forecasts, call `get_weather`.\n"
+            "1. When answering questions regarding current weather, temperature, or forecasts, call `get_weather`. If the user asks for weather 'here' or 'my area', use 'current_location'.\n"
             "2. When answering questions regarding current news, events after your training cutoff, live facts, or searching the web, call `web_search`.\n"
-            "3. When answering questions about driving routes, travel duration, traffic, or maps, call `get_route_or_map`.\n"
+            "3. Only call `get_route_or_map` when the user explicitly asks for driving directions, navigation, routes, travel duration/distance between places, traffic, or an interactive map visualizer. DO NOT call `get_route_or_map` for general conversational text, recommendations, cultural inquiries, or general questions that merely mention a city or location.\n"
             "4. If current date or time is asked, use the system date and time provided above.\n"
-            "5. Always synthesize tool outputs into a clear, natural-language response for the user. When a route or location map is returned, include the interactive map iframe directly (e.g. `<iframe src=\"<map_embed_url>\" width=\"100%\" height=\"350\"></iframe>`) along with the full-screen route link."
+            "5. If a tool returns an error or coordinates cannot be resolved, NEVER output a raw error message to the user. Instead, respond helpfully and conversationally using your general knowledge, or politely ask for clarification if necessary.\n"
+            "6. Always synthesize tool outputs into a clear, natural-language response for the user. When a route or location map is returned, include the interactive map iframe directly (e.g. `<iframe src=\"<map_embed_url>\" width=\"100%\" height=\"350\"></iframe>`) along with the full-screen route link."
         )
 
     async def stream_chat_turn(
@@ -227,6 +228,40 @@ class ChatService:
             default_headers=headers if headers else None,
         )
         assistant_content = ""
+        saved_to_db = False
+
+        def persist_assistant_message(content: str) -> None:
+            nonlocal saved_to_db
+            clean_content = content.strip() if content else ""
+            if saved_to_db or not clean_content:
+                return
+            if SessionLocal is None:
+                return
+            try:
+                with SessionLocal() as stream_db:
+                    latest = (
+                        stream_db.query(PublicChat)
+                        .filter(
+                            PublicChat.id == chat_id,
+                            PublicChat.email == email,
+                        )
+                        .with_for_update()
+                        .first()
+                    )
+                    if latest:
+                        latest.messages = [
+                            *latest.messages,
+                            {
+                                "id": str(uuid4()),
+                                "role": "assistant",
+                                "content": clean_content,
+                            },
+                        ]
+                        stream_db.commit()
+                        saved_to_db = True
+                        logger.info("Successfully persisted assistant response for chat %s (%d chars)", chat_id, len(clean_content))
+            except Exception as db_err:
+                logger.exception("Failed to persist assistant response to DB for chat %s: %s", chat_id, db_err)
 
         try:
             system_prompt = self.build_system_prompt(client_timezone, client_location)
@@ -242,8 +277,7 @@ class ChatService:
 
             while turn < max_turns:
                 turn += 1
-                if await request.is_disconnected():
-                    return
+                disconnected = await request.is_disconnected()
 
                 tool_calls_acc: dict[int, dict[str, str]] = {}
                 text_acc = ""
@@ -262,15 +296,17 @@ class ChatService:
                     key_name = "GROQ_API_KEY" if active_provider == "groq" else "OPENROUTER_API_KEY"
                     if "429" in exc_str or "rate limit" in exc_str:
                         logger.warning("%s rate limit 429 encountered: %s", provider_name, exc)
-                        yield json.dumps({
-                            "error": f"{provider_name} rate limit reached. Please wait a few seconds and try again."
-                        }) + "\n"
+                        if not disconnected:
+                            yield json.dumps({
+                                "error": f"{provider_name} rate limit reached. Please wait a few seconds and try again."
+                            }) + "\n"
                         return
                     if "401" in exc_str or "auth" in exc_str or "invalid token" in exc_str:
                         logger.error("%s auth error: %s", provider_name, exc)
-                        yield json.dumps({
-                            "error": f"{provider_name} authentication failed. Please verify your {key_name}."
-                        }) + "\n"
+                        if not disconnected:
+                            yield json.dumps({
+                                "error": f"{provider_name} authentication failed. Please verify your {key_name}."
+                            }) + "\n"
                         return
                     # If model fails on tools parameter (400 or unsupported), fall back to non-tool call
                     if "tool" in exc_str or "unsupported" in exc_str or "400" in exc_str:
@@ -294,12 +330,12 @@ class ChatService:
                         text_acc = msg.content
                         if not tool_calls_acc:
                             assistant_content = text_acc
-                            yield json.dumps({"token": text_acc}) + "\n"
+                            if not disconnected:
+                                yield json.dumps({"token": text_acc}) + "\n"
                 else:
                     # Streaming chunks from AsyncStream
                     async for chunk in stream:
-                        if await request.is_disconnected():
-                            return
+                        disconnected = await request.is_disconnected()
                         if not chunk.choices:
                             continue
                         delta = chunk.choices[0].delta
@@ -335,7 +371,11 @@ class ChatService:
                             # Stream live token to UI if no tool calls detected
                             if not tool_calls_acc:
                                 assistant_content += content
-                                yield json.dumps({"token": content}) + "\n"
+                                if not disconnected:
+                                    try:
+                                        yield json.dumps({"token": content}) + "\n"
+                                    except Exception:
+                                        pass
 
                 # If native tool calls were received, execute them and continue to next turn
                 if tool_calls_acc:
@@ -356,12 +396,16 @@ class ChatService:
                         "tool_calls": tool_call_dicts,
                     })
 
-                    # Execute all tools
+                    # Execute all tools with live client context
                     for tc in tool_calls_acc.values():
                         func_name = tc["name"]
                         func_args = tc["arguments"]
                         logger.info("Executing tool '%s' with args: %s", func_name, func_args)
-                        tool_output = await tool_registry.execute_tool(func_name, func_args)
+                        tool_output = await tool_registry.execute_tool(
+                            func_name,
+                            func_args,
+                            client_location=client_location,
+                        )
                         messages.append({
                             "role": "tool",
                             "tool_call_id": tc["id"],
@@ -377,7 +421,11 @@ class ChatService:
                 if parsed:
                     tool_name, tool_args = parsed
                     logger.info("Executing text-parsed tool '%s' with args: %s", tool_name, tool_args)
-                    tool_output = await tool_registry.execute_tool(tool_name, tool_args)
+                    tool_output = await tool_registry.execute_tool(
+                        tool_name,
+                        tool_args,
+                        client_location=client_location,
+                    )
                     messages.append({"role": "assistant", "content": text_acc})
                     messages.append({
                         "role": "user",
@@ -393,30 +441,10 @@ class ChatService:
                 break
 
             # Save the final assistant response to the database
-            if SessionLocal is None:
-                raise RuntimeError("Database session is unavailable.")
-            with SessionLocal() as stream_db:
-                latest = (
-                    stream_db.query(PublicChat)
-                    .filter(
-                        PublicChat.id == chat_id,
-                        PublicChat.email == email,
-                    )
-                    .with_for_update()
-                    .first()
-                )
-                if latest:
-                    latest.messages = [
-                        *latest.messages,
-                        {
-                            "id": str(uuid4()),
-                            "role": "assistant",
-                            "content": assistant_content,
-                        },
-                    ]
-                    stream_db.commit()
+            persist_assistant_message(assistant_content)
 
-            yield json.dumps({"done": True}) + "\n"
+            if not await request.is_disconnected():
+                yield json.dumps({"done": True}) + "\n"
 
         except Exception as e:
             logger.exception("Chat turn processing failed: %s", e)
@@ -431,8 +459,12 @@ class ChatService:
             elif "timeout" in e_str or "timed out" in e_str:
                 error_text = f"Request timed out while waiting for a response from {provider_name}. Please try again."
 
-            yield json.dumps({"error": error_text}) + "\n"
+            try:
+                yield json.dumps({"error": error_text}) + "\n"
+            except Exception:
+                pass
 
         finally:
+            persist_assistant_message(assistant_content)
             await client.close()
 

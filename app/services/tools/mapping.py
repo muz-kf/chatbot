@@ -12,8 +12,9 @@ class MappingAndRoutingTool(BaseTool):
 
     name = "get_route_or_map"
     description = (
-        "Get driving routes, estimated travel time, traffic duration, turn-by-turn navigation steps, "
-        "or interactive OpenStreetMap visualizer between locations using OpenStreetMap and OSRM."
+        "Calculate driving directions, routes, travel duration, distance, traffic estimates, "
+        "and interactive OpenStreetMap visualizer embeds between locations. "
+        "Use ONLY when the user explicitly requests navigation, driving routes, travel time, or a map embed."
     )
     parameters = {
         "type": "object",
@@ -21,8 +22,8 @@ class MappingAndRoutingTool(BaseTool):
             "origin": {
                 "type": "string",
                 "description": (
-                    "Starting address, city, landmark, or coordinates (e.g. 'Times Square, New York' "
-                    "or 'current_location' if using user's live location)."
+                    "Starting address, city, landmark, or coordinates. "
+                    "Use 'current_location' if navigating from the user's live location."
                 ),
             },
             "destination": {
@@ -38,12 +39,47 @@ class MappingAndRoutingTool(BaseTool):
         "required": ["destination"],
     }
 
-    async def _geocode(self, client: httpx.AsyncClient, query: str) -> dict[str, Any] | None:
+    async def _geocode(
+        self,
+        client: httpx.AsyncClient,
+        query: str,
+        client_location: Any | None = None,
+    ) -> dict[str, Any] | None:
         """Geocode location query to latitude, longitude, and formatted name."""
-        query = query.strip()
+        query_str = str(query).strip()
+
+        # Check if live location was requested
+        if query_str.lower() in ("current_location", "here", "my location", "me", "current", "my position", "my coordinates"):
+            if client_location:
+                c_lat = getattr(client_location, "latitude", None) or (
+                    client_location.get("latitude") if isinstance(client_location, dict) else None
+                )
+                c_lon = getattr(client_location, "longitude", None) or (
+                    client_location.get("longitude") if isinstance(client_location, dict) else None
+                )
+                if c_lat is not None and c_lon is not None:
+                    return {
+                        "name": "Current Location",
+                        "latitude": float(c_lat),
+                        "longitude": float(c_lon),
+                    }
+            return None
+
+        # Strip conversational prefixes if present
+        clean_query = query_str
+        prefixes = [
+            "directions to ", "directions for ", "direction to ", "route to ", "route from ",
+            "navigate to ", "how to get to ", "map of ", "take me to ", "way to ", "path to ",
+            "drive to ", "trip to ", "walk to ", "where is "
+        ]
+        for p in prefixes:
+            if clean_query.lower().startswith(p):
+                clean_query = clean_query[len(p):].strip()
+                break
+
         # Check if coordinates were passed directly as "lat, lon"
-        if "," in query:
-            parts = [p.strip() for p in query.split(",")]
+        if "," in clean_query:
+            parts = [p.strip() for p in clean_query.split(",")]
             if len(parts) == 2:
                 try:
                     lat, lon = float(parts[0]), float(parts[1])
@@ -52,10 +88,10 @@ class MappingAndRoutingTool(BaseTool):
                     pass
 
         try:
-            # 1. Try Open-Meteo geocoding
+            # 1. Try Open-Meteo geocoding (fast city/town search)
             resp = await client.get(
                 "https://geocoding-api.open-meteo.com/v1/search",
-                params={"name": query, "count": 1, "language": "en", "format": "json"},
+                params={"name": clean_query, "count": 1, "language": "en", "format": "json"},
             )
             if resp.status_code == 200:
                 data = resp.json()
@@ -64,12 +100,33 @@ class MappingAndRoutingTool(BaseTool):
                     r = results[0]
                     name_parts = [r.get("name"), r.get("admin1"), r.get("country")]
                     name = ", ".join(p for p in name_parts if p)
-                    return {"name": name or query, "latitude": r["latitude"], "longitude": r["longitude"]}
+                    return {"name": name or clean_query, "latitude": r["latitude"], "longitude": r["longitude"]}
 
-            # 2. Try Nominatim as fallback
+            # 2. Try Komoot Photon API (free OpenStreetMap landmark & POI geocoding)
+            photon_resp = await client.get(
+                "https://photon.komoot.io/api/",
+                params={"q": clean_query, "limit": 1},
+                headers={"User-Agent": "DAZZ-Chatbot/2.0"},
+            )
+            if photon_resp.status_code == 200:
+                photon_data = photon_resp.json()
+                features = photon_data.get("features", [])
+                if features:
+                    coords = features[0]["geometry"]["coordinates"]
+                    props = features[0].get("properties", {})
+                    p_name = props.get("name") or props.get("city") or clean_query
+                    p_country = props.get("country", "")
+                    full_p_name = f"{p_name}, {p_country}".strip(", ")
+                    return {
+                        "name": full_p_name or clean_query,
+                        "latitude": float(coords[1]),
+                        "longitude": float(coords[0]),
+                    }
+
+            # 3. Try Nominatim as fallback
             nom_resp = await client.get(
                 "https://nominatim.openstreetmap.org/search",
-                params={"q": query, "format": "json", "limit": 1},
+                params={"q": clean_query, "format": "json", "limit": 1},
                 headers={"User-Agent": "DAZZ-Chatbot/2.0"},
             )
             if nom_resp.status_code == 200:
@@ -77,12 +134,12 @@ class MappingAndRoutingTool(BaseTool):
                 if nom_data:
                     n = nom_data[0]
                     return {
-                        "name": n.get("display_name", query),
+                        "name": n.get("display_name", clean_query),
                         "latitude": float(n["lat"]),
                         "longitude": float(n["lon"]),
                     }
         except Exception as e:
-            logger.warning("Geocoding failed for '%s': %s", query, e)
+            logger.warning("Geocoding failed for '%s': %s", clean_query, e)
 
         return None
 
@@ -98,17 +155,26 @@ class MappingAndRoutingTool(BaseTool):
         if not destination:
             return {"error": "A destination location must be provided."}
 
+        client_location = kwargs.get("client_location")
+
         try:
             async with httpx.AsyncClient(timeout=12.0) as client:
-                dest_geo = await self._geocode(client, destination)
+                dest_geo = await self._geocode(client, destination, client_location=client_location)
                 if not dest_geo:
-                    return {"error": f"Could not find coordinates for destination '{destination}'."}
+                    return {
+                        "status": "unresolved",
+                        "error": (
+                            f"Could not find geographic coordinates for '{destination}'. "
+                            "Please answer the user conversationally using your general knowledge without map coordinates, "
+                            "or suggest a more specific city or landmark name."
+                        ),
+                    }
 
                 dest_lat = dest_geo["latitude"]
                 dest_lon = dest_geo["longitude"]
 
                 # If no origin is provided, return a location map overview
-                if not origin or origin.strip().lower() in ("none", ""):
+                if not origin or origin.strip().lower() in ("none", "", "null"):
                     bbox_delta = 0.02
                     embed_map_url = (
                         f"https://www.openstreetmap.org/export/embed.html?"
@@ -125,9 +191,24 @@ class MappingAndRoutingTool(BaseTool):
                     }
 
                 # Geocode origin
-                orig_geo = await self._geocode(client, origin)
+                orig_geo = await self._geocode(client, origin, client_location=client_location)
                 if not orig_geo:
-                    return {"error": f"Could not find coordinates for origin '{origin}'."}
+                    # Return destination location map instead of failing completely
+                    bbox_delta = 0.02
+                    embed_map_url = (
+                        f"https://www.openstreetmap.org/export/embed.html?"
+                        f"bbox={dest_lon - bbox_delta:.4f}%2C{dest_lat - bbox_delta:.4f}%2C"
+                        f"{dest_lon + bbox_delta:.4f}%2C{dest_lat + bbox_delta:.4f}&"
+                        f"layer=mapnik&marker={dest_lat:.5f}%2C{dest_lon:.5f}"
+                    )
+                    return {
+                        "type": "location",
+                        "location": dest_geo["name"],
+                        "coordinates": {"latitude": dest_lat, "longitude": dest_lon},
+                        "map_embed_url": embed_map_url,
+                        "map_link": f"https://www.openstreetmap.org/?mlat={dest_lat}&mlon={dest_lon}#map=15/{dest_lat}/{dest_lon}",
+                        "note": f"Starting point '{origin}' could not be resolved or live location was not shared. Showing location map for '{dest_geo['name']}'.",
+                    }
 
                 orig_lat = orig_geo["latitude"]
                 orig_lon = orig_geo["longitude"]
