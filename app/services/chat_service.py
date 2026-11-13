@@ -161,7 +161,7 @@ class ChatService:
             "2. When answering questions regarding current news, events after your training cutoff, live facts, or searching the web, call `web_search`.\n"
             "3. When answering questions about driving routes, travel duration, traffic, or maps, call `get_route_or_map`.\n"
             "4. If current date or time is asked, use the system date and time provided above.\n"
-            "5. Always synthesize tool outputs into a clear, natural-language response for the user. When a route or location map is returned, include the map link or embed URL provided."
+            "5. Always synthesize tool outputs into a clear, natural-language response for the user. When a route or location map is returned, include the interactive map iframe directly (e.g. `<iframe src=\"<map_embed_url>\" width=\"100%\" height=\"350\"></iframe>`) along with the full-screen route link."
         )
 
     async def stream_chat_turn(

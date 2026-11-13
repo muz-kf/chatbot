@@ -2594,8 +2594,46 @@ button {
 }
 
 :root[data-theme="gold"] .stop-button {
-  color: white !important;
-  background: linear-gradient(145deg, #d77f66, #9e493e) !important;
+  color: #211805 !important;
+  background: linear-gradient(145deg, #f59e0b, #d97706) !important;
+  border-color: rgba(245, 158, 11, 0.6) !important;
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.4) !important;
+}
+
+:root[data-theme="gold"] .send-button.is-loading-pause {
+  background: linear-gradient(145deg, #d97706, #b45309) !important;
+  border-color: rgba(245, 158, 11, 0.5) !important;
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.35) !important;
+  color: #211805 !important;
+}
+
+:root[data-theme="gold"] .conversation-item {
+  color: #e6cca0 !important;
+  font-weight: 450;
+}
+
+:root[data-theme="gold"] .conversation-item-icon {
+  color: #d4af37 !important;
+  opacity: 0.85;
+}
+
+:root[data-theme="gold"] .conversation-item:hover,
+:root[data-theme="gold"] .conversation-item:focus-visible {
+  color: #fff3cf !important;
+  background: rgba(217, 119, 6, 0.16) !important;
+  border-color: rgba(245, 158, 11, 0.28) !important;
+}
+
+:root[data-theme="gold"] .conversation-item.is-active {
+  color: #fff3cf !important;
+  background: rgba(217, 119, 6, 0.26) !important;
+  border-color: rgba(245, 158, 11, 0.45) !important;
+  font-weight: 600;
+}
+
+:root[data-theme="gold"] .conversation-item.is-active .conversation-item-icon {
+  color: #fbbf24 !important;
+  opacity: 1;
 }
 
 :root[data-theme="gold"] .chat-error {
@@ -3023,8 +3061,46 @@ button {
 }
 
 :root[data-theme="green"] .stop-button {
-  color: white !important;
-  background: linear-gradient(145deg, #e2768c, #a43d63) !important;
+  color: #022013 !important;
+  background: linear-gradient(145deg, #34d399, #059669) !important;
+  border-color: rgba(52, 211, 153, 0.6) !important;
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.4) !important;
+}
+
+:root[data-theme="green"] .send-button.is-loading-pause {
+  background: linear-gradient(145deg, #059669, #047857) !important;
+  border-color: rgba(52, 211, 153, 0.5) !important;
+  box-shadow: 0 0 14px rgba(16, 185, 129, 0.35) !important;
+  color: #022013 !important;
+}
+
+:root[data-theme="green"] .voice-dictation-banner {
+  background: rgba(5, 150, 105, 0.12) !important;
+  border-color: rgba(16, 185, 129, 0.35) !important;
+}
+
+:root[data-theme="green"] .dictation-dot {
+  background: #10b981 !important;
+  box-shadow: 0 0 10px #10b981 !important;
+}
+
+:root[data-theme="green"] .dictation-dot.is-sending {
+  background: #34d399 !important;
+  box-shadow: 0 0 12px #34d399 !important;
+}
+
+:root[data-theme="green"] .dictation-label {
+  color: #34d399 !important;
+}
+
+:root[data-theme="green"] .dictation-active {
+  color: #a7f3d0 !important;
+}
+
+:root[data-theme="green"] .dictation-done-btn {
+  background: linear-gradient(145deg, #059669, #10b981) !important;
+  color: #ffffff !important;
+  border-color: rgba(52, 211, 153, 0.4) !important;
 }
 
 :root[data-theme="green"] .chat-error {
@@ -3408,6 +3484,50 @@ button {
   border-color: rgba(191, 65, 97, .2);
   color: #963d56;
   background: rgba(255, 230, 237, .82);
+}
+
+:root[data-theme="white"] .voice-dictation-banner {
+  background: rgba(255, 255, 255, 0.96) !important;
+  border-color: rgba(99, 102, 241, 0.28) !important;
+  box-shadow: 0 4px 18px rgba(79, 70, 229, 0.12) !important;
+}
+
+:root[data-theme="white"] .dictation-dot {
+  background: #6366f1 !important;
+  box-shadow: 0 0 10px #6366f1 !important;
+}
+
+:root[data-theme="white"] .dictation-dot.is-sending {
+  background: #10b981 !important;
+  box-shadow: 0 0 12px #10b981 !important;
+}
+
+:root[data-theme="white"] .dictation-label {
+  color: #4338ca !important;
+}
+
+:root[data-theme="white"] .dictation-label-sub {
+  color: #64748b !important;
+}
+
+:root[data-theme="white"] .dictation-text {
+  color: #0f172a !important;
+}
+
+:root[data-theme="white"] .dictation-active {
+  color: #1e1b4b !important;
+  font-weight: 600 !important;
+}
+
+:root[data-theme="white"] .dictation-placeholder {
+  color: #64748b !important;
+  opacity: 0.85 !important;
+}
+
+:root[data-theme="white"] .dictation-done-btn {
+  background: linear-gradient(135deg, #4f46e5, #6366f1) !important;
+  color: #ffffff !important;
+  border-color: rgba(79, 70, 229, 0.4) !important;
 }
 
 :root[data-theme="white"] .sidebar-scrim {
@@ -4823,6 +4943,42 @@ button {
 }
 :root[data-theme="skyblue"] .sidebar-empty p { color: #0c2340; }
 :root[data-theme="skyblue"] .sidebar-empty span { color: #0369a1; }
+:root[data-theme="skyblue"] .conversation-item {
+  color: #0c2340 !important;
+  font-weight: 500;
+}
+:root[data-theme="skyblue"] .conversation-item-icon {
+  color: #0284c7 !important;
+  opacity: 0.85;
+}
+:root[data-theme="skyblue"] .conversation-item:hover,
+:root[data-theme="skyblue"] .conversation-item:focus-visible {
+  color: #0284c7 !important;
+  background: rgba(14, 165, 233, 0.12) !important;
+  border-color: rgba(14, 165, 233, 0.25) !important;
+}
+:root[data-theme="skyblue"] .conversation-item.is-active {
+  color: #0284c7 !important;
+  background: rgba(14, 165, 233, 0.18) !important;
+  border-color: rgba(14, 165, 233, 0.35) !important;
+  font-weight: 600;
+}
+:root[data-theme="skyblue"] .conversation-item.is-active .conversation-item-icon {
+  color: #0284c7 !important;
+  opacity: 1;
+}
+:root[data-theme="skyblue"] .stop-button {
+  color: #ffffff !important;
+  background: linear-gradient(145deg, #0284c7, #0369a1) !important;
+  border-color: rgba(14, 165, 233, 0.5) !important;
+  box-shadow: 0 0 16px rgba(14, 165, 233, 0.35) !important;
+}
+:root[data-theme="skyblue"] .send-button.is-loading-pause {
+  background: linear-gradient(145deg, #0284c7, #0369a1) !important;
+  border-color: rgba(14, 165, 233, 0.5) !important;
+  box-shadow: 0 0 14px rgba(14, 165, 233, 0.35) !important;
+  color: #ffffff !important;
+}
 :root[data-theme="skyblue"] .settings-toggle { color: #0369a1 !important; }
 :root[data-theme="skyblue"] .settings-field label { color: #0369a1; }
 :root[data-theme="skyblue"] .setting-select-wrap svg { color: #0284c7; }
@@ -5162,6 +5318,18 @@ button {
   box-shadow: 0 4px 17px rgba(249, 115, 22, .45), inset 0 1px 0 rgba(255, 255, 255, .4);
   color: white !important;
 }
+:root[data-theme="orange"] .stop-button {
+  color: #ffffff !important;
+  background: linear-gradient(145deg, #ea580c, #c2410c) !important;
+  border-color: rgba(249, 115, 22, 0.6) !important;
+  box-shadow: 0 0 16px rgba(249, 115, 22, 0.4) !important;
+}
+:root[data-theme="orange"] .send-button.is-loading-pause {
+  background: linear-gradient(145deg, #c2410c, #9a3412) !important;
+  border-color: rgba(249, 115, 22, 0.5) !important;
+  box-shadow: 0 0 14px rgba(249, 115, 22, 0.35) !important;
+  color: #ffffff !important;
+}
 :root[data-theme="orange"] .msg-action-btn { color: rgba(254, 215, 170, .7); }
 :root[data-theme="orange"] .msg-action-btn:hover {
   color: #ffffff;
@@ -5387,6 +5555,18 @@ button {
   background: linear-gradient(145deg, #f43f5e, #be123c 62%, #881337) !important;
   box-shadow: 0 4px 17px rgba(190, 18, 60, .48), inset 0 1px 0 rgba(255, 255, 255, .4);
   color: white !important;
+}
+:root[data-theme="maroon"] .stop-button {
+  color: #ffffff !important;
+  background: linear-gradient(145deg, #be123c, #881337) !important;
+  border-color: rgba(225, 29, 72, 0.6) !important;
+  box-shadow: 0 0 16px rgba(190, 18, 60, 0.4) !important;
+}
+:root[data-theme="maroon"] .send-button.is-loading-pause {
+  background: linear-gradient(145deg, #9f1239, #701a31) !important;
+  border-color: rgba(225, 29, 72, 0.5) !important;
+  box-shadow: 0 0 14px rgba(190, 18, 60, 0.35) !important;
+  color: #ffffff !important;
 }
 :root[data-theme="maroon"] .msg-action-btn { color: rgba(254, 205, 211, .7); }
 :root[data-theme="maroon"] .msg-action-btn:hover {
@@ -5614,6 +5794,18 @@ button {
   box-shadow: 0 4px 17px rgba(236, 72, 153, .45), inset 0 1px 0 rgba(255, 255, 255, .4);
   color: white !important;
 }
+:root[data-theme="pink"] .stop-button {
+  color: #ffffff !important;
+  background: linear-gradient(145deg, #db2777, #be185d) !important;
+  border-color: rgba(236, 72, 153, 0.6) !important;
+  box-shadow: 0 0 16px rgba(236, 72, 153, 0.4) !important;
+}
+:root[data-theme="pink"] .send-button.is-loading-pause {
+  background: linear-gradient(145deg, #be185d, #9d174d) !important;
+  border-color: rgba(236, 72, 153, 0.5) !important;
+  box-shadow: 0 0 14px rgba(236, 72, 153, 0.35) !important;
+  color: #ffffff !important;
+}
 :root[data-theme="pink"] .msg-action-btn { color: rgba(251, 207, 232, .7); }
 :root[data-theme="pink"] .msg-action-btn:hover {
   color: #ffffff;
@@ -5764,6 +5956,41 @@ button {
   background: linear-gradient(145deg, #c084fc, #9333ea 62%, #7e22ce) !important;
   box-shadow: 0 4px 20px rgba(168, 85, 247, .45), inset 0 1px 0 rgba(255, 255, 255, .35);
   color: #ffffff !important;
+}
+:root[data-theme="zyricon"] .stop-button {
+  color: #ffffff !important;
+  background: linear-gradient(145deg, #a855f7, #7e22ce) !important;
+  border-color: rgba(168, 85, 247, 0.6) !important;
+  box-shadow: 0 0 18px rgba(168, 85, 247, 0.45) !important;
+}
+:root[data-theme="zyricon"] .send-button.is-loading-pause {
+  background: linear-gradient(145deg, #7e22ce, #6b21a8) !important;
+  border-color: rgba(168, 85, 247, 0.5) !important;
+  box-shadow: 0 0 14px rgba(168, 85, 247, 0.35) !important;
+  color: #ffffff !important;
+}
+:root[data-theme="zyricon"] .voice-dictation-banner {
+  background: rgba(126, 34, 206, 0.16) !important;
+  border-color: rgba(168, 85, 247, 0.35) !important;
+}
+:root[data-theme="zyricon"] .dictation-dot {
+  background: #a855f7 !important;
+  box-shadow: 0 0 10px #a855f7 !important;
+}
+:root[data-theme="zyricon"] .dictation-dot.is-sending {
+  background: #c084fc !important;
+  box-shadow: 0 0 12px #c084fc !important;
+}
+:root[data-theme="zyricon"] .dictation-label {
+  color: #c084fc !important;
+}
+:root[data-theme="zyricon"] .dictation-active {
+  color: #e9d5ff !important;
+}
+:root[data-theme="zyricon"] .dictation-done-btn {
+  background: linear-gradient(145deg, #9333ea, #7e22ce) !important;
+  color: #ffffff !important;
+  border-color: rgba(168, 85, 247, 0.4) !important;
 }
 :root[data-theme="zyricon"] .user-bubble {
   border-color: rgba(168, 85, 247, .32);
@@ -5970,6 +6197,18 @@ button {
   background: linear-gradient(145deg, #c084fc, #9333ea) !important;
   box-shadow: 0 4px 17px rgba(147, 51, 234, .35), inset 0 1px 0 rgba(255, 255, 255, .35);
   color: white !important;
+}
+:root[data-theme="miracle"] .stop-button {
+  color: #ffffff !important;
+  background: linear-gradient(145deg, #7c3aed, #6d28d9) !important;
+  border-color: rgba(124, 58, 237, 0.6) !important;
+  box-shadow: 0 0 16px rgba(124, 58, 237, 0.4) !important;
+}
+:root[data-theme="miracle"] .send-button.is-loading-pause {
+  background: linear-gradient(145deg, #6d28d9, #5b21b6) !important;
+  border-color: rgba(124, 58, 237, 0.5) !important;
+  box-shadow: 0 0 14px rgba(124, 58, 237, 0.35) !important;
+  color: #ffffff !important;
 }
 :root[data-theme="miracle"] .msg-action-btn { color: rgba(30, 19, 56, .55); }
 :root[data-theme="miracle"] .msg-action-btn:hover {
@@ -6539,3 +6778,377 @@ button {
     box-shadow: 0 0 20px rgba(168, 85, 247, 0.25);
   }
 }
+
+/* ==========================================================================
+   THEME ADAPTATIONS: ASKING DAZZ & INTERACTIVE MAPS (ALL 10+ THEMES)
+   ========================================================================== */
+
+/* --- 1. Neon Green --- */
+:root[data-theme="green"] .asking-dazz-container {
+  background: rgba(5, 150, 105, 0.12);
+  border-color: rgba(16, 185, 129, 0.35);
+  box-shadow: 0 0 18px rgba(16, 185, 129, 0.22);
+}
+:root[data-theme="green"] .asking-dazz-hud {
+  color: #34d399;
+}
+:root[data-theme="green"] .asking-radar-ring {
+  background: #10b981;
+  box-shadow: 0 0 10px #10b981;
+}
+:root[data-theme="green"] .asking-dazz-label {
+  background: linear-gradient(135deg, #a7f3d0, #34d399);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+:root[data-theme="green"] .asking-dazz-details {
+  color: #6ee7b7;
+}
+:root[data-theme="green"] .asking-pulse-dot {
+  background: #34d399;
+  box-shadow: 0 0 8px #34d399;
+}
+:root[data-theme="green"] .chat-map-card {
+  border-color: rgba(16, 185, 129, 0.35);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.4), 0 0 20px rgba(16, 185, 129, 0.14);
+}
+:root[data-theme="green"] .chat-map-link {
+  color: #34d399;
+}
+
+/* --- 2. Midnight Gold --- */
+:root[data-theme="gold"] .asking-dazz-container {
+  background: rgba(217, 119, 6, 0.12);
+  border-color: rgba(245, 158, 11, 0.35);
+  box-shadow: 0 0 18px rgba(245, 158, 11, 0.22);
+}
+:root[data-theme="gold"] .asking-dazz-hud {
+  color: #fbbf24;
+}
+:root[data-theme="gold"] .asking-radar-ring {
+  background: #f59e0b;
+  box-shadow: 0 0 10px #f59e0b;
+}
+:root[data-theme="gold"] .asking-dazz-label {
+  background: linear-gradient(135deg, #fef08a, #f59e0b);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+:root[data-theme="gold"] .asking-dazz-details {
+  color: #fde68a;
+}
+:root[data-theme="gold"] .asking-pulse-dot {
+  background: #fbbf24;
+  box-shadow: 0 0 8px #fbbf24;
+}
+:root[data-theme="gold"] .chat-map-card {
+  border-color: rgba(245, 158, 11, 0.35);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.4), 0 0 20px rgba(245, 158, 11, 0.14);
+}
+:root[data-theme="gold"] .chat-map-link {
+  color: #fbbf24;
+}
+
+/* --- 3. D.A.Z.Z & Jarvis --- */
+:is([data-theme="dazz"], [data-theme="jarvis"]) .asking-dazz-container {
+  background: rgba(0, 240, 255, 0.08);
+  border-color: rgba(0, 240, 255, 0.4);
+  box-shadow: 0 0 22px rgba(0, 240, 255, 0.25);
+}
+:is([data-theme="dazz"], [data-theme="jarvis"]) .asking-dazz-hud {
+  color: #00f0ff;
+}
+:is([data-theme="dazz"], [data-theme="jarvis"]) .asking-radar-ring {
+  background: #00f0ff;
+  box-shadow: 0 0 12px #00f0ff;
+}
+:is([data-theme="dazz"], [data-theme="jarvis"]) .asking-dazz-label {
+  background: linear-gradient(135deg, #ffffff, #00f0ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+:is([data-theme="dazz"], [data-theme="jarvis"]) .asking-dazz-details {
+  color: #7dd3fc;
+}
+:is([data-theme="dazz"], [data-theme="jarvis"]) .asking-pulse-dot {
+  background: #00f0ff;
+  box-shadow: 0 0 8px #00f0ff;
+}
+:is([data-theme="dazz"], [data-theme="jarvis"]) .chat-map-card {
+  border-color: rgba(0, 240, 255, 0.4);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45), 0 0 24px rgba(0, 240, 255, 0.18);
+}
+:is([data-theme="dazz"], [data-theme="jarvis"]) .chat-map-link {
+  color: #00f0ff;
+}
+
+/* --- 4. Crimson Red --- */
+:root[data-theme="red"] .asking-dazz-container {
+  background: rgba(220, 38, 38, 0.12);
+  border-color: rgba(239, 68, 68, 0.35);
+  box-shadow: 0 0 18px rgba(239, 68, 68, 0.22);
+}
+:root[data-theme="red"] .asking-dazz-hud {
+  color: #f87171;
+}
+:root[data-theme="red"] .asking-radar-ring {
+  background: #ef4444;
+  box-shadow: 0 0 10px #ef4444;
+}
+:root[data-theme="red"] .asking-dazz-label {
+  background: linear-gradient(135deg, #fecaca, #ef4444);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+:root[data-theme="red"] .asking-dazz-details {
+  color: #fca5a5;
+}
+:root[data-theme="red"] .asking-pulse-dot {
+  background: #f87171;
+  box-shadow: 0 0 8px #f87171;
+}
+:root[data-theme="red"] .chat-map-card {
+  border-color: rgba(239, 68, 68, 0.35);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.4), 0 0 20px rgba(239, 68, 68, 0.14);
+}
+:root[data-theme="red"] .chat-map-link {
+  color: #f87171;
+}
+
+/* --- 5. Solar Orange --- */
+:root[data-theme="orange"] .asking-dazz-container {
+  background: rgba(234, 88, 12, 0.12);
+  border-color: rgba(249, 115, 22, 0.35);
+  box-shadow: 0 0 18px rgba(249, 115, 22, 0.22);
+}
+:root[data-theme="orange"] .asking-dazz-hud {
+  color: #fb923c;
+}
+:root[data-theme="orange"] .asking-radar-ring {
+  background: #f97316;
+  box-shadow: 0 0 10px #f97316;
+}
+:root[data-theme="orange"] .asking-dazz-label {
+  background: linear-gradient(135deg, #ffedd5, #f97316);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+:root[data-theme="orange"] .asking-dazz-details {
+  color: #fdba74;
+}
+:root[data-theme="orange"] .asking-pulse-dot {
+  background: #fb923c;
+  box-shadow: 0 0 8px #fb923c;
+}
+:root[data-theme="orange"] .chat-map-card {
+  border-color: rgba(249, 115, 22, 0.35);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.4), 0 0 20px rgba(249, 115, 22, 0.14);
+}
+:root[data-theme="orange"] .chat-map-link {
+  color: #fb923c;
+}
+
+/* --- 6. Velvet Maroon --- */
+:root[data-theme="maroon"] .asking-dazz-container {
+  background: rgba(190, 18, 60, 0.12);
+  border-color: rgba(225, 29, 72, 0.35);
+  box-shadow: 0 0 18px rgba(225, 29, 72, 0.22);
+}
+:root[data-theme="maroon"] .asking-dazz-hud {
+  color: #fb7185;
+}
+:root[data-theme="maroon"] .asking-radar-ring {
+  background: #e11d48;
+  box-shadow: 0 0 10px #e11d48;
+}
+:root[data-theme="maroon"] .asking-dazz-label {
+  background: linear-gradient(135deg, #ffe4e6, #e11d48);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+:root[data-theme="maroon"] .asking-dazz-details {
+  color: #fda4af;
+}
+:root[data-theme="maroon"] .asking-pulse-dot {
+  background: #fb7185;
+  box-shadow: 0 0 8px #fb7185;
+}
+:root[data-theme="maroon"] .chat-map-card {
+  border-color: rgba(225, 29, 72, 0.35);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.4), 0 0 20px rgba(225, 29, 72, 0.14);
+}
+:root[data-theme="maroon"] .chat-map-link {
+  color: #fb7185;
+}
+
+/* --- 7. Sky Blue --- */
+:root[data-theme="skyblue"] .asking-dazz-container {
+  background: rgba(2, 132, 199, 0.12);
+  border-color: rgba(14, 165, 233, 0.35);
+  box-shadow: 0 0 18px rgba(14, 165, 233, 0.22);
+}
+:root[data-theme="skyblue"] .asking-dazz-hud {
+  color: #0284c7;
+}
+:root[data-theme="skyblue"] .asking-radar-ring {
+  background: #0ea5e9;
+  box-shadow: 0 0 10px #0ea5e9;
+}
+:root[data-theme="skyblue"] .asking-dazz-label {
+  background: linear-gradient(135deg, #0369a1, #0ea5e9);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+:root[data-theme="skyblue"] .asking-dazz-details {
+  color: #0369a1;
+}
+:root[data-theme="skyblue"] .asking-pulse-dot {
+  background: #0ea5e9;
+  box-shadow: 0 0 8px #0ea5e9;
+}
+:root[data-theme="skyblue"] .chat-map-card {
+  border-color: rgba(14, 165, 233, 0.35);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12), 0 0 20px rgba(14, 165, 233, 0.14);
+}
+:root[data-theme="skyblue"] .chat-map-link {
+  color: #0284c7;
+}
+
+/* --- 8. Neon Pink --- */
+:root[data-theme="pink"] .asking-dazz-container {
+  background: rgba(219, 39, 119, 0.12);
+  border-color: rgba(236, 72, 153, 0.35);
+  box-shadow: 0 0 18px rgba(236, 72, 153, 0.22);
+}
+:root[data-theme="pink"] .asking-dazz-hud {
+  color: #f472b6;
+}
+:root[data-theme="pink"] .asking-radar-ring {
+  background: #ec4899;
+  box-shadow: 0 0 10px #ec4899;
+}
+:root[data-theme="pink"] .asking-dazz-label {
+  background: linear-gradient(135deg, #fce7f3, #ec4899);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+:root[data-theme="pink"] .asking-dazz-details {
+  color: #fbcfe8;
+}
+:root[data-theme="pink"] .asking-pulse-dot {
+  background: #f472b6;
+  box-shadow: 0 0 8px #f472b6;
+}
+:root[data-theme="pink"] .chat-map-card {
+  border-color: rgba(236, 72, 153, 0.35);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.4), 0 0 20px rgba(236, 72, 153, 0.14);
+}
+:root[data-theme="pink"] .chat-map-link {
+  color: #f472b6;
+}
+
+/* --- 9. Zyricon Night --- */
+:root[data-theme="zyricon"] .asking-dazz-container {
+  background: rgba(126, 34, 206, 0.14);
+  border-color: rgba(168, 85, 247, 0.35);
+  box-shadow: 0 0 18px rgba(168, 85, 247, 0.25);
+}
+:root[data-theme="zyricon"] .asking-dazz-hud {
+  color: #c084fc;
+}
+:root[data-theme="zyricon"] .asking-radar-ring {
+  background: #9333ea;
+  box-shadow: 0 0 10px #9333ea;
+}
+:root[data-theme="zyricon"] .asking-dazz-label {
+  background: linear-gradient(135deg, #f3e8ff, #a855f7);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+:root[data-theme="zyricon"] .asking-dazz-details {
+  color: #d8b4fe;
+}
+:root[data-theme="zyricon"] .asking-pulse-dot {
+  background: #c084fc;
+  box-shadow: 0 0 8px #c084fc;
+}
+:root[data-theme="zyricon"] .chat-map-card {
+  border-color: rgba(168, 85, 247, 0.35);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.4), 0 0 20px rgba(168, 85, 247, 0.15);
+}
+:root[data-theme="zyricon"] .chat-map-link {
+  color: #c084fc;
+}
+
+/* --- 10. Miracle Violet --- */
+:root[data-theme="miracle"] .asking-dazz-container {
+  background: rgba(124, 58, 237, 0.12);
+  border-color: rgba(124, 58, 237, 0.35);
+  box-shadow: 0 0 18px rgba(124, 58, 237, 0.22);
+}
+:root[data-theme="miracle"] .asking-dazz-hud {
+  color: #7c3aed;
+}
+:root[data-theme="miracle"] .asking-radar-ring {
+  background: #7c3aed;
+  box-shadow: 0 0 10px #7c3aed;
+}
+:root[data-theme="miracle"] .asking-dazz-label {
+  background: linear-gradient(135deg, #4c1d95, #7c3aed);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+:root[data-theme="miracle"] .asking-dazz-details {
+  color: #5b21b6;
+}
+:root[data-theme="miracle"] .asking-pulse-dot {
+  background: #7c3aed;
+  box-shadow: 0 0 8px #7c3aed;
+}
+:root[data-theme="miracle"] .chat-map-card {
+  border-color: rgba(124, 58, 237, 0.35);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12), 0 0 20px rgba(124, 58, 237, 0.14);
+}
+:root[data-theme="miracle"] .chat-map-link {
+  color: #7c3aed;
+}
+
+/* --- 11. Cloud White (Light Mode) --- */
+:root[data-theme="white"] .asking-dazz-container {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(79, 70, 229, 0.35);
+  box-shadow: 0 4px 18px rgba(79, 70, 229, 0.14);
+}
+:root[data-theme="white"] .asking-dazz-hud {
+  color: #4f46e5;
+}
+:root[data-theme="white"] .asking-radar-ring {
+  background: #6366f1;
+  box-shadow: 0 0 10px #6366f1;
+}
+:root[data-theme="white"] .asking-dazz-label {
+  background: linear-gradient(135deg, #312e81, #4f46e5);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+:root[data-theme="white"] .asking-dazz-details {
+  color: #475569;
+}
+:root[data-theme="white"] .asking-pulse-dot {
+  background: #4f46e5;
+  box-shadow: 0 0 8px #4f46e5;
+}
+:root[data-theme="white"] .chat-map-card {
+  border-color: rgba(0, 0, 0, 0.12);
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+}
+:root[data-theme="white"] .chat-map-caption {
+  background: #f8fafc;
+  color: #334155;
+  border-top-color: rgba(0, 0, 0, 0.08);
+}
+:root[data-theme="white"] .chat-map-link {
+  color: #4f46e5;
+}
+

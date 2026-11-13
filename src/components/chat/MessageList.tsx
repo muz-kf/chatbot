@@ -31,6 +31,39 @@ type MessageListProps = {
   onEdit?: (message: Message) => void;
 };
 
+const IFRAME_REGEX = /<iframe[\s\S]*?src=["']([^"']+)["'][\s\S]*?(?:<\/iframe>|\/>)/gi;
+
+function renderMessageParts(content: string) {
+  IFRAME_REGEX.lastIndex = 0;
+  const parts: Array<{ type: "text" | "iframe"; content: string }> = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = IFRAME_REGEX.exec(content)) !== null) {
+    if (match.index > lastIndex) {
+      const textChunk = content.slice(lastIndex, match.index);
+      if (textChunk.trim()) {
+        parts.push({ type: "text", content: textChunk });
+      }
+    }
+    parts.push({ type: "iframe", content: match[1] });
+    lastIndex = IFRAME_REGEX.lastIndex;
+  }
+
+  if (lastIndex < content.length) {
+    const remaining = content.slice(lastIndex);
+    if (remaining.trim()) {
+      parts.push({ type: "text", content: remaining });
+    }
+  }
+
+  if (parts.length === 0) {
+    parts.push({ type: "text", content });
+  }
+
+  return parts;
+}
+
 export function MessageList({
   messages,
   streaming,
@@ -219,46 +252,82 @@ export function MessageList({
 
                     <div className="markdown-content">
                       {message.content ? (
-                        <ReactMarkdown
-                          remarkPlugins={[remarkGfm]}
-                          components={{
-                            p: ({ children }) => <p>{children}</p>,
-                            h1: ({ children }) => <h1>{children}</h1>,
-                            h2: ({ children }) => <h2>{children}</h2>,
-                            h3: ({ children }) => <h3>{children}</h3>,
-                            ul: ({ children }) => <ul>{children}</ul>,
-                            ol: ({ children }) => <ol>{children}</ol>,
-                            blockquote: ({ children }) => <blockquote>{children}</blockquote>,
-                            pre: ({ children }) => <pre>{children}</pre>,
-                            code: ({ children }) => <code>{children}</code>,
-                            a: ({ children, href }) => {
-                              if (href && (href.includes("openstreetmap.org/export/embed.html") || href.includes("layer=mapnik"))) {
-                                return (
-                                  <div className="chat-map-card">
-                                    <iframe
-                                      src={href}
-                                      className="chat-map-iframe"
-                                      title="OpenStreetMap Location"
-                                      loading="lazy"
-                                    />
-                                    <div className="chat-map-caption">
-                                      <MapPin size={13} className="text-emerald-400" />
-                                      <span>Interactive OpenStreetMap</span>
-                                      <a href={href.replace("/export/embed.html", "")} target="_blank" rel="noreferrer" className="chat-map-link">
-                                        View in OSM ↗
-                                      </a>
-                                    </div>
+                        renderMessageParts(message.content).map((part, pIdx) => {
+                          if (part.type === "iframe") {
+                            const osmLink = part.content.replace("/export/embed.html", "");
+                            return (
+                              <div className="chat-map-card" key={`iframe-${pIdx}`}>
+                                <iframe
+                                  src={part.content}
+                                  className="chat-map-iframe"
+                                  title="Interactive Route Map"
+                                  loading="lazy"
+                                  allowFullScreen
+                                />
+                                <div className="chat-map-caption">
+                                  <div className="chat-map-caption-left">
+                                    <MapPin size={13} className="text-emerald-400" />
+                                    <span>Interactive OpenStreetMap</span>
                                   </div>
-                                );
-                              }
-                              return <a href={href} target="_blank" rel="noreferrer">{children}</a>;
-                            },
-                            hr: () => <hr />,
-                            table: ({ children }) => <div className="markdown-table"><table>{children}</table></div>,
-                          }}
-                        >
-                          {message.content}
-                        </ReactMarkdown>
+                                  <a
+                                    href={osmLink}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="chat-map-link"
+                                  >
+                                    View full screen ↗
+                                  </a>
+                                </div>
+                              </div>
+                            );
+                          }
+                          return (
+                            <ReactMarkdown
+                              key={`md-${pIdx}`}
+                              remarkPlugins={[remarkGfm]}
+                              components={{
+                                p: ({ children }) => <p>{children}</p>,
+                                h1: ({ children }) => <h1>{children}</h1>,
+                                h2: ({ children }) => <h2>{children}</h2>,
+                                h3: ({ children }) => <h3>{children}</h3>,
+                                ul: ({ children }) => <ul>{children}</ul>,
+                                ol: ({ children }) => <ol>{children}</ol>,
+                                blockquote: ({ children }) => <blockquote>{children}</blockquote>,
+                                pre: ({ children }) => <pre>{children}</pre>,
+                                code: ({ children }) => <code>{children}</code>,
+                                a: ({ children, href }) => {
+                                  if (href && (href.includes("openstreetmap.org/export/embed.html") || href.includes("layer=mapnik"))) {
+                                    return (
+                                      <div className="chat-map-card">
+                                        <iframe
+                                          src={href}
+                                          className="chat-map-iframe"
+                                          title="OpenStreetMap Location"
+                                          loading="lazy"
+                                          allowFullScreen
+                                        />
+                                        <div className="chat-map-caption">
+                                          <div className="chat-map-caption-left">
+                                            <MapPin size={13} className="text-emerald-400" />
+                                            <span>Interactive OpenStreetMap</span>
+                                          </div>
+                                          <a href={href.replace("/export/embed.html", "")} target="_blank" rel="noreferrer" className="chat-map-link">
+                                            View in OSM ↗
+                                          </a>
+                                        </div>
+                                      </div>
+                                    );
+                                  }
+                                  return <a href={href} target="_blank" rel="noreferrer">{children}</a>;
+                                },
+                                hr: () => <hr />,
+                                table: ({ children }) => <div className="markdown-table"><table>{children}</table></div>,
+                              }}
+                            >
+                              {part.content}
+                            </ReactMarkdown>
+                          );
+                        })
                       ) : isStreamingAssistant ? (
                         <div className="asking-dazz-container" role="status" aria-label="Asking DAZZ">
                           <div className="asking-dazz-hud">
