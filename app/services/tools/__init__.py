@@ -1,10 +1,12 @@
 from .base import BaseTool
+from .mapping import MappingAndRoutingTool
 from .registry import ToolRegistry, tool_registry
 from .search import WebSearchTool
 from .weather import WeatherTool
 
 __all__ = [
     "BaseTool",
+    "MappingAndRoutingTool",
     "ToolRegistry",
     "WeatherTool",
     "WebSearchTool",

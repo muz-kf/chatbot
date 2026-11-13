@@ -75,9 +75,17 @@ class ChatMessage(BaseModel):
         return result
 
 
+class ClientLocation(BaseModel):
+    latitude: float
+    longitude: float
+    accuracy: float | None = None
+
+
 class ChatTurnRequest(BaseModel):
     chatId: str
     message: ChatMessage
+    clientTimezone: str | None = None
+    clientLocation: ClientLocation | None = None
 
     @field_validator("message")
     @classmethod

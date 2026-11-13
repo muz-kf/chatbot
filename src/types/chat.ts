@@ -29,6 +29,12 @@ export type ChatSummary = {
   updatedAt: string;
 };
 
+export type UserLocation = {
+  latitude: number;
+  longitude: number;
+  accuracy?: number;
+};
+
 export const fonts = [
   "Sora",
   "Poppins",

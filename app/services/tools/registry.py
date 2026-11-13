@@ -3,6 +3,7 @@ import logging
 from typing import Any
 
 from .base import BaseTool
+from .mapping import MappingAndRoutingTool
 from .search import WebSearchTool
 from .weather import WeatherTool
 
@@ -62,4 +63,5 @@ class ToolRegistry:
 tool_registry = ToolRegistry()
 tool_registry.register(WeatherTool())
 tool_registry.register(WebSearchTool())
+tool_registry.register(MappingAndRoutingTool())
 

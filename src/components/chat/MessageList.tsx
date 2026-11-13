@@ -1,10 +1,12 @@
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  AlertTriangle,
   Check,
   Copy,
   FileAudio2,
   FileText,
   Film,
+  MapPin,
   MoreHorizontal,
   Pencil,
   Share2,
@@ -229,14 +231,57 @@ export function MessageList({
                             blockquote: ({ children }) => <blockquote>{children}</blockquote>,
                             pre: ({ children }) => <pre>{children}</pre>,
                             code: ({ children }) => <code>{children}</code>,
-                            a: ({ children, href }) => <a href={href} target="_blank" rel="noreferrer">{children}</a>,
+                            a: ({ children, href }) => {
+                              if (href && (href.includes("openstreetmap.org/export/embed.html") || href.includes("layer=mapnik"))) {
+                                return (
+                                  <div className="chat-map-card">
+                                    <iframe
+                                      src={href}
+                                      className="chat-map-iframe"
+                                      title="OpenStreetMap Location"
+                                      loading="lazy"
+                                    />
+                                    <div className="chat-map-caption">
+                                      <MapPin size={13} className="text-emerald-400" />
+                                      <span>Interactive OpenStreetMap</span>
+                                      <a href={href.replace("/export/embed.html", "")} target="_blank" rel="noreferrer" className="chat-map-link">
+                                        View in OSM ↗
+                                      </a>
+                                    </div>
+                                  </div>
+                                );
+                              }
+                              return <a href={href} target="_blank" rel="noreferrer">{children}</a>;
+                            },
                             hr: () => <hr />,
                             table: ({ children }) => <div className="markdown-table"><table>{children}</table></div>,
                           }}
                         >
                           {message.content}
                         </ReactMarkdown>
-                      ) : (isStreamingAssistant ? <span className="thinking-dots" aria-label="DAZZ is thinking"><i /><i /><i /></span> : null)}
+                      ) : isStreamingAssistant ? (
+                        <div className="asking-dazz-container" role="status" aria-label="Asking DAZZ">
+                          <div className="asking-dazz-hud">
+                            <span className="asking-radar-ring" />
+                            <Sparkles size={15} className="asking-dazz-sparkles animate-pulse" />
+                            <span className="asking-dazz-label">Asking DAZZ...</span>
+                          </div>
+                          <div className="asking-dazz-details">
+                            <span className="asking-pulse-dot" />
+                            <span>Consulting real-time intelligence & tools</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="fancy-error-card" role="alert">
+                          <div className="fancy-error-header">
+                            <AlertTriangle size={18} className="fancy-error-icon" />
+                            <h4 className="fancy-error-title">No data received from AI</h4>
+                          </div>
+                          <p className="fancy-error-description">
+                            DAZZ did not generate a response. The AI provider may be temporarily busy, experiencing rate limits, or encountered a network timeout.
+                          </p>
+                        </div>
+                      )}
                       {isStreamingAssistant && Boolean(message.content) && <span className="stream-cursor" />}
                     </div>
 

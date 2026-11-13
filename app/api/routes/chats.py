@@ -132,6 +132,8 @@ async def create_turn(
             email=email,
             current_messages=current_messages,
             model=model,
+            client_timezone=data.clientTimezone,
+            client_location=data.clientLocation,
         ),
         media_type="application/x-ndjson",
         headers={

@@ -260,3 +260,81 @@ async def test_chat_service_tool_loop_mocked() -> None:
             assert "The current weather in Berlin is 18°C and Sunny." in full_text
             assert done is True
             assert mock_weather_exec.called
+
+
+@pytest.mark.anyio
+async def test_mapping_tool_single_location() -> None:
+    from app.services.tools.mapping import MappingAndRoutingTool
+    tool = MappingAndRoutingTool()
+
+    mock_geo_resp = MagicMock()
+    mock_geo_resp.status_code = 200
+    mock_geo_resp.json.return_value = {
+        "results": [
+            {"name": "Eiffel Tower", "admin1": "Ile-de-France", "country": "France", "latitude": 48.8584, "longitude": 2.2945}
+        ]
+    }
+
+    with patch("httpx.AsyncClient.get", return_value=mock_geo_resp):
+        result = await tool.execute(destination="Eiffel Tower, Paris")
+        assert result["type"] == "location"
+        assert "Eiffel Tower" in result["location"]
+        assert "map_embed_url" in result
+        assert "openstreetmap.org/export/embed.html" in result["map_embed_url"]
+
+
+@pytest.mark.anyio
+async def test_mapping_tool_routing() -> None:
+    from app.services.tools.mapping import MappingAndRoutingTool
+    tool = MappingAndRoutingTool()
+
+    mock_geo1 = MagicMock(status_code=200)
+    mock_geo1.json.return_value = {
+        "results": [{"name": "Times Square", "latitude": 40.7580, "longitude": -73.9855}]
+    }
+    mock_geo2 = MagicMock(status_code=200)
+    mock_geo2.json.return_value = {
+        "results": [{"name": "Central Park", "latitude": 40.78509, "longitude": -73.96828}]
+    }
+
+    mock_osrm = MagicMock(status_code=200)
+    mock_osrm.raise_for_status.return_value = None
+    mock_osrm.json.return_value = {
+        "code": "Ok",
+        "routes": [
+            {
+                "distance": 4500,
+                "duration": 720,
+                "legs": [
+                    {
+                        "steps": [
+                            {"maneuver": {"type": "depart"}, "name": "7th Ave", "distance": 1200},
+                            {"maneuver": {"type": "turn", "modifier": "left"}, "name": "Central Park S", "distance": 800},
+                        ]
+                    }
+                ],
+            }
+        ],
+    }
+
+    with patch("httpx.AsyncClient.get", side_effect=[mock_geo2, mock_geo1, mock_osrm]):
+        result = await tool.execute(origin="Times Square", destination="Central Park")
+        assert result["type"] == "route"
+        assert result["distance_km"] == "4.5 km"
+        assert result["estimated_duration"] == "12 min"
+        assert "map_embed_url" in result
+        assert len(result["steps"]) > 0
+
+
+def test_client_location_and_timezone_in_system_prompt() -> None:
+    chat_service = ChatService(api_key="test-key")
+    prompt = chat_service.build_system_prompt(
+        client_timezone="Asia/Tokyo",
+        client_location={"latitude": 35.6762, "longitude": 139.6503},
+    )
+
+    assert "User's Live Location:" in prompt
+    assert "Latitude 35.67620, Longitude 139.65030" in prompt
+    assert "JST" in prompt or "+0900" in prompt
+    assert "get_route_or_map" in prompt
+

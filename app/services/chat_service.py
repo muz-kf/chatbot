@@ -120,24 +120,48 @@ class ChatService:
         self.api_key = api_key or OPENROUTER_API_KEY
         self.base_url = "https://openrouter.ai/api/v1"
 
-    def build_system_prompt(self) -> str:
-        """Inject current system date, time, weekday, timezone and tool instructions into system prompt."""
-        time_context = get_system_datetime_context(DEFAULT_TIMEZONE or None)
+    def build_system_prompt(
+        self,
+        client_timezone: str | None = None,
+        client_location: Any | None = None,
+    ) -> str:
+        """Inject current system date, time, weekday, timezone, live location, and tool instructions into system prompt."""
+        tz_to_use = client_timezone or DEFAULT_TIMEZONE or None
+        time_context = get_system_datetime_context(tz_to_use)
         tools = tool_registry.get_all()
         tool_descriptions = "\n".join(
             f"- `{t.name}`: {t.description}" for t in tools
         )
 
+        location_context = ""
+        if client_location:
+            lat = getattr(client_location, "latitude", None) or (
+                client_location.get("latitude") if isinstance(client_location, dict) else None
+            )
+            lon = getattr(client_location, "longitude", None) or (
+                client_location.get("longitude") if isinstance(client_location, dict) else None
+            )
+            if lat is not None and lon is not None:
+                location_context = (
+                    f"User's Live Location:\n"
+                    f"- Coordinates: Latitude {lat:.5f}, Longitude {lon:.5f}\n"
+                    f"- The user has shared their live device GPS location with DAZZ. You know their exact current position.\n"
+                    f"- Use these coordinates when the user asks 'where am I?', requests weather for their current area, "
+                    f"or requests directions/routes/traffic from 'here' or 'my location' without asking them for their location.\n\n"
+                )
+
         return (
-            "You are a helpful, accurate personal AI assistant.\n\n"
+            "You are a helpful, accurate personal AI assistant named DAZZ.\n\n"
             f"{time_context}\n\n"
+            f"{location_context}"
             "You have access to real-time tools:\n"
             f"{tool_descriptions}\n\n"
             "Guidelines:\n"
-            "1. When answering questions regarding current weather, conditions, or forecasts, always call `get_weather`.\n"
+            "1. When answering questions regarding current weather, conditions, or forecasts, call `get_weather`.\n"
             "2. When answering questions regarding current news, events after your training cutoff, live facts, or searching the web, call `web_search`.\n"
-            "3. If current date or time is asked, use the system date and time provided above.\n"
-            "4. Always synthesize tool outputs into a clear, natural-language response for the user."
+            "3. When answering questions about driving routes, travel duration, traffic, or maps, call `get_route_or_map`.\n"
+            "4. If current date or time is asked, use the system date and time provided above.\n"
+            "5. Always synthesize tool outputs into a clear, natural-language response for the user. When a route or location map is returned, include the map link or embed URL provided."
         )
 
     async def stream_chat_turn(
@@ -147,6 +171,8 @@ class ChatService:
         email: str,
         current_messages: list[ChatMessage],
         model: str,
+        client_timezone: str | None = None,
+        client_location: Any | None = None,
     ) -> AsyncGenerator[str, None]:
         """Execute chat turn with multi-turn tool calling loop and stream NDJSON response to client."""
         client = AsyncOpenAI(
@@ -160,7 +186,7 @@ class ChatService:
         assistant_content = ""
 
         try:
-            system_prompt = self.build_system_prompt()
+            system_prompt = self.build_system_prompt(client_timezone, client_location)
             messages: list[dict[str, Any]] = [
                 {"role": "system", "content": system_prompt},
                 *(to_openrouter_message(msg) for msg in current_messages),
