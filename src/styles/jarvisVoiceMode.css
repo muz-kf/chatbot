@@ -624,25 +624,40 @@
    ========================================================================== */
 .jarvis-subtitle-card {
   position: relative;
-  width: min(92%, 640px);
-  min-height: 96px;
-  max-height: 180px;
+  width: min(94%, 720px);
+  min-height: 120px;
+  max-height: 280px;
   overflow-y: auto;
+  scroll-behavior: smooth;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 16px 20px;
-  border-radius: 16px;
-  background: rgba(2, 16, 32, 0.65);
-  border: 1px solid rgba(0, 240, 255, 0.22);
-  backdrop-filter: blur(14px);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(0, 240, 255, 0.05);
+  gap: 14px;
+  padding: 18px 24px;
+  border-radius: 18px;
+  background: rgba(2, 16, 32, 0.72);
+  border: 1px solid var(--reactor-accent);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55), inset 0 0 24px rgba(0, 240, 255, 0.05);
   transition: border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
+.jarvis-subtitle-card::-webkit-scrollbar {
+  width: 4px;
+}
+
+.jarvis-subtitle-card::-webkit-scrollbar-thumb {
+  background: var(--reactor-accent);
+  border-radius: 99px;
+  box-shadow: 0 0 8px var(--reactor-accent);
+}
+
+.jarvis-subtitle-card::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 .jarvis-subtitle-card:hover {
-  border-color: rgba(0, 240, 255, 0.4);
-  box-shadow: 0 8px 36px rgba(0, 0, 0, 0.6), inset 0 0 24px rgba(0, 240, 255, 0.08);
+  border-color: var(--reactor-accent);
+  box-shadow: 0 12px 44px rgba(0, 0, 0, 0.65), inset 0 0 30px rgba(0, 240, 255, 0.08);
 }
 
 .subtitle-turn {
@@ -804,13 +819,45 @@
   background: rgba(255, 255, 255, 0.06);
 }
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .jarvis-arc-container {
-    width: 260px;
-    height: 260px;
+/* ==========================================================================
+   DESKTOP / PC SPATIOUS SCREEN ARRANGEMENT & AUTO-SCROLL EFFORT
+   ========================================================================== */
+@media (min-width: 960px) {
+  .jarvis-center-stage {
+    padding: 16px 40px;
+    gap: 24px;
   }
 
+  .jarvis-subtitle-card {
+    width: min(92%, 880px);
+    min-height: 160px;
+    max-height: 380px;
+    padding: 24px 32px;
+  }
+
+  .turn-text {
+    font-size: 16px;
+    line-height: 1.65;
+  }
+}
+
+@media (min-width: 1280px) {
+  .jarvis-subtitle-card {
+    width: min(90%, 960px);
+    max-height: 440px;
+  }
+}
+
+/* ==========================================================================
+   MOBILE RESPONSIVENESS
+   ========================================================================== */
+@media (max-width: 768px) {
+  .jarvis-arc-container {
+    width: 220px;
+    height: 220px;
+  }
+
+  .hud-corner-mark.top-left .hud-bracket,
   .hud-corner-mark.top-left .hud-code,
   .hud-corner-mark.bottom-left,
   .hud-corner-mark.bottom-right {
@@ -819,17 +866,67 @@
 
   .jarvis-hud-top,
   .jarvis-control-deck {
+    padding: 10px 14px;
+  }
+
+  .hud-title-text {
+    font-size: 12px;
+  }
+
+  .hud-exit-btn {
+    padding: 5px 10px;
+    font-size: 11px;
+  }
+  .hud-exit-btn kbd {
+    display: none;
+  }
+
+  .jarvis-subtitle-card {
+    width: 95%;
+    min-height: 96px;
+    max-height: 220px;
     padding: 12px 16px;
+  }
+
+  .turn-text {
+    font-size: 14px;
+    line-height: 1.5;
   }
 
   .jarvis-pill-button {
     padding: 10px 18px;
     font-size: 13px;
   }
+
+  .control-cluster {
+    gap: 10px;
+  }
 }
 
-/* Header Voice Mode Pill Button */
-.header-voice-mode-btn {
+@media (max-width: 420px) {
+  .jarvis-arc-container {
+    width: 190px;
+    height: 190px;
+  }
+
+  .jarvis-center-stage {
+    gap: 14px;
+  }
+
+  .status-label {
+    font-size: 11px;
+  }
+
+  .jarvis-subtitle-card {
+    max-height: 190px;
+  }
+}
+
+/* ==========================================================================
+   VOICE BUTTON THEME MATCHING (HEADER, SIDEBAR & UI)
+   ========================================================================== */
+.header-voice-mode-btn,
+.voice-mode-launch-btn {
   display: inline-flex !important;
   align-items: center;
   gap: 6px;
@@ -838,42 +935,113 @@
   border-radius: 999px;
   font-size: 11px;
   font-weight: 600;
-  color: #00f0ff !important;
-  background: rgba(0, 240, 255, 0.08) !important;
-  border: 1px solid rgba(0, 240, 255, 0.3) !important;
-  box-shadow: 0 0 10px rgba(0, 240, 255, 0.15);
+  color: var(--voice-btn-accent, #00f0ff) !important;
+  background: var(--voice-btn-bg, rgba(0, 240, 255, 0.08)) !important;
+  border: 1px solid var(--voice-btn-border, rgba(0, 240, 255, 0.35)) !important;
+  box-shadow: 0 0 12px var(--voice-btn-glow, rgba(0, 240, 255, 0.2)) !important;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.header-voice-mode-btn:hover {
-  background: rgba(0, 240, 255, 0.18) !important;
-  border-color: rgba(0, 240, 255, 0.6) !important;
-  box-shadow: 0 0 16px rgba(0, 240, 255, 0.35);
-  transform: translateY(-1px);
-}
-
-.header-voice-icon {
-  animation: pulseBeacon 1.5s infinite alternate;
-}
-
-/* Sidebar Voice Mode Launch Button */
 .voice-mode-launch-btn {
   margin-top: 6px !important;
-  color: #00f0ff !important;
-  border-color: rgba(0, 240, 255, 0.3) !important;
-  background: rgba(0, 240, 255, 0.06) !important;
 }
 
+.header-voice-mode-btn:hover,
 .voice-mode-launch-btn:hover {
-  background: rgba(0, 240, 255, 0.16) !important;
-  border-color: rgba(0, 240, 255, 0.6) !important;
-  box-shadow: 0 0 16px rgba(0, 240, 255, 0.25);
+  transform: translateY(-1px);
+  filter: brightness(1.2);
 }
 
+.header-voice-icon,
 .voice-launch-icon {
-  color: #00f0ff;
+  color: var(--voice-btn-accent, #00f0ff) !important;
   animation: pulseBeacon 1.5s infinite alternate;
+}
+
+/* Theme variable overrides for buttons across all 12 themes */
+:is(:root, :root[data-theme="dazz"], :root[data-theme="jarvis"]) {
+  --voice-btn-accent: #00f0ff;
+  --voice-btn-bg: rgba(0, 240, 255, 0.08);
+  --voice-btn-border: rgba(0, 240, 255, 0.35);
+  --voice-btn-glow: rgba(0, 240, 255, 0.2);
+}
+
+:root[data-theme="purple"] {
+  --voice-btn-accent: #c084fc;
+  --voice-btn-bg: rgba(168, 85, 247, 0.12);
+  --voice-btn-border: rgba(192, 132, 252, 0.4);
+  --voice-btn-glow: rgba(168, 85, 247, 0.25);
+}
+
+:root[data-theme="green"] {
+  --voice-btn-accent: #34d399;
+  --voice-btn-bg: rgba(16, 185, 129, 0.12);
+  --voice-btn-border: rgba(52, 211, 153, 0.4);
+  --voice-btn-glow: rgba(16, 185, 129, 0.25);
+}
+
+:root[data-theme="gold"] {
+  --voice-btn-accent: #fbbf24;
+  --voice-btn-bg: rgba(245, 158, 11, 0.12);
+  --voice-btn-border: rgba(251, 191, 36, 0.4);
+  --voice-btn-glow: rgba(251, 191, 36, 0.25);
+}
+
+:root[data-theme="red"] {
+  --voice-btn-accent: #f87171;
+  --voice-btn-bg: rgba(239, 68, 68, 0.12);
+  --voice-btn-border: rgba(248, 113, 113, 0.4);
+  --voice-btn-glow: rgba(239, 68, 68, 0.25);
+}
+
+:root[data-theme="orange"] {
+  --voice-btn-accent: #fb923c;
+  --voice-btn-bg: rgba(249, 115, 22, 0.12);
+  --voice-btn-border: rgba(251, 146, 60, 0.4);
+  --voice-btn-glow: rgba(249, 115, 22, 0.25);
+}
+
+:root[data-theme="maroon"] {
+  --voice-btn-accent: #fb7185;
+  --voice-btn-bg: rgba(225, 29, 72, 0.12);
+  --voice-btn-border: rgba(251, 113, 133, 0.4);
+  --voice-btn-glow: rgba(225, 29, 72, 0.25);
+}
+
+:root[data-theme="skyblue"] {
+  --voice-btn-accent: #38bdf8;
+  --voice-btn-bg: rgba(14, 165, 233, 0.12);
+  --voice-btn-border: rgba(56, 189, 248, 0.4);
+  --voice-btn-glow: rgba(14, 165, 233, 0.25);
+}
+
+:root[data-theme="pink"] {
+  --voice-btn-accent: #f472b6;
+  --voice-btn-bg: rgba(236, 72, 153, 0.12);
+  --voice-btn-border: rgba(244, 114, 182, 0.4);
+  --voice-btn-glow: rgba(236, 72, 153, 0.25);
+}
+
+:root[data-theme="zyricon"] {
+  --voice-btn-accent: #a78bfa;
+  --voice-btn-bg: rgba(139, 92, 246, 0.12);
+  --voice-btn-border: rgba(167, 139, 250, 0.4);
+  --voice-btn-glow: rgba(139, 92, 246, 0.25);
+}
+
+:root[data-theme="white"] {
+  --voice-btn-accent: #334155;
+  --voice-btn-bg: rgba(15, 23, 42, 0.06);
+  --voice-btn-border: rgba(71, 85, 105, 0.3);
+  --voice-btn-glow: rgba(0, 0, 0, 0.06);
+}
+
+:root[data-theme="miracle"] {
+  --voice-btn-accent: #9333ea;
+  --voice-btn-bg: rgba(168, 85, 247, 0.08);
+  --voice-btn-border: rgba(168, 85, 247, 0.3);
+  --voice-btn-glow: rgba(168, 85, 247, 0.15);
 }
 
 @keyframes pulseBeacon {

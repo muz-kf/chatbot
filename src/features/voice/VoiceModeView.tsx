@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Mic,
   MicOff,
@@ -10,13 +10,12 @@ import {
   CornerDownLeft,
   ChevronLeft,
   Settings2,
-  Palette,
 } from "lucide-react";
 import { JarvisArcReactor } from "./JarvisArcReactor";
 import { useVoiceAssistant, type VoiceAssistantStatus } from "./useVoiceAssistant";
 import { playJarvisStartupSweep, playDeactivationChime } from "./audioChime";
 import type { VoiceSettings } from "../../lib/speechSynthesis";
-import { themes, type ThemeChoice, type AiProvider, type Message, type UserLocation } from "../../types/chat";
+import type { AiProvider, Message, UserLocation } from "../../types/chat";
 
 export interface VoiceModeViewProps {
   chatId: string | null;
@@ -28,7 +27,6 @@ export interface VoiceModeViewProps {
   onExit: () => void;
   onTurnComplete?: (userMsg: Message, assistantMsg: Message, chatId: string) => void;
   onCreateChat?: (firstMessage: string) => Promise<string>;
-  onThemeChange?: (nextTheme: ThemeChoice) => void;
 }
 
 export function VoiceModeView({
@@ -41,9 +39,9 @@ export function VoiceModeView({
   onExit,
   onTurnComplete,
   onCreateChat,
-  onThemeChange,
 }: VoiceModeViewProps) {
   const [soundEffectsEnabled, setSoundEffectsEnabled] = useState(true);
+  const subtitleContainerRef = useRef<HTMLDivElement>(null);
 
   const {
     status,
@@ -67,6 +65,16 @@ export function VoiceModeView({
     onTurnComplete,
     onCreateChat,
   });
+
+  // Auto-scroll to latest token / speech stream without requiring manual scrolling
+  useEffect(() => {
+    if (subtitleContainerRef.current) {
+      subtitleContainerRef.current.scrollTo({
+        top: subtitleContainerRef.current.scrollHeight,
+        behavior: "smooth",
+      });
+    }
+  }, [lastAssistantReply, transcript, interimTranscript]);
 
   // On mount: Play Jarvis startup sound sweep and start listening automatically
   useEffect(() => {
@@ -132,36 +140,18 @@ export function VoiceModeView({
       <header className="jarvis-hud-top">
         <div className="hud-corner-mark top-left" aria-hidden="true">
           <span className="hud-bracket" />
-          <span className="hud-code">STARK IND. // NEURAL OS</span>
+          <span className="hud-code">DAZZ BY MZA</span>
         </div>
 
         <div className="hud-center-title">
           <div className="hud-title-badge">
             <Radio size={14} className="hud-beacon-icon animate-pulse" />
             <span className="hud-title-text">{aiName} VOICE MODE</span>
-            <span className="hud-provider-tag">{provider.toUpperCase()}</span>
           </div>
         </div>
 
         <div className="hud-corner-mark top-right">
           <div className="hud-actions-strip">
-            {onThemeChange && (
-              <div className="hud-theme-picker" title="Switch Voice Mode Theme">
-                <Palette size={14} className="hud-theme-icon" />
-                <select
-                  value={theme}
-                  onChange={(e) => onThemeChange(e.target.value as ThemeChoice)}
-                  className="hud-theme-select"
-                  aria-label="Select Voice Mode Theme"
-                >
-                  {themes.map((t) => (
-                    <option key={t.value} value={t.value}>
-                      {t.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
             <button
               type="button"
               className={`hud-icon-btn ${soundEffectsEnabled ? "is-active" : ""}`}
@@ -220,7 +210,7 @@ export function VoiceModeView({
         )}
 
         {/* Live Conversation Subtitle / Transcoding Glass Card */}
-        <div className="jarvis-subtitle-card" aria-live="polite">
+        <div ref={subtitleContainerRef} className="jarvis-subtitle-card" aria-live="polite">
           {/* User Live Speech Transcription */}
           {(transcript || interimTranscript) && (
             <div className="subtitle-turn user-turn">

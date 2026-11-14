@@ -26,9 +26,9 @@ function getAudioContext(): AudioContext | null {
 }
 
 /**
- * Alexa / Jarvis Listen Chime:
- * A crisp, high-tech two-tone rising chime (D5 587.33 Hz -> A5 880 Hz)
- * with a high harmonic overtone that signals "I'm listening".
+ * Exact Alexa Wake-Word Chime:
+ * A silky-smooth, warm two-tone rising chime (C#5 554.37 Hz -> A5 880 Hz).
+ * Uses pure sine waves with anti-click envelopes matching the authentic Alexa acoustic signature.
  */
 export function playListenChime(volume = 0.22): void {
   try {
@@ -36,55 +36,46 @@ export function playListenChime(volume = 0.22): void {
     if (!ctx) return;
     const now = ctx.currentTime;
 
-    // Primary low tone (D5)
+    // First tone: C#5 (554.37 Hz)
     const osc1 = ctx.createOscillator();
     const gain1 = ctx.createGain();
     osc1.type = "sine";
-    osc1.frequency.setValueAtTime(587.33, now);
-    gain1.gain.setValueAtTime(0, now);
-    gain1.gain.linearRampToValueAtTime(volume * 0.85, now + 0.02);
-    gain1.gain.exponentialRampToValueAtTime(0.0001, now + 0.22);
+    osc1.frequency.setValueAtTime(554.37, now);
+
+    gain1.gain.setValueAtTime(0.0001, now);
+    gain1.gain.exponentialRampToValueAtTime(volume * 0.82, now + 0.016);
+    gain1.gain.exponentialRampToValueAtTime(0.0001, now + 0.16);
+
     osc1.connect(gain1);
     gain1.connect(ctx.destination);
     osc1.start(now);
-    osc1.stop(now + 0.23);
+    osc1.stop(now + 0.17);
 
-    // Primary high tone (A5) - delayed slightly for the iconic two-tone signature
+    // Second tone: A5 (880 Hz) - rising note starting at 70ms
     const osc2 = ctx.createOscillator();
     const gain2 = ctx.createGain();
     osc2.type = "sine";
-    osc2.frequency.setValueAtTime(880, now + 0.075);
-    gain2.gain.setValueAtTime(0, now + 0.075);
-    gain2.gain.linearRampToValueAtTime(volume, now + 0.095);
-    gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.48);
+    osc2.frequency.setValueAtTime(880, now + 0.07);
+
+    gain2.gain.setValueAtTime(0.0001, now + 0.07);
+    gain2.gain.exponentialRampToValueAtTime(volume, now + 0.088);
+    gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.45);
+
     osc2.connect(gain2);
     gain2.connect(ctx.destination);
-    osc2.start(now + 0.075);
-    osc2.stop(now + 0.49);
-
-    // Subtle holographic shimmer harmonic (triangle wave at 1760 Hz)
-    const osc3 = ctx.createOscillator();
-    const gain3 = ctx.createGain();
-    osc3.type = "triangle";
-    osc3.frequency.setValueAtTime(1760, now + 0.075);
-    gain3.gain.setValueAtTime(0, now + 0.075);
-    gain3.gain.linearRampToValueAtTime(volume * 0.18, now + 0.095);
-    gain3.gain.exponentialRampToValueAtTime(0.0001, now + 0.35);
-    osc3.connect(gain3);
-    gain3.connect(ctx.destination);
-    osc3.start(now + 0.075);
-    osc3.stop(now + 0.36);
+    osc2.start(now + 0.07);
+    osc2.stop(now + 0.46);
   } catch (err) {
-    // Non-blocking if audio output is blocked by browser policy before user interaction
     console.debug("[AudioChime] Chime skipped:", err);
   }
 }
 
 /**
- * Response-Completed / Ready-to-Listen Chime:
- * A subtle, warm single chime with gentle shimmer signaling the turn is handed back to user.
+ * Exact Alexa Confirmation / Turn-Ready Chime:
+ * A subtle, warm single tone at A5 (880 Hz) with gentle exponential decay,
+ * signaling that speech playback ended and listening is active.
  */
-export function playTurnReadyChime(volume = 0.18): void {
+export function playTurnReadyChime(volume = 0.16): void {
   try {
     const ctx = getAudioContext();
     if (!ctx) return;
@@ -93,17 +84,16 @@ export function playTurnReadyChime(volume = 0.18): void {
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.type = "sine";
-    osc.frequency.setValueAtTime(783.99, now); // G5
-    osc.frequency.exponentialRampToValueAtTime(1046.5, now + 0.12); // C6
+    osc.frequency.setValueAtTime(880, now);
 
-    gain.gain.setValueAtTime(0, now);
-    gain.gain.linearRampToValueAtTime(volume, now + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.38);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(volume, now + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.35);
 
     osc.connect(gain);
     gain.connect(ctx.destination);
     osc.start(now);
-    osc.stop(now + 0.39);
+    osc.stop(now + 0.36);
   } catch (err) {
     console.debug("[AudioChime] Turn chime skipped:", err);
   }
