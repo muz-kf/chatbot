@@ -94,7 +94,7 @@ export function ChatSidebar({
 
   const handleTestVoice = () => {
     speakText(
-      `Hello! I am your AI assistant ${defaultAiName || "Assistant"}. How does my voice sound?`,
+      `Hello! I am ${defaultAiName || "Assistant"}. How does my voice sound?`,
       voiceSettings,
     );
   };
@@ -133,7 +133,6 @@ export function ChatSidebar({
         <Button variant="outline" className="new-chat-button" onClick={onNewChat}>
           <Plus size={16} />
           <span>New conversation</span>
-          <kbd>⌘ K</kbd>
         </Button>
 
         <div className="sidebar-section-label">YOUR SPACE</div>
