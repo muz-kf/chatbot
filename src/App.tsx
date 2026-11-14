@@ -8,6 +8,7 @@ import { ChatHeader } from "./components/chat/ChatHeader";
 import { ChatSidebar } from "./components/chat/ChatSidebar";
 import { MessageList } from "./components/chat/MessageList";
 import { WelcomeScreen } from "./components/chat/WelcomeScreen";
+import { VoiceModeView } from "./features/voice/VoiceModeView";
 import { processAttachment, recordedAudioToWav } from "./lib/attachmentProcessing";
 import { ApiError, apiRequest, queryKeys } from "./lib/api";
 import { createSpeechRecognition } from "./lib/speechRecognition";
@@ -134,6 +135,41 @@ function App() {
       return DEFAULT_VOICE_SETTINGS;
     }
   });
+
+  const [currentPath, setCurrentPath] = useState(() => window.location.pathname);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setCurrentPath(window.location.pathname);
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  const navigateTo = useCallback(
+    (pathname: string, searchParams?: Record<string, string>) => {
+      const search = new URLSearchParams(window.location.search);
+      if (searchParams) {
+        Object.entries(searchParams).forEach(([k, v]) => {
+          if (v) search.set(k, v);
+          else search.delete(k);
+        });
+      }
+      const queryString = search.toString();
+      const targetUrl = queryString ? `${pathname}?${queryString}` : pathname;
+      window.history.pushState(null, "", targetUrl);
+      setCurrentPath(pathname);
+    },
+    [],
+  );
+
+  const handleOpenVoiceMode = useCallback(() => {
+    navigateTo("/voice", activeChatId ? { chatId: activeChatId } : undefined);
+  }, [activeChatId, navigateTo]);
+
+  const handleExitVoiceMode = useCallback(() => {
+    navigateTo("/", activeChatId ? { chatId: activeChatId } : undefined);
+  }, [activeChatId, navigateTo]);
 
   const handleProviderChange = (newProvider: AiProvider) => {
     setProvider(newProvider);
@@ -924,6 +960,7 @@ function App() {
         onSelectChat={(chatId) => void openChat(chatId)}
         onSignOut={() => void signOut()}
         onToggleSettings={() => setSettingsOpen((open) => !open)}
+        onOpenVoiceMode={handleOpenVoiceMode}
         onFontChange={setFont}
         onThemeChange={changeTheme}
       />
@@ -934,6 +971,7 @@ function App() {
           provider={provider}
           onToggleSidebar={() => setSidebarOpen((open) => !open)}
           onScrollLatest={() => scrollToBottom(true)}
+          onOpenVoiceMode={handleOpenVoiceMode}
         />
         <section ref={viewportRef} className="conversation-viewport" aria-label={`Conversation with ${activeAiName}`}>
           {chatNotFound ? (
@@ -998,6 +1036,32 @@ function App() {
           aiName={activeAiName}
         />
       </main>
+      {currentPath === "/voice" && authState === "authenticated" && (
+        <VoiceModeView
+          chatId={activeChatId}
+          aiName={activeAiName}
+          provider={provider}
+          voiceSettings={voiceSettings}
+          theme={theme}
+          onExit={handleExitVoiceMode}
+          onTurnComplete={(userMsg, assistantMsg, turnChatId) => {
+            if (!activeChatId) {
+              setActiveChatId(turnChatId);
+            }
+            setMessages((prev) => [...prev, userMsg, assistantMsg]);
+            void queryClient.invalidateQueries({ queryKey: queryKeys.chats });
+            void queryClient.invalidateQueries({ queryKey: queryKeys.chat(turnChatId) });
+          }}
+          onCreateChat={async (firstMessage) => {
+            const { chat: createdChat } = await createChatMutation.mutateAsync(
+              firstMessage || "Voice conversation",
+            );
+            setActiveChatId(createdChat.id);
+            setChats((current) => [createdChat, ...current]);
+            return createdChat.id;
+          }}
+        />
+      )}
       {authState === "loading" && (
         <div className="auth-overlay">
           <div className="auth-loading" role="status">Restoring your session...</div>

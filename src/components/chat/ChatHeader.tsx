@@ -1,4 +1,4 @@
-import { ArrowDown, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { ArrowDown, PanelLeftClose, PanelLeftOpen, Radio } from "lucide-react";
 import { Button } from "../ui/button";
 import { DazzMark } from "./DazzMark";
 import type { AiProvider } from "../../types/chat";
@@ -9,6 +9,7 @@ type ChatHeaderProps = {
   provider: AiProvider;
   onToggleSidebar: () => void;
   onScrollLatest: () => void;
+  onOpenVoiceMode?: () => void;
 };
 
 export function ChatHeader({
@@ -17,6 +18,7 @@ export function ChatHeader({
   provider,
   onToggleSidebar,
   onScrollLatest,
+  onOpenVoiceMode,
 }: ChatHeaderProps) {
   return (
     <header className="chat-header">
@@ -45,6 +47,18 @@ export function ChatHeader({
         </button>
       </div>
       <div className="header-trailing">
+        {onOpenVoiceMode && (
+          <Button
+            variant="outline"
+            className="header-voice-mode-btn"
+            aria-label="Enter Voice Mode"
+            title="Enter Voice Mode (Hands-free voice assistant)"
+            onClick={onOpenVoiceMode}
+          >
+            <Radio size={13} className="header-voice-icon" />
+            <span>Voice Mode</span>
+          </Button>
+        )}
         <span className="model-pill">
           <span /> {aiName} · {provider === "groq" ? "Groq" : "OpenRouter"}
         </span>

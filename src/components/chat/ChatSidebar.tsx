@@ -6,6 +6,7 @@ import {
   MessageSquare,
   PanelLeftClose,
   Plus,
+  Radio,
   Settings2,
   Sparkles,
   Volume2,
@@ -53,6 +54,7 @@ type ChatSidebarProps = {
   onSelectChat: (chatId: string) => void;
   onSignOut: () => void;
   onToggleSettings: () => void;
+  onOpenVoiceMode?: () => void;
   onFontChange: (font: FontChoice) => void;
   onThemeChange: (theme: ThemeChoice) => void;
 };
@@ -80,6 +82,7 @@ export function ChatSidebar({
   onSelectChat,
   onSignOut,
   onToggleSettings,
+  onOpenVoiceMode,
   onFontChange,
   onThemeChange,
 }: ChatSidebarProps) {
@@ -138,6 +141,18 @@ export function ChatSidebar({
           <Plus size={16} />
           <span>New conversation</span>
         </Button>
+
+        {onOpenVoiceMode && (
+          <Button
+            variant="outline"
+            className="new-chat-button voice-mode-launch-btn"
+            onClick={onOpenVoiceMode}
+            title="Launch Voice Mode (Jarvis Iron Man HUD)"
+          >
+            <Radio size={15} className="voice-launch-icon" />
+            <span>Launch Voice Mode</span>
+          </Button>
+        )}
 
         <div className="sidebar-section-label">YOUR SPACE</div>
         <ThemedScrollArea className="conversation-list" aria-label="Saved conversations">
