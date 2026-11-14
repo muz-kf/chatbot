@@ -137,9 +137,14 @@ export class StreamingTTSQueue {
   private queue: string[] = [];
   private isPlaying: boolean = false;
   private stopped: boolean = false;
+  private isFlushed: boolean = false;
+  private onEndCallback: (() => void) | null = null;
 
-  constructor(settings: VoiceSettings) {
+  constructor(settings: VoiceSettings, onEnd?: () => void) {
     this.settings = settings;
+    if (onEnd) {
+      this.onEndCallback = onEnd;
+    }
   }
 
   updateSettings(settings: VoiceSettings): void {
@@ -180,13 +185,34 @@ export class StreamingTTSQueue {
     }
   }
 
-  flush(): void {
-    if (this.stopped || !this.settings.enabled) return;
+  flush(onEnd?: () => void): void {
+    if (onEnd) {
+      this.onEndCallback = onEnd;
+    }
+    this.isFlushed = true;
+
+    if (this.stopped || !this.settings.enabled) {
+      if (this.onEndCallback) {
+        const cb = this.onEndCallback;
+        this.onEndCallback = null;
+        cb();
+      }
+      return;
+    }
+
     if (this.buffer.trim()) {
       const cleaned = cleanTextForSpeech(this.buffer);
       this.buffer = "";
       if (cleaned) {
         this.enqueue(cleaned);
+      }
+    }
+
+    if (!this.isPlaying && this.queue.length === 0) {
+      if (this.onEndCallback) {
+        const cb = this.onEndCallback;
+        this.onEndCallback = null;
+        cb();
       }
     }
   }
@@ -201,11 +227,21 @@ export class StreamingTTSQueue {
   private playNext(): void {
     if (this.stopped || this.queue.length === 0) {
       this.isPlaying = false;
+      if (this.isFlushed && !this.stopped && this.onEndCallback) {
+        const cb = this.onEndCallback;
+        this.onEndCallback = null;
+        cb();
+      }
       return;
     }
 
     if (typeof window === "undefined" || !("speechSynthesis" in window)) {
       this.isPlaying = false;
+      if (this.isFlushed && !this.stopped && this.onEndCallback) {
+        const cb = this.onEndCallback;
+        this.onEndCallback = null;
+        cb();
+      }
       return;
     }
 
@@ -243,6 +279,8 @@ export class StreamingTTSQueue {
 
   stop(): void {
     this.stopped = true;
+    this.isFlushed = false;
+    this.onEndCallback = null;
     this.buffer = "";
     this.queue = [];
     this.isPlaying = false;

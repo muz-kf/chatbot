@@ -39,10 +39,12 @@ type ChatSidebarProps = {
   activeChatId: string | null;
   user: UserProfile;
   sendOnVoiceEnd: boolean;
+  autoListenOnResponse: boolean;
   provider: AiProvider;
   defaultAiName: string;
   voiceSettings: VoiceSettings;
   onSendOnVoiceEndChange: (enabled: boolean) => void;
+  onAutoListenOnResponseChange: (enabled: boolean) => void;
   onProviderChange: (provider: AiProvider) => void;
   onDefaultAiNameChange: (name: string) => void;
   onVoiceSettingsChange: (settings: VoiceSettings) => void;
@@ -64,10 +66,12 @@ export function ChatSidebar({
   activeChatId,
   user,
   sendOnVoiceEnd,
+  autoListenOnResponse,
   provider,
   defaultAiName,
   voiceSettings,
   onSendOnVoiceEndChange,
+  onAutoListenOnResponseChange,
   onProviderChange,
   onDefaultAiNameChange,
   onVoiceSettingsChange,
@@ -282,6 +286,26 @@ export function ChatSidebar({
                         onChange={(e) =>
                           onVoiceSettingsChange({ ...voiceSettings, enabled: e.target.checked })
                         }
+                        className="voice-sender-checkbox"
+                      />
+                      <span className="voice-sender-knob" />
+                    </label>
+                  </div>
+                </div>
+
+                {/* Auto-listen after response */}
+                <div className="settings-field voice-settings-field">
+                  <div className="setting-toggle-row">
+                    <label htmlFor="auto-listen-toggle" className="setting-toggle-text">
+                      <span className="font-medium text-xs">Auto-listen on response</span>
+                      <small className="block opacity-70 text-[10px]">Trigger microphone back when AI finishes (with voice sender)</small>
+                    </label>
+                    <label className={`voice-sender-switch ${autoListenOnResponse ? "is-checked" : ""}`} htmlFor="auto-listen-toggle">
+                      <input
+                        type="checkbox"
+                        id="auto-listen-toggle"
+                        checked={autoListenOnResponse}
+                        onChange={(e) => onAutoListenOnResponseChange(e.target.checked)}
                         className="voice-sender-checkbox"
                       />
                       <span className="voice-sender-knob" />

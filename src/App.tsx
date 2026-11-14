@@ -101,6 +101,15 @@ function App() {
     setSendOnVoiceEnd(enabled);
     window.localStorage.setItem("chat-send-on-voice-sender", String(enabled));
   };
+  const [autoListenOnResponse, setAutoListenOnResponse] = useState<boolean>(() => {
+    const saved = window.localStorage.getItem("chat-auto-listen-on-response");
+    return saved !== null ? saved === "true" : false;
+  });
+
+  const handleAutoListenOnResponseChange = (enabled: boolean) => {
+    setAutoListenOnResponse(enabled);
+    window.localStorage.setItem("chat-auto-listen-on-response", String(enabled));
+  };
   const [theme, setTheme] = useState<ThemeChoice>(getSavedTheme);
   const [font, setFont] = useState<FontChoice>(() => getSavedFont(theme));
   const [provider, setProvider] = useState<AiProvider>(() => {
@@ -478,24 +487,26 @@ function App() {
           window.history.replaceState({ chatId: createdChat.id }, "", newUrl);
         }
 
+        let accumulatedContent = "";
         inFlightRef.current = {
           chatId,
           controller,
-          userMessage,
-          assistantMessage,
+          userMessage: { ...userMessage },
+          assistantMessage: { ...assistantMessage },
           historyBeforeTurn: currentHistory,
         };
 
         const appendToken = (token: string) => {
+          accumulatedContent += token;
           if (inFlightRef.current && inFlightRef.current.chatId === chatId) {
-            inFlightRef.current.assistantMessage.content += token;
+            inFlightRef.current.assistantMessage.content = accumulatedContent;
           }
           ttsQueueRef.current?.pushToken(token);
           if (activeChatIdRef.current === chatId) {
             setMessages((current) =>
               current.map((message) =>
                 message.id === assistantMessage.id
-                  ? { ...message, content: message.content + token }
+                  ? { ...message, content: accumulatedContent }
                   : message,
               ),
             );
@@ -513,8 +524,23 @@ function App() {
         await queryClient.invalidateQueries({ queryKey: queryKeys.chats });
         await queryClient.invalidateQueries({ queryKey: queryKeys.chat(chatId) });
 
+        const triggerMicIfAutoListen = () => {
+          if (sendOnVoiceEnd && autoListenOnResponse && !controller.signal.aborted) {
+            setTimeout(() => {
+              if (activeChatIdRef.current === chatId) {
+                void startVoiceRecording();
+              }
+            }, 600);
+          }
+        };
+
         // Flush remaining tokens in the streaming TTS buffer
-        ttsQueueRef.current?.flush();
+        if (voiceSettings.enabled && ttsQueueRef.current) {
+          ttsQueueRef.current.flush(triggerMicIfAutoListen);
+        } else {
+          ttsQueueRef.current?.flush();
+          triggerMicIfAutoListen();
+        }
       } catch (requestError) {
         if (!controller.signal.aborted) {
           const rawError =
@@ -883,10 +909,12 @@ function App() {
         activeChatId={activeChatId}
         user={user ?? { email: "", name: "" }}
         sendOnVoiceEnd={sendOnVoiceEnd}
+        autoListenOnResponse={autoListenOnResponse}
         provider={provider}
         defaultAiName={defaultAiName}
         voiceSettings={voiceSettings}
         onSendOnVoiceEndChange={handleSendOnVoiceEndChange}
+        onAutoListenOnResponseChange={handleAutoListenOnResponseChange}
         onProviderChange={handleProviderChange}
         onDefaultAiNameChange={handleDefaultAiNameChange}
         onVoiceSettingsChange={handleVoiceSettingsChange}

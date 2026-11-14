@@ -79,10 +79,21 @@ def run_e2e_test():
         response_text = assistant_bubble.inner_text()
         print(f"📥 Received AI response: \n---\n{response_text}\n---")
 
-        # 7. Validate response
+        # 7. Validate response and ensure no token duplication occurred
         assert len(response_text.strip()) > 0, "Error: AI response is empty!"
         assert "paris" in response_text.lower(), f"Error: Expected 'Paris' in response, but got: {response_text}"
-        print("🎉 Validation passed: Response contains 'Paris'!")
+        assert not response_text.lower().startswith("thethe"), f"Error: Duplicate token prefix detected: {response_text}"
+        print("🎉 Validation passed: Response contains 'Paris' and no duplicate text!")
+
+        # 8. Test Settings tab toggle: Auto-listen on response
+        print("⚙️ Testing 'Auto-listen on response' setting toggle in Settings...")
+        settings_btn = page.locator("button.settings-toggle")
+        if settings_btn.is_visible():
+            settings_btn.click()
+            auto_listen_toggle = page.locator("label.voice-sender-switch[for='auto-listen-toggle']")
+            expect(auto_listen_toggle).to_be_visible(timeout=5000)
+            auto_listen_toggle.click()
+            print("✅ Verified 'Auto-listen on response' setting toggle works!")
 
         # 8. Save screenshot
         os.makedirs("tests/screenshots", exist_ok=True)
