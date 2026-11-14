@@ -17,6 +17,7 @@ type ChatComposerProps = {
   recording?: boolean;
   recordingTranscript?: string;
   sendOnVoiceEnd?: boolean;
+  autoListenTrigger?: number;
   showScrollBottom?: boolean;
   onScrollBottom?: () => void;
   onSendText?: (text: string) => void;
@@ -41,6 +42,7 @@ export function ChatComposer({
   userLocation,
   locationLoading = false,
   sendOnVoiceEnd = true,
+  autoListenTrigger = 0,
   showScrollBottom = false,
   onScrollBottom,
   onSendText,
@@ -133,11 +135,8 @@ export function ChatComposer({
     }
   }
 
-  function toggleListening() {
-    if (listening) {
-      completeVoiceNoteAndSend();
-      return;
-    }
+  function startListening() {
+    if (listening || streaming) return;
 
     setVoiceError("");
     setInterimText("");
@@ -220,8 +219,42 @@ export function ChatComposer({
           ? err.message
           : "Live voice recognition is not available in this browser. Try Chrome, Edge, or Safari.",
       );
+      setListening(false);
     }
   }
+
+  function toggleListening() {
+    if (listening) {
+      completeVoiceNoteAndSend();
+    } else {
+      startListening();
+    }
+  }
+
+  // Auto-listen trigger from parent (when response ends and auto-listen is enabled)
+  useEffect(() => {
+    if (autoListenTrigger > 0 && sendOnVoiceEnd && !listening && !streaming) {
+      startListening();
+    }
+  }, [autoListenTrigger]);
+
+  // Turn off microphone if response streaming begins
+  useEffect(() => {
+    if (streaming && listening) {
+      if (silenceTimerRef.current) {
+        clearTimeout(silenceTimerRef.current);
+        silenceTimerRef.current = null;
+      }
+      try {
+        recognitionRef.current?.abort();
+      } catch {
+        // ignore
+      }
+      recognitionRef.current = null;
+      setListening(false);
+      setIsFinishing(false);
+    }
+  }, [streaming, listening]);
 
   function handleFormSubmit(event: FormEvent<HTMLFormElement>) {
     if (listening) {

@@ -235,11 +235,11 @@ export function MessageList({
                   </>
                 ) : (
                   <>
-                    {isStreamingAssistant && (
-                      <div className="jarvis-voice-visualizer" aria-label="D.A.Z.Z vocal synthesis active">
+                    {isStreamingAssistant && voiceSettings?.enabled && (
+                      <div className="jarvis-voice-visualizer" aria-label={`${aiName} vocal synthesis active`}>
                         <div className="jarvis-hud-badge">
                           <span className="jarvis-pulse-dot" />
-                          <span className="jarvis-hud-label">D.A.Z.Z // VOCAL SYNTHESIS ACTIVE</span>
+                          <span className="jarvis-hud-label">{aiName.toUpperCase()} // VOCAL SYNTHESIS ACTIVE</span>
                         </div>
                         <div className="jarvis-soundwaves" aria-hidden="true">
                           <span className="wave-bar bar-1" />

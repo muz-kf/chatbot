@@ -19,6 +19,7 @@ export const DEFAULT_VOICE_SETTINGS: VoiceSettings = {
 };
 
 let voicesCache: SpeechSynthesisVoice[] = [];
+const activeUtterances = new Set<SpeechSynthesisUtterance>();
 
 export function getVoices(): SpeechSynthesisVoice[] {
   if (typeof window === "undefined" || !("speechSynthesis" in window)) {
@@ -118,10 +119,15 @@ export function speakText(
   utterance.rate = Math.max(0.5, Math.min(2.0, settings.rate || 1.0));
   utterance.pitch = Math.max(0.5, Math.min(2.0, settings.pitch || 1.0));
 
-  if (onEnd) {
-    utterance.onend = onEnd;
-    utterance.onerror = onEnd;
-  }
+  activeUtterances.add(utterance);
+  utterance.onend = () => {
+    activeUtterances.delete(utterance);
+    onEnd?.();
+  };
+  utterance.onerror = () => {
+    activeUtterances.delete(utterance);
+    onEnd?.();
+  };
 
   window.speechSynthesis.speak(utterance);
 }
@@ -263,12 +269,16 @@ export class StreamingTTSQueue {
     utterance.rate = Math.max(0.5, Math.min(2.0, this.settings.rate || 1.0));
     utterance.pitch = Math.max(0.5, Math.min(2.0, this.settings.pitch || 1.0));
 
+    activeUtterances.add(utterance);
+
     utterance.onend = () => {
+      activeUtterances.delete(utterance);
       if (!this.stopped) {
         this.playNext();
       }
     };
     utterance.onerror = () => {
+      activeUtterances.delete(utterance);
       if (!this.stopped) {
         this.playNext();
       }
@@ -284,6 +294,7 @@ export class StreamingTTSQueue {
     this.buffer = "";
     this.queue = [];
     this.isPlaying = false;
+    activeUtterances.clear();
     stopSpeaking();
   }
 }

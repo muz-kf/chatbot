@@ -171,8 +171,8 @@ export function ChatSidebar({
               className="voice-sender-checkbox"
             />
             <span className="voice-sender-info">
-              <span className="voice-sender-label">Send on voice sender</span>
-              <span className="voice-sender-sub">Auto-send transcript on finish</span>
+              <span className="voice-sender-label">Send on voice note</span>
+              <span className="voice-sender-sub">Auto-send transcript on pause</span>
             </span>
             <span className={`voice-sender-switch ${sendOnVoiceEnd ? "is-checked" : ""}`} aria-hidden="true">
               <span className="voice-sender-knob" />
@@ -271,7 +271,47 @@ export function ChatSidebar({
                   </div>
                 </div>
 
-                {/* Voice Customization */}
+                {/* Voice Controls: Send on voice note, Auto-listen, TTS */}
+                <div className="settings-field voice-settings-field">
+                  <div className="setting-toggle-row">
+                    <label htmlFor="settings-voice-auto-send" className="setting-toggle-text">
+                      <span className="font-medium text-xs">Send on voice note</span>
+                      <small className="block opacity-70 text-[10px]">Auto-send transcript on pause</small>
+                    </label>
+                    <label className={`voice-sender-switch ${sendOnVoiceEnd ? "is-checked" : ""}`} htmlFor="settings-voice-auto-send">
+                      <input
+                        type="checkbox"
+                        id="settings-voice-auto-send"
+                        checked={sendOnVoiceEnd}
+                        onChange={(e) => onSendOnVoiceEndChange(e.target.checked)}
+                        className="voice-sender-checkbox"
+                      />
+                      <span className="voice-sender-knob" />
+                    </label>
+                  </div>
+                </div>
+
+                {/* Auto-listen after response */}
+                <div className="settings-field voice-settings-field">
+                  <div className="setting-toggle-row">
+                    <label htmlFor="auto-listen-toggle" className="setting-toggle-text">
+                      <span className="font-medium text-xs">Auto-listen on response</span>
+                      <small className="block opacity-70 text-[10px]">Trigger microphone back when AI finishes (with voice note)</small>
+                    </label>
+                    <label className={`voice-sender-switch ${autoListenOnResponse ? "is-checked" : ""}`} htmlFor="auto-listen-toggle">
+                      <input
+                        type="checkbox"
+                        id="auto-listen-toggle"
+                        checked={autoListenOnResponse}
+                        onChange={(e) => onAutoListenOnResponseChange(e.target.checked)}
+                        className="voice-sender-checkbox"
+                      />
+                      <span className="voice-sender-knob" />
+                    </label>
+                  </div>
+                </div>
+
+                {/* Read aloud (TTS) */}
                 <div className="settings-field voice-settings-field">
                   <div className="setting-toggle-row">
                     <label htmlFor="voice-speech-toggle" className="setting-toggle-text">
@@ -286,26 +326,6 @@ export function ChatSidebar({
                         onChange={(e) =>
                           onVoiceSettingsChange({ ...voiceSettings, enabled: e.target.checked })
                         }
-                        className="voice-sender-checkbox"
-                      />
-                      <span className="voice-sender-knob" />
-                    </label>
-                  </div>
-                </div>
-
-                {/* Auto-listen after response */}
-                <div className="settings-field voice-settings-field">
-                  <div className="setting-toggle-row">
-                    <label htmlFor="auto-listen-toggle" className="setting-toggle-text">
-                      <span className="font-medium text-xs">Auto-listen on response</span>
-                      <small className="block opacity-70 text-[10px]">Trigger microphone back when AI finishes (with voice sender)</small>
-                    </label>
-                    <label className={`voice-sender-switch ${autoListenOnResponse ? "is-checked" : ""}`} htmlFor="auto-listen-toggle">
-                      <input
-                        type="checkbox"
-                        id="auto-listen-toggle"
-                        checked={autoListenOnResponse}
-                        onChange={(e) => onAutoListenOnResponseChange(e.target.checked)}
                         className="voice-sender-checkbox"
                       />
                       <span className="voice-sender-knob" />

@@ -105,6 +105,7 @@ function App() {
     const saved = window.localStorage.getItem("chat-auto-listen-on-response");
     return saved !== null ? saved === "true" : false;
   });
+  const [autoListenTrigger, setAutoListenTrigger] = useState(0);
 
   const handleAutoListenOnResponseChange = (enabled: boolean) => {
     setAutoListenOnResponse(enabled);
@@ -528,9 +529,9 @@ function App() {
           if (sendOnVoiceEnd && autoListenOnResponse && !controller.signal.aborted) {
             setTimeout(() => {
               if (activeChatIdRef.current === chatId) {
-                void startVoiceRecording();
+                setAutoListenTrigger((prev) => prev + 1);
               }
-            }, 600);
+            }, 500);
           }
         };
 
@@ -981,6 +982,7 @@ function App() {
           recording={recording}
           recordingTranscript={recordingTranscript}
           sendOnVoiceEnd={sendOnVoiceEnd}
+          autoListenTrigger={autoListenTrigger}
           showScrollBottom={showScrollBottom}
           onScrollBottom={() => scrollToBottom(true)}
           onSendText={handleDirectSend}
