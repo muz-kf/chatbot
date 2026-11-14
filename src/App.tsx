@@ -28,6 +28,7 @@ import { getRandomId } from "./lib/utils";
 import {
   type VoiceSettings,
   DEFAULT_VOICE_SETTINGS,
+  StreamingTTSQueue,
   speakText,
 } from "./lib/speechSynthesis";
 
@@ -107,7 +108,7 @@ function App() {
     return saved === "openrouter" ? "openrouter" : "groq";
   });
   const [defaultAiName, setDefaultAiName] = useState<string>(() => {
-    return window.localStorage.getItem("chat-default-ai-name") || "Assistant";
+    return window.localStorage.getItem("chat-default-ai-name") || "DAZZ";
   });
   const [chatAiNames, setChatAiNames] = useState<Record<string, string>>({});
 
@@ -130,13 +131,13 @@ function App() {
   };
 
   const handleDefaultAiNameChange = (name: string) => {
-    const trimmed = name.trim() || "Assistant";
+    const trimmed = name.trim() || "DAZZ";
     setDefaultAiName(trimmed);
     window.localStorage.setItem("chat-default-ai-name", trimmed);
   };
 
   const handleRenameActiveAi = (newName: string) => {
-    const trimmed = newName.trim() || "Assistant";
+    const trimmed = newName.trim() || "DAZZ";
     if (activeChatId) {
       window.localStorage.setItem(`chat-ai-name-${activeChatId}`, trimmed);
       setChatAiNames((prev) => ({ ...prev, [activeChatId]: trimmed }));
@@ -175,6 +176,7 @@ function App() {
       message: Message;
       signal: AbortSignal;
       onToken: (token: string) => void;
+      aiName?: string;
     }) => {
       const clientTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
       const response = await fetch(`/api/chats/${input.chatId}/turns`, {
@@ -186,7 +188,7 @@ function App() {
           clientTimezone,
           clientLocation: userLocation,
           provider,
-          aiName: activeAiName,
+          aiName: input.aiName || activeAiName,
         }),
         signal: input.signal,
       });
@@ -233,6 +235,7 @@ function App() {
   const requestRef = useRef<AbortController | null>(null);
   const activeChatIdRef = useRef<string | null>(null);
   activeChatIdRef.current = activeChatId;
+  const ttsQueueRef = useRef<StreamingTTSQueue | null>(null);
 
   interface InFlightTurn {
     chatId: string;
@@ -404,6 +407,46 @@ function App() {
     setError("");
     setStreaming(true);
 
+    // Conversational user name adoption
+    const userNameMatch = content.match(/\b(?:call me|my name is|you can call me)\s+([A-Za-z0-9_-]{2,25})\b/i);
+    if (userNameMatch && userNameMatch[1]) {
+      const candidate = userNameMatch[1].trim();
+      const lower = candidate.toLowerCase();
+      const ignore = ["a", "an", "the", "back", "again", "later", "please", "now", "here", "today", "tomorrow", "something", "whatever"];
+      if (!ignore.includes(lower)) {
+        const formatted = candidate.charAt(0).toUpperCase() + candidate.slice(1);
+        setUser((prev) => (prev ? { ...prev, name: formatted } : prev));
+      }
+    }
+
+    // Conversational AI persona name adoption
+    let turnAiName = activeAiName;
+    const aiNameMatch = content.match(/\b(?:call yourself|your name is|i(?:'ll| will) call you|from now on you are|name yourself)\s+([A-Za-z0-9_-]{2,25})\b/i);
+    if (aiNameMatch && aiNameMatch[1]) {
+      const candidate = aiNameMatch[1].trim();
+      const lower = candidate.toLowerCase();
+      const ignore = ["a", "an", "the", "back", "again", "later", "please", "now", "here", "today", "tomorrow", "something", "whatever", "dazz", "assistant"];
+      if (!ignore.includes(lower)) {
+        const formatted = candidate.charAt(0).toUpperCase() + candidate.slice(1);
+        turnAiName = formatted;
+        if (activeChatId) {
+          window.localStorage.setItem(`chat-ai-name-${activeChatId}`, formatted);
+          setChatAiNames((prev) => ({ ...prev, [activeChatId]: formatted }));
+        } else {
+          setDefaultAiName(formatted);
+          window.localStorage.setItem("chat-default-ai-name", formatted);
+        }
+      }
+    }
+
+    // Initialize real-time streaming TTS queue
+    ttsQueueRef.current?.stop();
+    if (voiceSettings.enabled) {
+      ttsQueueRef.current = new StreamingTTSQueue(voiceSettings);
+    } else {
+      ttsQueueRef.current = null;
+    }
+
     requestRef.current?.abort();
     const controller = new AbortController();
     requestRef.current = controller;
@@ -426,6 +469,11 @@ function App() {
           chatId = createdChat.id;
           setActiveChatId(chatId);
           setChats((current) => [createdChat, ...current]);
+          const newChatId = createdChat.id;
+          if (turnAiName) {
+            window.localStorage.setItem(`chat-ai-name-${newChatId}`, turnAiName);
+            setChatAiNames((prev) => ({ ...prev, [newChatId]: turnAiName }));
+          }
           const newUrl = `${window.location.pathname}?chatId=${encodeURIComponent(createdChat.id)}`;
           window.history.replaceState({ chatId: createdChat.id }, "", newUrl);
         }
@@ -442,6 +490,7 @@ function App() {
           if (inFlightRef.current && inFlightRef.current.chatId === chatId) {
             inFlightRef.current.assistantMessage.content += token;
           }
+          ttsQueueRef.current?.pushToken(token);
           if (activeChatIdRef.current === chatId) {
             setMessages((current) =>
               current.map((message) =>
@@ -458,15 +507,14 @@ function App() {
           message: userMessage,
           signal: controller.signal,
           onToken: appendToken,
+          aiName: turnAiName,
         });
 
         await queryClient.invalidateQueries({ queryKey: queryKeys.chats });
         await queryClient.invalidateQueries({ queryKey: queryKeys.chat(chatId) });
 
-        // Auto-speak reply if voice output is enabled
-        if (voiceSettings.enabled && inFlightRef.current?.assistantMessage.content) {
-          speakText(inFlightRef.current.assistantMessage.content, voiceSettings);
-        }
+        // Flush remaining tokens in the streaming TTS buffer
+        ttsQueueRef.current?.flush();
       } catch (requestError) {
         if (!controller.signal.aborted) {
           const rawError =
@@ -553,6 +601,7 @@ function App() {
   }
 
   function stopResponse() {
+    ttsQueueRef.current?.stop();
     inFlightRef.current?.controller.abort();
     inFlightRef.current = null;
     requestRef.current?.abort();
@@ -563,6 +612,7 @@ function App() {
   function newChat() {
     // When navigating to a new chat, do NOT abort in-flight generation of the previous chat.
     // The previous chat will continue in the background and commit cleanly to the database.
+    ttsQueueRef.current?.stop();
     setStreaming(false);
     cancelVoiceRecording();
     setMessages([]);
@@ -577,6 +627,7 @@ function App() {
   }
 
   async function openChat(chatId: string) {
+    ttsQueueRef.current?.stop();
     if (chatId === activeChatId) {
       if (window.matchMedia("(max-width: 767px)").matches) setSidebarOpen(false);
       return;
@@ -854,7 +905,6 @@ function App() {
           provider={provider}
           onToggleSidebar={() => setSidebarOpen((open) => !open)}
           onScrollLatest={() => scrollToBottom(true)}
-          onRenameAi={handleRenameActiveAi}
         />
         <section ref={viewportRef} className="conversation-viewport" aria-label={`Conversation with ${activeAiName}`}>
           {chatNotFound ? (

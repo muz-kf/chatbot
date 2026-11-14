@@ -45,20 +45,15 @@ def run_e2e_test():
         expect(composer).to_be_visible(timeout=15000)
         print("✅ Chat composer is visible.")
 
-        # 3. Test Custom AI Name per chat
-        print("✏️ Testing AI Persona Customization...")
+        # 3. Verify Default AI Name and Conversational Name Adoption
+        print("✏️ Testing AI Persona Default ('DAZZ') and Conversational Adoption...")
         header_badge = page.locator(".header-ai-badge")
-        if header_badge.is_visible(timeout=5000):
-            header_badge.click()
-            ai_input = page.locator(".ai-name-input")
-            if ai_input.is_visible(timeout=3000):
-                ai_input.fill("Jarvis")
-                ai_input.press("Enter")
-                page.wait_for_timeout(500)
-                print("✅ Successfully renamed AI to 'Jarvis'.")
+        expect(header_badge).to_be_visible(timeout=5000)
+        expect(header_badge).to_contain_text("DAZZ")
+        print("✅ Header badge correctly displays default AI name: 'DAZZ'.")
 
-        # 4. Input test prompt into chat box
-        prompt_text = "What is the capital city of France? Answer in one short sentence."
+        # 4. Input conversational prompt to adopt new name and answer question
+        prompt_text = "From now on call yourself Jarvis. Also what is the capital city of France? Answer in one short sentence."
         print(f"💬 Entering prompt: '{prompt_text}'")
         composer.fill(prompt_text)
 
@@ -70,7 +65,11 @@ def run_e2e_test():
             composer.press("Enter")
         print("📤 Message sent to AI.")
 
-        # 6. Wait for assistant message response to stream in
+        # 6. Verify conversational name update on header badge
+        expect(header_badge).to_contain_text("Jarvis", timeout=5000)
+        print("✅ Header badge dynamically updated to adopted name 'Jarvis'!")
+
+        # 7. Wait for assistant message response to stream in
         print("⏳ Waiting for assistant reply...")
         assistant_bubble = page.locator(".message-assistant .markdown-content").last
         expect(assistant_bubble).to_be_visible(timeout=30000)

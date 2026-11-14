@@ -154,7 +154,7 @@ class ChatService:
         ai_name: str | None = None,
     ) -> str:
         """Inject current system date, time, weekday, timezone, live location, custom AI persona, and tool instructions into system prompt."""
-        name = (ai_name or "Assistant").strip() or "Assistant"
+        name = (ai_name or "DAZZ").strip() or "DAZZ"
         tz_to_use = client_timezone or config.DEFAULT_TIMEZONE or None
         time_context = get_system_datetime_context(tz_to_use)
         tools = tool_registry.get_all()
@@ -191,7 +191,8 @@ class ChatService:
             "3. Only call `get_route_or_map` when the user explicitly asks for driving directions, navigation, routes, travel duration/distance between places, traffic, or an interactive map visualizer. DO NOT call `get_route_or_map` for general conversational text, recommendations, cultural inquiries, or general questions that merely mention a city or location.\n"
             "4. If current date or time is asked, use the system date and time provided above.\n"
             "5. If a tool returns an error or coordinates cannot be resolved, NEVER output a raw error message to the user. Instead, respond helpfully and conversationally using your general knowledge, or politely ask for clarification if necessary.\n"
-            "6. Always synthesize tool outputs into a clear, natural-language response for the user. When a route or location map is returned, include the interactive map iframe directly (e.g. `<iframe src=\"<map_embed_url>\" width=\"100%\" height=\"350\"></iframe>`) along with the full-screen route link."
+            "6. Always synthesize tool outputs into a clear, natural-language response for the user. When a route or location map is returned, include the interactive map iframe directly (e.g. `<iframe src=\"<map_embed_url>\" width=\"100%\" height=\"350\"></iframe>`) along with the full-screen route link.\n"
+            f"7. Identity: Your default name is {name}. If the user asks you to call them a specific name (e.g. 'call me Alex'), acknowledge and address them by that name. If the user tells you to call yourself something or adopt a new name (e.g. 'call yourself Jarvis', 'your name is Jarvis'), happily accept that name as your persona."
         )
 
     async def stream_chat_turn(
@@ -218,7 +219,7 @@ class ChatService:
             uses_attachments=uses_attachments,
         )
 
-        name = (ai_name or "Assistant").strip() or "Assistant"
+        name = (ai_name or "DAZZ").strip() or "DAZZ"
         headers: dict[str, str] = {}
         if active_provider == "openrouter":
             headers = {

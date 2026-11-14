@@ -72,27 +72,16 @@ def run_e2e_selenium_test():
         )
         print("✅ Chat composer is visible.")
 
-        # 3. Test Custom AI Name per chat
-        print("✏️ Testing AI Persona Customization...")
-        try:
-            header_badge = WebDriverWait(driver, 5).until(
-                EC.element_to_be_clickable((By.CSS_SELECTOR, ".header-ai-badge"))
-            )
-            header_badge.click()
-            ai_input = WebDriverWait(driver, 3).until(
-                EC.visibility_of_element_located((By.CSS_SELECTOR, ".ai-name-input"))
-            )
-            ai_input.send_keys(Keys.CONTROL + "a")
-            ai_input.send_keys(Keys.BACKSPACE)
-            ai_input.send_keys("Friday")
-            ai_input.send_keys(Keys.RETURN)
-            time.sleep(0.5)
-            print("✅ Successfully renamed AI to 'Friday'.")
-        except Exception as e:
-            print(f"ℹ️ AI renaming optional step skipped: {e}")
+        # 3. Verify Default AI Name and Conversational Name Adoption
+        print("✏️ Testing AI Persona Default ('DAZZ') and Conversational Adoption...")
+        header_badge = wait.until(
+            EC.visibility_of_element_located((By.CSS_SELECTOR, ".header-ai-badge"))
+        )
+        assert "DAZZ" in header_badge.text, f"Expected 'DAZZ' in header badge, got: {header_badge.text}"
+        print("✅ Header badge correctly displays default AI name: 'DAZZ'.")
 
-        # 4. Input test prompt into chat box
-        prompt_text = "What is 15 plus 25? Answer with just the number."
+        # 4. Input conversational prompt to adopt new persona name and compute answer
+        prompt_text = "From now on call yourself Jarvis. What is 15 plus 25? Answer with just the number."
         print(f"💬 Entering prompt: '{prompt_text}'")
         composer.send_keys(prompt_text)
 
@@ -104,7 +93,11 @@ def run_e2e_selenium_test():
             composer.send_keys(Keys.RETURN)
         print("📤 Message sent to AI.")
 
-        # 6. Wait for assistant message response to stream in
+        # 6. Verify conversational name update on header badge
+        WebDriverWait(driver, 5).until(lambda d: "Jarvis" in d.find_element(By.CSS_SELECTOR, ".header-ai-badge").text)
+        print("✅ Header badge dynamically updated to adopted name 'Jarvis'!")
+
+        # 7. Wait for assistant message response to stream in
         print("⏳ Waiting for assistant reply...")
         assistant_bubble = WebDriverWait(driver, 30).until(
             EC.visibility_of_element_located((By.CSS_SELECTOR, ".message-assistant .markdown-content"))
