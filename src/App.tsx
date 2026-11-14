@@ -1043,7 +1043,9 @@ function App() {
           provider={provider}
           voiceSettings={voiceSettings}
           theme={theme}
+          userLocation={userLocation}
           onExit={handleExitVoiceMode}
+          onThemeChange={changeTheme}
           onTurnComplete={(userMsg, assistantMsg, turnChatId) => {
             if (!activeChatId) {
               setActiveChatId(turnChatId);

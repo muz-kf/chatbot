@@ -23,53 +23,140 @@
   --reactor-glow: rgba(0, 240, 255, 0.5);
 }
 
-/* Theme variations for the Arc Reactor */
-.jarvis-voice-mode-root.theme-gold,
-.jarvis-voice-mode-root[data-theme="gold"] {
-  background-color: #0c0902;
+/* ==========================================================================
+   THEME PALETTES (ALL 12 THEMES MATCHING THE APP)
+   ========================================================================== */
+
+/* 1. DAZZ / JARVIS */
+:is(.jarvis-voice-mode-root.theme-dazz, .jarvis-voice-mode-root[data-theme="dazz"], :root[data-theme="dazz"] .jarvis-voice-mode-root, :root[data-theme="jarvis"] .jarvis-voice-mode-root) {
+  background-color: #020e1a;
+  --reactor-accent: #00f0ff;
+  --reactor-core-cyan: #00f0ff;
+  --reactor-core-blue: #0077ff;
+  --reactor-core-light: #ffffff;
+  --reactor-glow: rgba(0, 240, 255, 0.55);
+  color: #d4f4ff;
+}
+
+/* 2. PURPLE */
+:is(.jarvis-voice-mode-root.theme-purple, .jarvis-voice-mode-root[data-theme="purple"], :root[data-theme="purple"] .jarvis-voice-mode-root) {
+  background-color: #0e051c;
+  --reactor-accent: #c084fc;
+  --reactor-core-cyan: #a855f7;
+  --reactor-core-blue: #7c3aed;
+  --reactor-core-light: #faf5ff;
+  --reactor-glow: rgba(168, 85, 247, 0.55);
+  color: #f3e8ff;
+}
+
+/* 3. GREEN */
+:is(.jarvis-voice-mode-root.theme-green, .jarvis-voice-mode-root[data-theme="green"], :root[data-theme="green"] .jarvis-voice-mode-root) {
+  background-color: #02160d;
+  --reactor-accent: #34d399;
+  --reactor-core-cyan: #10b981;
+  --reactor-core-blue: #059669;
+  --reactor-core-light: #ecfdf5;
+  --reactor-glow: rgba(16, 185, 129, 0.55);
+  color: #d1fae5;
+}
+
+/* 4. GOLD */
+:is(.jarvis-voice-mode-root.theme-gold, .jarvis-voice-mode-root[data-theme="gold"], :root[data-theme="gold"] .jarvis-voice-mode-root) {
+  background-color: #171203;
   --reactor-accent: #fbbf24;
   --reactor-core-cyan: #f59e0b;
   --reactor-core-blue: #b45309;
   --reactor-core-light: #fffbeb;
-  --reactor-glow: rgba(251, 191, 36, 0.5);
+  --reactor-glow: rgba(251, 191, 36, 0.55);
   color: #fef3c7;
 }
 
-.jarvis-voice-mode-root.theme-red,
-.jarvis-voice-mode-root.theme-maroon,
-.jarvis-voice-mode-root[data-theme="red"],
-.jarvis-voice-mode-root[data-theme="maroon"] {
-  background-color: #120306;
-  --reactor-accent: #ef4444;
-  --reactor-core-cyan: #f87171;
+/* 5. RED */
+:is(.jarvis-voice-mode-root.theme-red, .jarvis-voice-mode-root[data-theme="red"], :root[data-theme="red"] .jarvis-voice-mode-root) {
+  background-color: #180407;
+  --reactor-accent: #f87171;
+  --reactor-core-cyan: #ef4444;
   --reactor-core-blue: #b91c1c;
   --reactor-core-light: #fff1f2;
-  --reactor-glow: rgba(239, 68, 68, 0.5);
+  --reactor-glow: rgba(239, 68, 68, 0.55);
+  color: #fee2e2;
+}
+
+/* 6. ORANGE */
+:is(.jarvis-voice-mode-root.theme-orange, .jarvis-voice-mode-root[data-theme="orange"], :root[data-theme="orange"] .jarvis-voice-mode-root) {
+  background-color: #170802;
+  --reactor-accent: #fb923c;
+  --reactor-core-cyan: #f97316;
+  --reactor-core-blue: #ea580c;
+  --reactor-core-light: #fff7ed;
+  --reactor-glow: rgba(249, 115, 22, 0.55);
+  color: #ffedd5;
+}
+
+/* 7. MAROON */
+:is(.jarvis-voice-mode-root.theme-maroon, .jarvis-voice-mode-root[data-theme="maroon"], :root[data-theme="maroon"] .jarvis-voice-mode-root) {
+  background-color: #160309;
+  --reactor-accent: #fb7185;
+  --reactor-core-cyan: #e11d48;
+  --reactor-core-blue: #9f1239;
+  --reactor-core-light: #fff1f2;
+  --reactor-glow: rgba(225, 29, 72, 0.55);
   color: #ffe4e6;
 }
 
-.jarvis-voice-mode-root.theme-purple,
-.jarvis-voice-mode-root.theme-zyricon,
-.jarvis-voice-mode-root[data-theme="purple"],
-.jarvis-voice-mode-root[data-theme="zyricon"] {
-  background-color: #0c0517;
-  --reactor-accent: #c084fc;
-  --reactor-core-cyan: #a855f7;
-  --reactor-core-blue: #6d28d9;
-  --reactor-core-light: #faf5ff;
-  --reactor-glow: rgba(168, 85, 247, 0.5);
-  color: #f3e8ff;
+/* 8. SKYBLUE */
+:is(.jarvis-voice-mode-root.theme-skyblue, .jarvis-voice-mode-root[data-theme="skyblue"], :root[data-theme="skyblue"] .jarvis-voice-mode-root) {
+  background-color: #031326;
+  --reactor-accent: #38bdf8;
+  --reactor-core-cyan: #0ea5e9;
+  --reactor-core-blue: #0284c7;
+  --reactor-core-light: #f0f9ff;
+  --reactor-glow: rgba(14, 165, 233, 0.55);
+  color: #e0f2fe;
 }
 
-.jarvis-voice-mode-root.theme-green,
-.jarvis-voice-mode-root[data-theme="green"] {
-  background-color: #02120b;
-  --reactor-accent: #34d399;
-  --reactor-core-cyan: #10b981;
-  --reactor-core-blue: #047857;
-  --reactor-core-light: #ecfdf5;
-  --reactor-glow: rgba(16, 185, 129, 0.5);
-  color: #d1fae5;
+/* 9. PINK */
+:is(.jarvis-voice-mode-root.theme-pink, .jarvis-voice-mode-root[data-theme="pink"], :root[data-theme="pink"] .jarvis-voice-mode-root) {
+  background-color: #180413;
+  --reactor-accent: #f472b6;
+  --reactor-core-cyan: #ec4899;
+  --reactor-core-blue: #db2777;
+  --reactor-core-light: #fdf2f8;
+  --reactor-glow: rgba(236, 72, 153, 0.55);
+  color: #fce7f3;
+}
+
+/* 10. ZYRICON */
+:is(.jarvis-voice-mode-root.theme-zyricon, .jarvis-voice-mode-root[data-theme="zyricon"], :root[data-theme="zyricon"] .jarvis-voice-mode-root) {
+  background-color: #0d0818;
+  --reactor-accent: #a78bfa;
+  --reactor-core-cyan: #8b5cf6;
+  --reactor-core-blue: #6d28d9;
+  --reactor-core-light: #faf5ff;
+  --reactor-glow: rgba(139, 92, 246, 0.55);
+  color: #ede9fe;
+}
+
+/* 11. WHITE */
+:is(.jarvis-voice-mode-root.theme-white, .jarvis-voice-mode-root[data-theme="white"], :root[data-theme="white"] .jarvis-voice-mode-root) {
+  background-color: #0f172a;
+  --reactor-accent: #e2e8f0;
+  --reactor-core-cyan: #94a3b8;
+  --reactor-core-blue: #64748b;
+  --reactor-core-light: #ffffff;
+  --reactor-glow: rgba(255, 255, 255, 0.45);
+  color: #f8fafc;
+}
+
+/* 12. MIRACLE */
+:is(.jarvis-voice-mode-root.theme-miracle, .jarvis-voice-mode-root[data-theme="miracle"], :root[data-theme="miracle"] .jarvis-voice-mode-root) {
+  background-color: #130c22;
+  --reactor-accent: #e9d5ff;
+  --reactor-core-cyan: #c084fc;
+  --reactor-core-blue: #9333ea;
+  --reactor-core-light: #faf5ff;
+  --reactor-glow: rgba(192, 132, 252, 0.55);
+  color: #faf5ff;
 }
 
 /* Holographic Atmosphere & Grid */
@@ -181,6 +268,48 @@
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.hud-theme-picker {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #d4f4ff;
+  transition: all 0.2s ease;
+}
+
+.hud-theme-picker:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: var(--reactor-accent);
+}
+
+.hud-theme-icon {
+  color: var(--reactor-accent);
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
+.hud-theme-select {
+  appearance: none;
+  background: transparent;
+  border: none;
+  color: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  padding-right: 6px;
+}
+
+.hud-theme-select option {
+  background: #020912;
+  color: #ffffff;
 }
 
 .hud-icon-btn {

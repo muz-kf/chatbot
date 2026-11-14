@@ -10,12 +10,13 @@ import {
   CornerDownLeft,
   ChevronLeft,
   Settings2,
+  Palette,
 } from "lucide-react";
 import { JarvisArcReactor } from "./JarvisArcReactor";
 import { useVoiceAssistant, type VoiceAssistantStatus } from "./useVoiceAssistant";
 import { playJarvisStartupSweep, playDeactivationChime } from "./audioChime";
 import type { VoiceSettings } from "../../lib/speechSynthesis";
-import type { AiProvider, Message } from "../../types/chat";
+import { themes, type ThemeChoice, type AiProvider, type Message, type UserLocation } from "../../types/chat";
 
 export interface VoiceModeViewProps {
   chatId: string | null;
@@ -23,9 +24,11 @@ export interface VoiceModeViewProps {
   provider: AiProvider;
   voiceSettings: VoiceSettings;
   theme?: string;
+  userLocation?: UserLocation | null;
   onExit: () => void;
   onTurnComplete?: (userMsg: Message, assistantMsg: Message, chatId: string) => void;
   onCreateChat?: (firstMessage: string) => Promise<string>;
+  onThemeChange?: (nextTheme: ThemeChoice) => void;
 }
 
 export function VoiceModeView({
@@ -34,9 +37,11 @@ export function VoiceModeView({
   provider,
   voiceSettings,
   theme = "dazz",
+  userLocation,
   onExit,
   onTurnComplete,
   onCreateChat,
+  onThemeChange,
 }: VoiceModeViewProps) {
   const [soundEffectsEnabled, setSoundEffectsEnabled] = useState(true);
 
@@ -57,6 +62,7 @@ export function VoiceModeView({
     aiName,
     provider,
     voiceSettings,
+    userLocation,
     soundEffectsEnabled,
     onTurnComplete,
     onCreateChat,
@@ -139,6 +145,23 @@ export function VoiceModeView({
 
         <div className="hud-corner-mark top-right">
           <div className="hud-actions-strip">
+            {onThemeChange && (
+              <div className="hud-theme-picker" title="Switch Voice Mode Theme">
+                <Palette size={14} className="hud-theme-icon" />
+                <select
+                  value={theme}
+                  onChange={(e) => onThemeChange(e.target.value as ThemeChoice)}
+                  className="hud-theme-select"
+                  aria-label="Select Voice Mode Theme"
+                >
+                  {themes.map((t) => (
+                    <option key={t.value} value={t.value}>
+                      {t.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             <button
               type="button"
               className={`hud-icon-btn ${soundEffectsEnabled ? "is-active" : ""}`}

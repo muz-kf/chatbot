@@ -2,7 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createSpeechRecognition } from "../../lib/speechRecognition";
 import { StreamingTTSQueue, type VoiceSettings } from "../../lib/speechSynthesis";
 import { apiRequest } from "../../lib/api";
-import type { AiProvider, Message } from "../../types/chat";
+import { getRandomId } from "../../lib/utils";
+import type { AiProvider, Message, UserLocation } from "../../types/chat";
 import { playListenChime, playTurnReadyChime } from "./audioChime";
 
 export type VoiceAssistantStatus = "idle" | "listening" | "thinking" | "speaking";
@@ -12,6 +13,7 @@ export interface UseVoiceAssistantOptions {
   aiName: string;
   provider: AiProvider;
   voiceSettings: VoiceSettings;
+  userLocation?: UserLocation | null;
   soundEffectsEnabled?: boolean;
   onTurnComplete?: (userMsg: Message, assistantMsg: Message, chatId: string) => void;
   onCreateChat?: (firstMessage: string) => Promise<string>;
@@ -22,6 +24,7 @@ export function useVoiceAssistant({
   aiName,
   provider,
   voiceSettings,
+  userLocation,
   soundEffectsEnabled = true,
   onTurnComplete,
   onCreateChat,
@@ -126,15 +129,17 @@ export function useVoiceAssistant({
       let hasStartedSpeaking = false;
 
       const userMessage: Message = {
-        id: `usr_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        id: getRandomId(),
         role: "user",
         content: prompt,
+        attachments: [],
       };
 
       const assistantMessage: Message = {
-        id: `ast_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        id: getRandomId(),
         role: "assistant",
         content: "",
+        attachments: [],
       };
 
       const handleToken = (token: string) => {
@@ -151,11 +156,16 @@ export function useVoiceAssistant({
       };
 
       try {
-        const response = await fetch(`/api/chats/${targetChatId}/turns/stream`, {
+        const clientTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+        const response = await fetch(`/api/chats/${targetChatId}/turns`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            content: prompt,
+            chatId: targetChatId,
+            message: userMessage,
+            clientTimezone,
+            clientLocation: userLocation,
+            provider,
             aiName,
           }),
           signal: controller.signal,
@@ -243,7 +253,7 @@ export function useVoiceAssistant({
         }
       }
     },
-    [aiName, muted, onCreateChat, onTurnComplete, soundEffectsEnabled, voiceSettings, startAudioSimulation, stopAudioSimulation],
+    [aiName, muted, onCreateChat, onTurnComplete, provider, soundEffectsEnabled, userLocation, voiceSettings, startAudioSimulation, stopAudioSimulation],
   );
 
   // Start Speech Recognition

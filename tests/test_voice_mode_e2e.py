@@ -67,13 +67,82 @@ def test_jarvis_voice_mode():
         expect(control_deck).to_be_visible()
         print("✅ Floating control deck with mic toggle & interrupt verified!")
 
-        # 5. Capture screenshot of Jarvis Voice Mode HUD
+        # 5. Test Theme Switching in Voice Mode (All Themes)
+        print("🎨 Testing theme switching in Voice Mode across 12 themes...")
+        theme_select = page.locator("select.hud-theme-select")
+        expect(theme_select).to_be_visible()
+
+        test_themes = ["gold", "red", "green", "purple", "orange", "skyblue", "pink", "maroon", "zyricon", "miracle", "white", "dazz"]
+        for t in test_themes:
+            theme_select.select_option(t)
+            time.sleep(0.15)
+            root_elem = page.locator(".jarvis-voice-mode-root")
+            expect(root_elem).to_have_class(f"jarvis-voice-mode-root theme-{t}")
+            print(f"  ✓ Theme '{t}' verified with reactive Arc Reactor styling")
+
+        # 6. Capture screenshot of Jarvis Voice Mode HUD in chosen theme
         os.makedirs("tests/screenshots", exist_ok=True)
         screenshot_path = "tests/screenshots/jarvis_voice_mode.png"
         page.screenshot(path=screenshot_path)
         print(f"📸 Saved Jarvis Arc Reactor Voice Mode screenshot to {screenshot_path}")
 
-        # 6. Test Exiting Voice Mode back to standard chat
+        # 7. Test Backend Streaming API Response via /api/chats/{id}/turns
+        print("⚡ Verifying chat turn response stream against backend API...")
+        api_result = page.evaluate("""
+            async () => {
+                // 1. Create chat
+                const createRes = await fetch('/api/chats', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title: 'Voice Mode API Test' })
+                });
+                if (!createRes.ok) throw new Error(`Create chat failed: ${createRes.status}`);
+                const { chat } = await createRes.json();
+
+                // 2. Post turn to /api/chats/{chat_id}/turns
+                const turnRes = await fetch(`/api/chats/${chat.id}/turns`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chatId: chat.id,
+                        message: {
+                            id: crypto.randomUUID(),
+                            role: 'user',
+                            content: 'What is 2 plus 2? Answer with just the number.',
+                            attachments: []
+                        },
+                        clientTimezone: 'UTC',
+                        provider: 'groq',
+                        aiName: 'JARVIS'
+                    })
+                });
+                if (!turnRes.ok) throw new Error(`Turn stream failed: ${turnRes.status}`);
+
+                const reader = turnRes.body.getReader();
+                const decoder = new TextDecoder();
+                let fullText = '';
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    const chunk = decoder.decode(value);
+                    const lines = chunk.split('\\n');
+                    for (const line of lines) {
+                        if (!line.trim()) continue;
+                        try {
+                            const parsed = JSON.parse(line);
+                            if (parsed.token) fullText += parsed.token;
+                        } catch {}
+                    }
+                }
+                return { success: true, text: fullText.trim() };
+            }
+        """)
+        assert api_result.get("success") is True, f"API test failed: {api_result}"
+        reply_text = api_result.get("text", "")
+        print(f"📥 Backend turn stream verified successfully! Reply received: '{reply_text}'")
+        assert "4" in reply_text, f"Expected '4' in response, got '{reply_text}'"
+
+        # 8. Test Exiting Voice Mode back to standard chat
         print("🚪 Testing 'Exit Voice Mode' button...")
         exit_btn = page.locator("button.hud-exit-btn")
         expect(exit_btn).to_be_visible()
@@ -85,7 +154,7 @@ def test_jarvis_voice_mode():
         print("✅ Smooth transition back to standard chat workspace verified!")
 
         browser.close()
-        print("🎉 Jarvis Voice Mode E2E Test completed with 100% success!")
+        print("🎉 Jarvis Voice Mode E2E Test & API validation completed with 100% success!")
 
 if __name__ == "__main__":
     try:
