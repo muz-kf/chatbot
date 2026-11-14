@@ -8,6 +8,7 @@ import { ChatHeader } from "./components/chat/ChatHeader";
 import { ChatSidebar } from "./components/chat/ChatSidebar";
 import { MessageList } from "./components/chat/MessageList";
 import { WelcomeScreen } from "./components/chat/WelcomeScreen";
+import { VoiceModeView } from "./features/voice/VoiceModeView";
 import { processAttachment, recordedAudioToWav } from "./lib/attachmentProcessing";
 import { ApiError, apiRequest, queryKeys } from "./lib/api";
 import { createSpeechRecognition } from "./lib/speechRecognition";
@@ -15,6 +16,7 @@ import {
   isFontChoice,
   isThemeChoice,
   themeFonts,
+  type AiProvider,
   type FontChoice,
   type ChatAttachment,
   type ChatSummary,
@@ -24,6 +26,12 @@ import {
   type UserProfile,
 } from "./types/chat";
 import { getRandomId } from "./lib/utils";
+import {
+  type VoiceSettings,
+  DEFAULT_VOICE_SETTINGS,
+  StreamingTTSQueue,
+  speakText,
+} from "./lib/speechSynthesis";
 
 type AuthState = "loading" | "authenticated" | "unauthenticated";
 
@@ -94,8 +102,101 @@ function App() {
     setSendOnVoiceEnd(enabled);
     window.localStorage.setItem("chat-send-on-voice-sender", String(enabled));
   };
+  const [autoListenOnResponse, setAutoListenOnResponse] = useState<boolean>(() => {
+    const saved = window.localStorage.getItem("chat-auto-listen-on-response");
+    return saved !== null ? saved === "true" : false;
+  });
+  const [autoListenTrigger, setAutoListenTrigger] = useState(0);
+
+  const handleAutoListenOnResponseChange = (enabled: boolean) => {
+    setAutoListenOnResponse(enabled);
+    window.localStorage.setItem("chat-auto-listen-on-response", String(enabled));
+  };
   const [theme, setTheme] = useState<ThemeChoice>(getSavedTheme);
   const [font, setFont] = useState<FontChoice>(() => getSavedFont(theme));
+  const [provider, setProvider] = useState<AiProvider>(() => {
+    const saved = window.localStorage.getItem("chat-ai-provider");
+    return saved === "openrouter" ? "openrouter" : "groq";
+  });
+  const [defaultAiName, setDefaultAiName] = useState<string>(() => {
+    return window.localStorage.getItem("chat-default-ai-name") || "DAZZ";
+  });
+  const [chatAiNames, setChatAiNames] = useState<Record<string, string>>({});
+
+  const activeAiName = activeChatId
+    ? (chatAiNames[activeChatId] || window.localStorage.getItem(`chat-ai-name-${activeChatId}`) || defaultAiName)
+    : defaultAiName;
+
+  const [voiceSettings, setVoiceSettings] = useState<VoiceSettings>(() => {
+    try {
+      const saved = window.localStorage.getItem("chat-voice-settings");
+      return saved ? JSON.parse(saved) : DEFAULT_VOICE_SETTINGS;
+    } catch {
+      return DEFAULT_VOICE_SETTINGS;
+    }
+  });
+
+  const [currentPath, setCurrentPath] = useState(() => window.location.pathname);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setCurrentPath(window.location.pathname);
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  const navigateTo = useCallback(
+    (pathname: string, searchParams?: Record<string, string>) => {
+      const search = new URLSearchParams(window.location.search);
+      if (searchParams) {
+        Object.entries(searchParams).forEach(([k, v]) => {
+          if (v) search.set(k, v);
+          else search.delete(k);
+        });
+      }
+      const queryString = search.toString();
+      const targetUrl = queryString ? `${pathname}?${queryString}` : pathname;
+      window.history.pushState(null, "", targetUrl);
+      setCurrentPath(pathname);
+    },
+    [],
+  );
+
+  const handleOpenVoiceMode = useCallback(() => {
+    navigateTo("/voice", activeChatId ? { chatId: activeChatId } : undefined);
+  }, [activeChatId, navigateTo]);
+
+  const handleExitVoiceMode = useCallback(() => {
+    navigateTo("/", activeChatId ? { chatId: activeChatId } : undefined);
+  }, [activeChatId, navigateTo]);
+
+  const handleProviderChange = (newProvider: AiProvider) => {
+    setProvider(newProvider);
+    window.localStorage.setItem("chat-ai-provider", newProvider);
+  };
+
+  const handleDefaultAiNameChange = (name: string) => {
+    const trimmed = name.trim() || "DAZZ";
+    setDefaultAiName(trimmed);
+    window.localStorage.setItem("chat-default-ai-name", trimmed);
+  };
+
+  const handleRenameActiveAi = (newName: string) => {
+    const trimmed = newName.trim() || "DAZZ";
+    if (activeChatId) {
+      window.localStorage.setItem(`chat-ai-name-${activeChatId}`, trimmed);
+      setChatAiNames((prev) => ({ ...prev, [activeChatId]: trimmed }));
+    } else {
+      handleDefaultAiNameChange(trimmed);
+    }
+  };
+
+  const handleVoiceSettingsChange = (settings: VoiceSettings) => {
+    setVoiceSettings(settings);
+    window.localStorage.setItem("chat-voice-settings", JSON.stringify(settings));
+  };
+
   const sessionQuery = useQuery({
     queryKey: queryKeys.session,
     queryFn: () => apiRequest<{ user: UserProfile }>("/api/auth/session"),
@@ -121,6 +222,7 @@ function App() {
       message: Message;
       signal: AbortSignal;
       onToken: (token: string) => void;
+      aiName?: string;
     }) => {
       const clientTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
       const response = await fetch(`/api/chats/${input.chatId}/turns`, {
@@ -131,11 +233,13 @@ function App() {
           message: input.message,
           clientTimezone,
           clientLocation: userLocation,
+          provider,
+          aiName: input.aiName || activeAiName,
         }),
         signal: input.signal,
       });
       if (!response.ok) {
-        let errorMessage = "DAZZ could not complete this response.";
+        let errorMessage = `${activeAiName} could not complete this response.`;
         try {
           const result = (await response.json()) as { error?: string };
           if (result?.error) errorMessage = result.error;
@@ -175,6 +279,19 @@ function App() {
   const [showScrollBottom, setShowScrollBottom] = useState(false);
   const userScrolledUpRef = useRef(false);
   const requestRef = useRef<AbortController | null>(null);
+  const activeChatIdRef = useRef<string | null>(null);
+  activeChatIdRef.current = activeChatId;
+  const ttsQueueRef = useRef<StreamingTTSQueue | null>(null);
+
+  interface InFlightTurn {
+    chatId: string;
+    controller: AbortController;
+    userMessage: Message;
+    assistantMessage: Message;
+    historyBeforeTurn: Message[];
+  }
+  const inFlightRef = useRef<InFlightTurn | null>(null);
+
   const draftRef = useRef<HTMLTextAreaElement>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
@@ -329,11 +446,53 @@ function App() {
       return;
     }
 
+    const currentHistory = [...messages];
     setMessages((current) => [...current, userMessage, assistantMessage]);
     setDraft("");
     setAttachments([]);
     setError("");
     setStreaming(true);
+
+    // Conversational user name adoption
+    const userNameMatch = content.match(/\b(?:call me|my name is|you can call me)\s+([A-Za-z0-9_-]{2,25})\b/i);
+    if (userNameMatch && userNameMatch[1]) {
+      const candidate = userNameMatch[1].trim();
+      const lower = candidate.toLowerCase();
+      const ignore = ["a", "an", "the", "back", "again", "later", "please", "now", "here", "today", "tomorrow", "something", "whatever"];
+      if (!ignore.includes(lower)) {
+        const formatted = candidate.charAt(0).toUpperCase() + candidate.slice(1);
+        setUser((prev) => (prev ? { ...prev, name: formatted } : prev));
+      }
+    }
+
+    // Conversational AI persona name adoption
+    let turnAiName = activeAiName;
+    const aiNameMatch = content.match(/\b(?:call yourself|your name is|i(?:'ll| will) call you|from now on you are|name yourself)\s+([A-Za-z0-9_-]{2,25})\b/i);
+    if (aiNameMatch && aiNameMatch[1]) {
+      const candidate = aiNameMatch[1].trim();
+      const lower = candidate.toLowerCase();
+      const ignore = ["a", "an", "the", "back", "again", "later", "please", "now", "here", "today", "tomorrow", "something", "whatever", "dazz", "assistant"];
+      if (!ignore.includes(lower)) {
+        const formatted = candidate.charAt(0).toUpperCase() + candidate.slice(1);
+        turnAiName = formatted;
+        if (activeChatId) {
+          window.localStorage.setItem(`chat-ai-name-${activeChatId}`, formatted);
+          setChatAiNames((prev) => ({ ...prev, [activeChatId]: formatted }));
+        } else {
+          setDefaultAiName(formatted);
+          window.localStorage.setItem("chat-default-ai-name", formatted);
+        }
+      }
+    }
+
+    // Initialize real-time streaming TTS queue
+    ttsQueueRef.current?.stop();
+    if (voiceSettings.enabled) {
+      ttsQueueRef.current = new StreamingTTSQueue(voiceSettings);
+    } else {
+      ttsQueueRef.current = null;
+    }
+
     requestRef.current?.abort();
     const controller = new AbortController();
     requestRef.current = controller;
@@ -347,18 +506,8 @@ function App() {
     }
 
     void (async () => {
-      const appendToken = (token: string) => {
-        setMessages((current) =>
-          current.map((message) =>
-            message.id === assistantMessage.id
-              ? { ...message, content: message.content + token }
-              : message,
-          ),
-        );
-      };
-
+      let chatId = activeChatId;
       try {
-        let chatId = activeChatId;
         if (!chatId) {
           const { chat: createdChat } = await createChatMutation.mutateAsync(
             messageContent.slice(0, 120) || "New conversation",
@@ -366,42 +515,99 @@ function App() {
           chatId = createdChat.id;
           setActiveChatId(chatId);
           setChats((current) => [createdChat, ...current]);
+          const newChatId = createdChat.id;
+          if (turnAiName) {
+            window.localStorage.setItem(`chat-ai-name-${newChatId}`, turnAiName);
+            setChatAiNames((prev) => ({ ...prev, [newChatId]: turnAiName }));
+          }
           const newUrl = `${window.location.pathname}?chatId=${encodeURIComponent(createdChat.id)}`;
           window.history.replaceState({ chatId: createdChat.id }, "", newUrl);
         }
+
+        let accumulatedContent = "";
+        inFlightRef.current = {
+          chatId,
+          controller,
+          userMessage: { ...userMessage },
+          assistantMessage: { ...assistantMessage },
+          historyBeforeTurn: currentHistory,
+        };
+
+        const appendToken = (token: string) => {
+          accumulatedContent += token;
+          if (inFlightRef.current && inFlightRef.current.chatId === chatId) {
+            inFlightRef.current.assistantMessage.content = accumulatedContent;
+          }
+          ttsQueueRef.current?.pushToken(token);
+          if (activeChatIdRef.current === chatId) {
+            setMessages((current) =>
+              current.map((message) =>
+                message.id === assistantMessage.id
+                  ? { ...message, content: accumulatedContent }
+                  : message,
+              ),
+            );
+          }
+        };
 
         await chatTurnMutation.mutateAsync({
           chatId,
           message: userMessage,
           signal: controller.signal,
           onToken: appendToken,
+          aiName: turnAiName,
         });
+
         await queryClient.invalidateQueries({ queryKey: queryKeys.chats });
+        await queryClient.invalidateQueries({ queryKey: queryKeys.chat(chatId) });
+
+        const triggerMicIfAutoListen = () => {
+          if (sendOnVoiceEnd && autoListenOnResponse && !controller.signal.aborted) {
+            setTimeout(() => {
+              if (activeChatIdRef.current === chatId) {
+                setAutoListenTrigger((prev) => prev + 1);
+              }
+            }, 500);
+          }
+        };
+
+        // Flush remaining tokens in the streaming TTS buffer
+        if (voiceSettings.enabled && ttsQueueRef.current) {
+          ttsQueueRef.current.flush(triggerMicIfAutoListen);
+        } else {
+          ttsQueueRef.current?.flush();
+          triggerMicIfAutoListen();
+        }
       } catch (requestError) {
         if (!controller.signal.aborted) {
           const rawError =
             requestError instanceof Error
               ? requestError.message
-              : "DAZZ could not complete this response. Please try again.";
+              : `${activeAiName} could not complete this response. Please try again.`;
 
-          setMessages((current) =>
-            current.map((msg) => {
-              if (msg.id === assistantMessage.id) {
-                return {
-                  ...msg,
-                  isError: true,
-                  content:
-                    msg.content.trim().length > 0
-                      ? `${msg.content}\n\n⚠️ *Response interrupted: ${rawError}*`
-                      : rawError,
-                };
-              }
-              return msg;
-            }),
-          );
-          setError(rawError);
+          if (activeChatIdRef.current === chatId) {
+            setMessages((current) =>
+              current.map((msg) => {
+                if (msg.id === assistantMessage.id) {
+                  return {
+                    ...msg,
+                    isError: true,
+                    content:
+                      msg.content.trim().length > 0
+                        ? `${msg.content}\n\n⚠️ *Response interrupted: ${rawError}*`
+                        : rawError,
+                  };
+                }
+                return msg;
+              }),
+            );
+            setError(rawError);
+          }
         }
       } finally {
+        if (inFlightRef.current?.controller === controller) {
+          inFlightRef.current = null;
+        }
         if (requestRef.current === controller) {
           requestRef.current = null;
           setStreaming(false);
@@ -458,13 +664,19 @@ function App() {
   }
 
   function stopResponse() {
+    ttsQueueRef.current?.stop();
+    inFlightRef.current?.controller.abort();
+    inFlightRef.current = null;
     requestRef.current?.abort();
     requestRef.current = null;
     setStreaming(false);
   }
 
   function newChat() {
-    stopResponse();
+    // When navigating to a new chat, do NOT abort in-flight generation of the previous chat.
+    // The previous chat will continue in the background and commit cleanly to the database.
+    ttsQueueRef.current?.stop();
+    setStreaming(false);
     cancelVoiceRecording();
     setMessages([]);
     setActiveChatId(null);
@@ -478,13 +690,34 @@ function App() {
   }
 
   async function openChat(chatId: string) {
+    ttsQueueRef.current?.stop();
     if (chatId === activeChatId) {
       if (window.matchMedia("(max-width: 767px)").matches) setSidebarOpen(false);
       return;
     }
-    stopResponse();
     setError("");
     setChatNotFound(false);
+
+    // If returning to a chat that is actively generating in the background,
+    // seamlessly restore its streaming view without waiting or triggering interrupted state
+    if (inFlightRef.current && inFlightRef.current.chatId === chatId) {
+      setActiveChatId(chatId);
+      setMessages([
+        ...inFlightRef.current.historyBeforeTurn,
+        inFlightRef.current.userMessage,
+        { ...inFlightRef.current.assistantMessage },
+      ]);
+      setStreaming(true);
+      setDraft("");
+      setAttachments([]);
+      const newUrl = `${window.location.pathname}?chatId=${encodeURIComponent(chatId)}`;
+      window.history.replaceState({ chatId }, "", newUrl);
+      if (window.matchMedia("(max-width: 767px)").matches) setSidebarOpen(false);
+      setTimeout(() => scrollToBottom(false), 60);
+      return;
+    }
+
+    setStreaming(false);
     try {
       const result = await queryClient.fetchQuery({
         queryKey: queryKeys.chat(chatId),
@@ -713,22 +946,34 @@ function App() {
         activeChatId={activeChatId}
         user={user ?? { email: "", name: "" }}
         sendOnVoiceEnd={sendOnVoiceEnd}
+        autoListenOnResponse={autoListenOnResponse}
+        provider={provider}
+        defaultAiName={defaultAiName}
+        voiceSettings={voiceSettings}
         onSendOnVoiceEndChange={handleSendOnVoiceEndChange}
+        onAutoListenOnResponseChange={handleAutoListenOnResponseChange}
+        onProviderChange={handleProviderChange}
+        onDefaultAiNameChange={handleDefaultAiNameChange}
+        onVoiceSettingsChange={handleVoiceSettingsChange}
         onClose={() => setSidebarOpen(false)}
         onNewChat={newChat}
         onSelectChat={(chatId) => void openChat(chatId)}
         onSignOut={() => void signOut()}
         onToggleSettings={() => setSettingsOpen((open) => !open)}
+        onOpenVoiceMode={handleOpenVoiceMode}
         onFontChange={setFont}
         onThemeChange={changeTheme}
       />
       <main className="chat-workspace">
         <ChatHeader
           sidebarOpen={sidebarOpen}
+          aiName={activeAiName}
+          provider={provider}
           onToggleSidebar={() => setSidebarOpen((open) => !open)}
           onScrollLatest={() => scrollToBottom(true)}
+          onOpenVoiceMode={handleOpenVoiceMode}
         />
-        <section ref={viewportRef} className="conversation-viewport" aria-label="Conversation with DAZZ">
+        <section ref={viewportRef} className="conversation-viewport" aria-label={`Conversation with ${activeAiName}`}>
           {chatNotFound ? (
             <div className="chat-not-found-screen" role="alert">
               <div className="chat-not-found-card">
@@ -746,7 +991,7 @@ function App() {
               </div>
             </div>
           ) : messages.length === 0 ? (
-            <WelcomeScreen onPrompt={startChat} />
+            <WelcomeScreen aiName={activeAiName} onPrompt={startChat} />
           ) : (
             <MessageList
               messages={messages}
@@ -754,6 +999,8 @@ function App() {
               sendOnVoiceEnd={sendOnVoiceEnd}
               copiedId={copiedId}
               bottomRef={bottomRef}
+              aiName={activeAiName}
+              voiceSettings={voiceSettings}
               onCopy={(message) => void copyMessage(message)}
               onEdit={(message) => {
                 setDraft(message.content);
@@ -773,6 +1020,7 @@ function App() {
           recording={recording}
           recordingTranscript={recordingTranscript}
           sendOnVoiceEnd={sendOnVoiceEnd}
+          autoListenTrigger={autoListenTrigger}
           showScrollBottom={showScrollBottom}
           onScrollBottom={() => scrollToBottom(true)}
           onSendText={handleDirectSend}
@@ -785,11 +1033,39 @@ function App() {
           onKeyDown={handleKeyDown}
           onStop={stopResponse}
           onRecord={() => (recording ? stopVoiceRecording() : void startVoiceRecording())}
+          aiName={activeAiName}
         />
       </main>
+      {currentPath === "/voice" && authState === "authenticated" && (
+        <VoiceModeView
+          chatId={activeChatId}
+          aiName={activeAiName}
+          provider={provider}
+          voiceSettings={voiceSettings}
+          theme={theme}
+          userLocation={userLocation}
+          onExit={handleExitVoiceMode}
+          onTurnComplete={(userMsg, assistantMsg, turnChatId) => {
+            if (!activeChatId) {
+              setActiveChatId(turnChatId);
+            }
+            setMessages((prev) => [...prev, userMsg, assistantMsg]);
+            void queryClient.invalidateQueries({ queryKey: queryKeys.chats });
+            void queryClient.invalidateQueries({ queryKey: queryKeys.chat(turnChatId) });
+          }}
+          onCreateChat={async (firstMessage) => {
+            const { chat: createdChat } = await createChatMutation.mutateAsync(
+              firstMessage || "Voice conversation",
+            );
+            setActiveChatId(createdChat.id);
+            setChats((current) => [createdChat, ...current]);
+            return createdChat.id;
+          }}
+        />
+      )}
       {authState === "loading" && (
         <div className="auth-overlay">
-          <div className="auth-loading" role="status">Restoring your DAZZ session...</div>
+          <div className="auth-loading" role="status">Restoring your session...</div>
         </div>
       )}
       {authState === "unauthenticated" && (

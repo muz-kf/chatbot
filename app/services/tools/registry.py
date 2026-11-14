@@ -33,8 +33,13 @@ class ToolRegistry:
         """Return the OpenAI-compatible tool specifications for all registered tools."""
         return [tool.to_openai_tool() for tool in self._tools.values()]
 
-    async def execute_tool(self, name: str, arguments: dict[str, Any] | str) -> dict[str, Any]:
-        """Execute a tool by name with parsed or string arguments."""
+    async def execute_tool(
+        self,
+        name: str,
+        arguments: dict[str, Any] | str,
+        **extra_kwargs: Any,
+    ) -> dict[str, Any]:
+        """Execute a tool by name with parsed or string arguments and contextual extra kwargs."""
         tool = self.get(name)
         if not tool:
             return {"error": f"Tool '{name}' is not recognized or supported."}
@@ -46,7 +51,12 @@ class ToolRegistry:
             except Exception as e:
                 return {"error": f"Invalid JSON arguments provided for tool '{name}': {str(e)}"}
         elif isinstance(arguments, dict):
-            parsed_args = arguments
+            parsed_args = dict(arguments)
+
+        # Merge extra context kwargs (e.g. client_location)
+        for key, val in extra_kwargs.items():
+            if key not in parsed_args and val is not None:
+                parsed_args[key] = val
 
         try:
             result = await tool.execute(**parsed_args)

@@ -36,6 +36,8 @@ export type UserLocation = {
   accuracy?: number;
 };
 
+export type AiProvider = "groq" | "openrouter";
+
 export const fonts = [
   "Sora",
   "Poppins",

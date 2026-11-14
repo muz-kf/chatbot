@@ -1,4 +1,4 @@
-import asyncio
+import anyio
 import logging
 from typing import Any
 import httpx
@@ -110,7 +110,7 @@ class WebSearchTool(BaseTool):
     async def _search_duckduckgo(self, query: str, max_results: int) -> dict[str, Any]:
         """Search using DuckDuckGo via ddgs library with HTTP fallback."""
         try:
-            raw_results = await asyncio.to_thread(self._execute_ddgs_sync, query, max_results)
+            raw_results = await anyio.to_thread.run_sync(self._execute_ddgs_sync, query, max_results)
             if raw_results:
                 results = [
                     {

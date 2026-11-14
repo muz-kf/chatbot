@@ -45,14 +45,15 @@ class WeatherTool(BaseTool):
     name = "get_weather"
     description = (
         "Get real-time weather information (temperature, weather condition, "
-        "humidity, and wind speed) for any requested city or location."
+        "humidity, and wind speed) for any requested city or location. "
+        "Use 'current_location' if the user asks for the weather for their current live location."
     )
     parameters = {
         "type": "object",
         "properties": {
             "location": {
                 "type": "string",
-                "description": "City or location name (e.g. 'Paris', 'Tokyo', 'San Francisco, CA')",
+                "description": "City or location name (e.g. 'Paris', 'Tokyo', 'San Francisco, CA' or 'current_location')",
             },
             "temperature_unit": {
                 "type": "string",
@@ -72,29 +73,49 @@ class WeatherTool(BaseTool):
         unit = "fahrenheit" if temperature_unit.lower() == "fahrenheit" else "celsius"
         temp_symbol = "°F" if unit == "fahrenheit" else "°C"
 
+        # Check if live location was requested
+        lat: float | None = None
+        lon: float | None = None
+        location_full: str = location
+
+        if location.lower() in ("current_location", "here", "my location", "me", "current", "my area"):
+            client_location = kwargs.get("client_location")
+            if client_location:
+                c_lat = getattr(client_location, "latitude", None) or (
+                    client_location.get("latitude") if isinstance(client_location, dict) else None
+                )
+                c_lon = getattr(client_location, "longitude", None) or (
+                    client_location.get("longitude") if isinstance(client_location, dict) else None
+                )
+                if c_lat is not None and c_lon is not None:
+                    lat = float(c_lat)
+                    lon = float(c_lon)
+                    location_full = "Current Location"
+
         try:
             async with httpx.AsyncClient(timeout=10.0) as client:
-                # 1. Geocode location to latitude/longitude
-                geo_resp = await client.get(
-                    "https://geocoding-api.open-meteo.com/v1/search",
-                    params={"name": location, "count": 1, "language": "en", "format": "json"},
-                )
-                geo_resp.raise_for_status()
-                geo_data = geo_resp.json()
+                # 1. Geocode location if not already resolved from client coordinates
+                if lat is None or lon is None:
+                    geo_resp = await client.get(
+                        "https://geocoding-api.open-meteo.com/v1/search",
+                        params={"name": location, "count": 1, "language": "en", "format": "json"},
+                    )
+                    geo_resp.raise_for_status()
+                    geo_data = geo_resp.json()
 
-                results = geo_data.get("results")
-                if not results:
-                    return {
-                        "error": f"Could not find coordinates for location '{location}'. Please verify the spelling."
-                    }
+                    results = geo_data.get("results")
+                    if not results:
+                        return {
+                            "error": f"Could not find coordinates for location '{location}'. Please verify the spelling or specify a nearby city."
+                        }
 
-                place = results[0]
-                lat = place.get("latitude")
-                lon = place.get("longitude")
-                name = place.get("name", location)
-                country = place.get("country", "")
-                admin1 = place.get("admin1", "")
-                location_full = f"{name}, {admin1}, {country}".replace(", ,", ",").strip(", ")
+                    place = results[0]
+                    lat = place.get("latitude")
+                    lon = place.get("longitude")
+                    name = place.get("name", location)
+                    country = place.get("country", "")
+                    admin1 = place.get("admin1", "")
+                    location_full = f"{name}, {admin1}, {country}".replace(", ,", ",").strip(", ")
 
                 # 2. Query Open-Meteo Forecast API
                 weather_resp = await client.get(
