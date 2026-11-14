@@ -9,10 +9,11 @@ const suggestions = [
 ];
 
 type WelcomeScreenProps = {
+  aiName?: string;
   onPrompt: (prompt: string) => void;
 };
 
-export function WelcomeScreen({ onPrompt }: WelcomeScreenProps) {
+export function WelcomeScreen({ aiName = "Assistant", onPrompt }: WelcomeScreenProps) {
   return (
     <motion.section
       initial={{ opacity: 0, y: 16 }}
@@ -25,7 +26,7 @@ export function WelcomeScreen({ onPrompt }: WelcomeScreenProps) {
       </div>
       <div className="welcome-eyebrow"><span /> YOUR AI, IN A NEW LIGHT</div>
       <h2>Hey there.<br /><span>What’s on your mind?</span></h2>
-      <p className="welcome-copy">I’m DAZZ. Ask me anything, explore an idea, or let’s make something great together.</p>
+      <p className="welcome-copy">I’m {aiName}. Ask me anything, explore an idea, or let’s make something great together.</p>
       <div className="suggestion-grid">
         {suggestions.map(({ title, prompt, icon: Icon }, index) => (
           <motion.button

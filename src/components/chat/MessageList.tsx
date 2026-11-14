@@ -20,6 +20,12 @@ import { useEffect, useRef, useState, type RefObject } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { Message } from "../../types/chat";
+import {
+  type VoiceSettings,
+  DEFAULT_VOICE_SETTINGS,
+  speakText,
+  stopSpeaking,
+} from "../../lib/speechSynthesis";
 
 type MessageListProps = {
   messages: Message[];
@@ -27,6 +33,8 @@ type MessageListProps = {
   sendOnVoiceEnd?: boolean;
   copiedId: string;
   bottomRef: RefObject<HTMLDivElement>;
+  aiName?: string;
+  voiceSettings?: VoiceSettings;
   onCopy: (message: Message) => void;
   onEdit?: (message: Message) => void;
 };
@@ -70,6 +78,8 @@ export function MessageList({
   sendOnVoiceEnd = true,
   copiedId,
   bottomRef,
+  aiName = "Assistant",
+  voiceSettings = DEFAULT_VOICE_SETTINGS,
   onCopy,
   onEdit,
 }: MessageListProps) {
@@ -112,20 +122,16 @@ export function MessageList({
   }
 
   function handleSpeak(message: Message) {
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
-
     if (speakingId === message.id) {
-      window.speechSynthesis.cancel();
+      stopSpeaking();
       setSpeakingId(null);
       return;
     }
 
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(message.content);
-    utterance.onend = () => setSpeakingId(null);
-    utterance.onerror = () => setSpeakingId(null);
     setSpeakingId(message.id);
-    window.speechSynthesis.speak(utterance);
+    speakText(message.content, voiceSettings, () => {
+      setSpeakingId((current) => (current === message.id ? null : current));
+    });
   }
 
   return (
@@ -188,7 +194,7 @@ export function MessageList({
                                   “{attachment.transcript}”
                                 </span>
                               )}
-                              {attachment.frames && <span className="message-attachment-note">3 video frames sent to DAZZ</span>}
+                              {attachment.frames && <span className="message-attachment-note">3 video frames sent to {aiName}</span>}
                             </div>
                           ))}
                         </div>
@@ -258,7 +264,7 @@ export function MessageList({
                         <div className="fancy-error-card in-chat-error" role="alert">
                           <div className="fancy-error-header">
                             <AlertTriangle size={18} className="fancy-error-icon" />
-                            <h4 className="fancy-error-title">DAZZ is temporarily unavailable</h4>
+                            <h4 className="fancy-error-title">{aiName} is temporarily unavailable</h4>
                           </div>
                           <p className="fancy-error-description">
                             {message.content.replace(/^⚠️\s*/, "") ||
@@ -347,11 +353,11 @@ export function MessageList({
                           );
                         })
                       ) : isStreamingAssistant ? (
-                        <div className="asking-dazz-container" role="status" aria-label="Asking DAZZ">
+                        <div className="asking-dazz-container" role="status" aria-label={`Asking ${aiName}`}>
                           <div className="asking-dazz-hud">
                             <span className="asking-radar-ring" />
                             <Sparkles size={15} className="asking-dazz-sparkles animate-pulse" />
-                            <span className="asking-dazz-label">Asking DAZZ...</span>
+                            <span className="asking-dazz-label">Asking {aiName}...</span>
                           </div>
                           <div className="asking-dazz-details">
                             <span className="asking-pulse-dot" />
@@ -362,10 +368,10 @@ export function MessageList({
                         <div className="fancy-error-card in-chat-error" role="alert">
                           <div className="fancy-error-header">
                             <AlertTriangle size={18} className="fancy-error-icon" />
-                            <h4 className="fancy-error-title">DAZZ is temporarily unavailable</h4>
+                            <h4 className="fancy-error-title">{aiName} is temporarily unavailable</h4>
                           </div>
                           <p className="fancy-error-description">
-                            DAZZ did not generate a response. The AI provider may be temporarily busy, experiencing rate limits, or encountered a network timeout.
+                            {aiName} did not generate a response. The AI provider may be temporarily busy, experiencing rate limits, or encountered a network timeout.
                           </p>
                           <div className="fancy-error-badge-row">
                             <span className="fancy-error-chip">AI Service Interruption</span>

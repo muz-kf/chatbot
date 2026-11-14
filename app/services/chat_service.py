@@ -151,8 +151,10 @@ class ChatService:
         self,
         client_timezone: str | None = None,
         client_location: Any | None = None,
+        ai_name: str | None = None,
     ) -> str:
-        """Inject current system date, time, weekday, timezone, live location, and tool instructions into system prompt."""
+        """Inject current system date, time, weekday, timezone, live location, custom AI persona, and tool instructions into system prompt."""
+        name = (ai_name or "Assistant").strip() or "Assistant"
         tz_to_use = client_timezone or config.DEFAULT_TIMEZONE or None
         time_context = get_system_datetime_context(tz_to_use)
         tools = tool_registry.get_all()
@@ -172,13 +174,13 @@ class ChatService:
                 location_context = (
                     f"User's Live Location:\n"
                     f"- Coordinates: Latitude {lat:.5f}, Longitude {lon:.5f}\n"
-                    f"- The user has shared their live device GPS location with DAZZ. You know their exact current position.\n"
+                    f"- The user has shared their live device GPS location with {name}. You know their exact current position.\n"
                     f"- Use these coordinates when the user asks 'where am I?', requests weather for their current area, "
                     f"or requests directions/routes/traffic from 'here' or 'my location' without asking them for their location.\n\n"
                 )
 
         return (
-            "You are a helpful, accurate personal AI assistant named DAZZ.\n\n"
+            f"You are a helpful, accurate personal AI assistant named {name}.\n\n"
             f"{time_context}\n\n"
             f"{location_context}"
             "You have access to real-time tools:\n"
@@ -202,6 +204,7 @@ class ChatService:
         client_timezone: str | None = None,
         client_location: Any | None = None,
         provider: str | None = None,
+        ai_name: str | None = None,
     ) -> AsyncGenerator[str, None]:
         """Execute chat turn with multi-turn tool calling loop and stream NDJSON response to client."""
         uses_attachments = any(
@@ -215,11 +218,12 @@ class ChatService:
             uses_attachments=uses_attachments,
         )
 
+        name = (ai_name or "Assistant").strip() or "Assistant"
         headers: dict[str, str] = {}
         if active_provider == "openrouter":
             headers = {
                 "HTTP-Referer": "http://localhost:5173",
-                "X-Title": "DAZZ",
+                "X-Title": name,
             }
 
         client = AsyncOpenAI(
@@ -264,7 +268,7 @@ class ChatService:
                 logger.exception("Failed to persist assistant response to DB for chat %s: %s", chat_id, db_err)
 
         try:
-            system_prompt = self.build_system_prompt(client_timezone, client_location)
+            system_prompt = self.build_system_prompt(client_timezone, client_location, ai_name=name)
             messages: list[dict[str, Any]] = [
                 {"role": "system", "content": system_prompt},
                 *(to_openrouter_message(msg) for msg in current_messages),

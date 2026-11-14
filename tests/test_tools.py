@@ -339,6 +339,16 @@ def test_client_location_and_timezone_in_system_prompt() -> None:
     assert "get_route_or_map" in prompt
 
 
+def test_custom_ai_name_in_system_prompt() -> None:
+    chat_service = ChatService(api_key="test-key")
+    prompt = chat_service.build_system_prompt(
+        ai_name="Jarvis",
+        client_location={"latitude": 13.0827, "longitude": 80.2707},
+    )
+    assert "personal AI assistant named Jarvis" in prompt
+    assert "shared their live device GPS location with Jarvis" in prompt
+
+
 def test_chat_service_groq_provider_resolution(monkeypatch) -> None:
     from app.core import config
     from app.services.chat_service import ChatService

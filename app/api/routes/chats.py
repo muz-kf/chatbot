@@ -144,6 +144,7 @@ async def create_turn(
             client_timezone=data.clientTimezone,
             client_location=data.clientLocation,
             provider=provider,
+            ai_name=data.aiName,
         ),
         media_type="application/x-ndjson",
         headers={

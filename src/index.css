@@ -561,16 +561,16 @@ button {
 
 .conversation-item {
   display: flex;
-  min-height: 40px;
+  min-height: 36px;
   align-items: center;
-  gap: 10px;
-  padding: 0 12px;
+  gap: 8px;
+  padding: 0 10px;
   overflow: hidden;
   border: 1px solid transparent;
-  border-radius: 10px;
+  border-radius: 8px;
   color: #c2bfd8;
   background: transparent;
-  font-size: 13px;
+  font-size: 11.5px;
   font-weight: 450;
   text-align: left;
   cursor: pointer;
@@ -578,8 +578,8 @@ button {
 }
 
 .conversation-item-icon {
-  width: 16px;
-  height: 16px;
+  width: 15px;
+  height: 15px;
   flex-shrink: 0;
   opacity: 0.8;
   transition: opacity .18s ease;
@@ -597,6 +597,9 @@ button {
   text-overflow: ellipsis;
   white-space: nowrap;
   flex: 1;
+  font-size: 11.5px;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
 }
 
 .conversation-item:hover,
@@ -7567,5 +7570,118 @@ button {
 :is(:root[data-theme="white"], :root[data-theme="skyblue"], :root[data-theme="miracle"]) .voice-interim {
   color: #475569 !important;
 }
+
+/* ========================================================
+   CUSTOM AI NAME & VOICE SYNTHESIS SETTINGS STYLES
+   ======================================================== */
+.header-ai-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  padding: 3px 6px;
+  border-radius: 6px;
+  transition: background-color .15s ease;
+}
+
+.header-ai-badge:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.ai-rename-pencil {
+  opacity: 0.55;
+  transition: opacity .15s ease, transform .15s ease;
+}
+
+.header-ai-badge:hover .ai-rename-pencil {
+  opacity: 1;
+  transform: scale(1.15);
+}
+
+.ai-name-form {
+  display: inline-flex;
+  align-items: center;
+}
+
+.ai-name-input {
+  background: rgba(15, 18, 35, 0.85);
+  border: 1px solid rgba(168, 85, 247, 0.45);
+  color: #fff;
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 16px;
+  font-weight: 700;
+  width: 140px;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.2);
+}
+
+.setting-text-input {
+  display: block;
+  width: 100%;
+  height: 36px;
+  padding: 0 11px;
+  border: 1px solid rgba(213, 205, 255, .14);
+  border-radius: 10px;
+  outline: none;
+  color: #ebe8f7;
+  background: rgba(7, 8, 19, .53);
+  font-size: 11px;
+  line-height: 1;
+  transition: border-color .18s ease, background .18s ease, box-shadow .18s ease;
+}
+
+.setting-text-input:focus {
+  border-color: rgba(164, 129, 255, .72);
+  box-shadow: 0 0 0 3px rgba(124, 86, 244, .19);
+}
+
+.setting-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.setting-toggle-text {
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+}
+
+.voice-rate-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 10px;
+  margin-bottom: 2px;
+}
+
+.test-voice-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  color: inherit;
+  font-size: 10px;
+  padding: 2px 7px;
+  cursor: pointer;
+  transition: all .15s ease;
+}
+
+.test-voice-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.setting-range-slider {
+  width: 100%;
+  accent-color: #a855f7;
+  cursor: pointer;
+  height: 4px;
+}
+
 
 

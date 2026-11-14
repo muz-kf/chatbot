@@ -29,6 +29,7 @@ type ChatComposerProps = {
   onKeyDown: (event: KeyboardEvent<HTMLTextAreaElement>) => void;
   onStop: () => void;
   onRecord?: () => void;
+  aiName?: string;
 };
 
 export function ChatComposer({
@@ -51,6 +52,7 @@ export function ChatComposer({
   onSubmit,
   onKeyDown,
   onStop,
+  aiName = "Assistant",
 }: ChatComposerProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [listening, setListening] = useState(false);
@@ -264,7 +266,7 @@ export function ChatComposer({
             </div>
             <div className="chat-error-body">
               <div className="chat-error-title-row">
-                <span className="chat-error-title">DAZZ Service Notice</span>
+                <span className="chat-error-title">{aiName} Service Notice</span>
                 {onDismissError && (
                   <button
                     type="button"
@@ -406,11 +408,11 @@ export function ChatComposer({
           value={value}
           onChange={(event) => onChange(event.target.value)}
           onKeyDown={onKeyDown}
-          placeholder={listening ? "Listening... speak now..." : "Message DAZZ..."}
+          placeholder={listening ? "Listening... speak now..." : `Message ${aiName}...`}
           maxLength={12_000}
           rows={1}
           disabled={streaming}
-          aria-label="Message DAZZ"
+          aria-label={`Message ${aiName}`}
           className="composer-input"
         />
 

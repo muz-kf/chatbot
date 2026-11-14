@@ -88,6 +88,7 @@ class ChatTurnRequest(BaseModel):
     clientLocation: ClientLocation | None = None
     provider: str | None = None
     model: str | None = None
+    aiName: str | None = None
 
     @field_validator("message")
     @classmethod

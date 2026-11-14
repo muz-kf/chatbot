@@ -15,6 +15,7 @@ import {
   isFontChoice,
   isThemeChoice,
   themeFonts,
+  type AiProvider,
   type FontChoice,
   type ChatAttachment,
   type ChatSummary,
@@ -24,6 +25,11 @@ import {
   type UserProfile,
 } from "./types/chat";
 import { getRandomId } from "./lib/utils";
+import {
+  type VoiceSettings,
+  DEFAULT_VOICE_SETTINGS,
+  speakText,
+} from "./lib/speechSynthesis";
 
 type AuthState = "loading" | "authenticated" | "unauthenticated";
 
@@ -96,6 +102,54 @@ function App() {
   };
   const [theme, setTheme] = useState<ThemeChoice>(getSavedTheme);
   const [font, setFont] = useState<FontChoice>(() => getSavedFont(theme));
+  const [provider, setProvider] = useState<AiProvider>(() => {
+    const saved = window.localStorage.getItem("chat-ai-provider");
+    return saved === "openrouter" ? "openrouter" : "groq";
+  });
+  const [defaultAiName, setDefaultAiName] = useState<string>(() => {
+    return window.localStorage.getItem("chat-default-ai-name") || "Assistant";
+  });
+  const [chatAiNames, setChatAiNames] = useState<Record<string, string>>({});
+
+  const activeAiName = activeChatId
+    ? (chatAiNames[activeChatId] || window.localStorage.getItem(`chat-ai-name-${activeChatId}`) || defaultAiName)
+    : defaultAiName;
+
+  const [voiceSettings, setVoiceSettings] = useState<VoiceSettings>(() => {
+    try {
+      const saved = window.localStorage.getItem("chat-voice-settings");
+      return saved ? JSON.parse(saved) : DEFAULT_VOICE_SETTINGS;
+    } catch {
+      return DEFAULT_VOICE_SETTINGS;
+    }
+  });
+
+  const handleProviderChange = (newProvider: AiProvider) => {
+    setProvider(newProvider);
+    window.localStorage.setItem("chat-ai-provider", newProvider);
+  };
+
+  const handleDefaultAiNameChange = (name: string) => {
+    const trimmed = name.trim() || "Assistant";
+    setDefaultAiName(trimmed);
+    window.localStorage.setItem("chat-default-ai-name", trimmed);
+  };
+
+  const handleRenameActiveAi = (newName: string) => {
+    const trimmed = newName.trim() || "Assistant";
+    if (activeChatId) {
+      window.localStorage.setItem(`chat-ai-name-${activeChatId}`, trimmed);
+      setChatAiNames((prev) => ({ ...prev, [activeChatId]: trimmed }));
+    } else {
+      handleDefaultAiNameChange(trimmed);
+    }
+  };
+
+  const handleVoiceSettingsChange = (settings: VoiceSettings) => {
+    setVoiceSettings(settings);
+    window.localStorage.setItem("chat-voice-settings", JSON.stringify(settings));
+  };
+
   const sessionQuery = useQuery({
     queryKey: queryKeys.session,
     queryFn: () => apiRequest<{ user: UserProfile }>("/api/auth/session"),
@@ -131,11 +185,13 @@ function App() {
           message: input.message,
           clientTimezone,
           clientLocation: userLocation,
+          provider,
+          aiName: activeAiName,
         }),
         signal: input.signal,
       });
       if (!response.ok) {
-        let errorMessage = "DAZZ could not complete this response.";
+        let errorMessage = `${activeAiName} could not complete this response.`;
         try {
           const result = (await response.json()) as { error?: string };
           if (result?.error) errorMessage = result.error;
@@ -406,12 +462,17 @@ function App() {
 
         await queryClient.invalidateQueries({ queryKey: queryKeys.chats });
         await queryClient.invalidateQueries({ queryKey: queryKeys.chat(chatId) });
+
+        // Auto-speak reply if voice output is enabled
+        if (voiceSettings.enabled && inFlightRef.current?.assistantMessage.content) {
+          speakText(inFlightRef.current.assistantMessage.content, voiceSettings);
+        }
       } catch (requestError) {
         if (!controller.signal.aborted) {
           const rawError =
             requestError instanceof Error
               ? requestError.message
-              : "DAZZ could not complete this response. Please try again.";
+              : `${activeAiName} could not complete this response. Please try again.`;
 
           if (activeChatIdRef.current === chatId) {
             setMessages((current) =>
@@ -771,7 +832,13 @@ function App() {
         activeChatId={activeChatId}
         user={user ?? { email: "", name: "" }}
         sendOnVoiceEnd={sendOnVoiceEnd}
+        provider={provider}
+        defaultAiName={defaultAiName}
+        voiceSettings={voiceSettings}
         onSendOnVoiceEndChange={handleSendOnVoiceEndChange}
+        onProviderChange={handleProviderChange}
+        onDefaultAiNameChange={handleDefaultAiNameChange}
+        onVoiceSettingsChange={handleVoiceSettingsChange}
         onClose={() => setSidebarOpen(false)}
         onNewChat={newChat}
         onSelectChat={(chatId) => void openChat(chatId)}
@@ -783,10 +850,13 @@ function App() {
       <main className="chat-workspace">
         <ChatHeader
           sidebarOpen={sidebarOpen}
+          aiName={activeAiName}
+          provider={provider}
           onToggleSidebar={() => setSidebarOpen((open) => !open)}
           onScrollLatest={() => scrollToBottom(true)}
+          onRenameAi={handleRenameActiveAi}
         />
-        <section ref={viewportRef} className="conversation-viewport" aria-label="Conversation with DAZZ">
+        <section ref={viewportRef} className="conversation-viewport" aria-label={`Conversation with ${activeAiName}`}>
           {chatNotFound ? (
             <div className="chat-not-found-screen" role="alert">
               <div className="chat-not-found-card">
@@ -804,7 +874,7 @@ function App() {
               </div>
             </div>
           ) : messages.length === 0 ? (
-            <WelcomeScreen onPrompt={startChat} />
+            <WelcomeScreen aiName={activeAiName} onPrompt={startChat} />
           ) : (
             <MessageList
               messages={messages}
@@ -812,6 +882,8 @@ function App() {
               sendOnVoiceEnd={sendOnVoiceEnd}
               copiedId={copiedId}
               bottomRef={bottomRef}
+              aiName={activeAiName}
+              voiceSettings={voiceSettings}
               onCopy={(message) => void copyMessage(message)}
               onEdit={(message) => {
                 setDraft(message.content);
@@ -843,11 +915,12 @@ function App() {
           onKeyDown={handleKeyDown}
           onStop={stopResponse}
           onRecord={() => (recording ? stopVoiceRecording() : void startVoiceRecording())}
+          aiName={activeAiName}
         />
       </main>
       {authState === "loading" && (
         <div className="auth-overlay">
-          <div className="auth-loading" role="status">Restoring your DAZZ session...</div>
+          <div className="auth-loading" role="status">Restoring your session...</div>
         </div>
       )}
       {authState === "unauthenticated" && (
