@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import time
 from playwright.sync_api import sync_playwright, expect
@@ -59,11 +60,11 @@ def test_jarvis_voice_mode():
         expect(svg_reactor).to_be_visible()
         print("✅ Arc Reactor SVG concentric rings and soundwave visualizer verified!")
 
-        # Verify DAZZ BY MZA branding on top-left HUD
+        # Verify MZA Corp branding on top-left HUD
         top_left_code = page.locator(".hud-corner-mark.top-left .hud-code")
         expect(top_left_code).to_be_visible()
-        expect(top_left_code).to_have_text("DAZZ BY MZA")
-        print("✅ Top-left HUD telemetry verified: 'DAZZ BY MZA'!")
+        expect(top_left_code).to_have_text("MZA Corp")
+        print("✅ Top-left HUD telemetry verified: 'MZA Corp'!")
 
         # Verify provider badge and theme selector are NOT in the Voice HUD
         provider_badge = page.locator(".jarvis-hud-top .hud-badge")
@@ -79,7 +80,10 @@ def test_jarvis_voice_mode():
         # Verify subtitle card exists and is ready for streaming
         subtitle_card = page.locator(".jarvis-subtitle-card")
         expect(subtitle_card).to_be_visible()
-        print("✅ Subtitle streaming container verified!")
+        stage = page.locator(".jarvis-center-stage")
+        expect(stage).to_have_class(re.compile(r"is-initial"))
+        expect(subtitle_card).to_have_class(re.compile(r"is-empty"))
+        print("✅ Subtitle streaming container & initial centered reactor state verified!")
 
         control_deck = page.locator(".jarvis-control-deck")
         expect(control_deck).to_be_visible()

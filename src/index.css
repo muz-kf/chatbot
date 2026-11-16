@@ -2110,9 +2110,7 @@ button {
   }
 
   .model-pill {
-    height: 28px;
-    padding: 0 9px;
-    font-size: 9px;
+    display: none !important;
   }
 
   .scroll-latest {

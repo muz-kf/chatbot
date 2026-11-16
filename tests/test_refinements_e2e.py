@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import time
 from playwright.sync_api import sync_playwright, expect
@@ -84,6 +85,11 @@ def test_mobile_voice_bootloader_and_settings():
         print("📱 Testing Voice Mode on Mobile Screen (390x844)...")
         page.set_viewport_size({"width": 390, "height": 844})
         
+        # Verify model-pill must NOT be shown in mobile mode
+        model_pill = page.locator(".model-pill")
+        expect(model_pill).to_be_hidden()
+        print("✅ Confirmed: model-pill is completely hidden on mobile viewports!")
+
         # Click Voice Mode button in header
         voice_btn = page.locator("button.header-voice-mode-btn")
         expect(voice_btn).to_be_visible()
@@ -91,22 +97,44 @@ def test_mobile_voice_bootloader_and_settings():
         page.wait_for_url("**/voice**")
         print("✅ Navigated to /voice route on mobile!")
 
-        # Verify DAZZ Voice mode element is HIDDEN on mobile
-        voice_mode_title = page.locator(".hud-center-title")
-        expect(voice_mode_title).to_be_hidden()
-        print("✅ Confirmed: 'DAZZ Voice mode' element is hidden on mobile device!")
+        # Verify initial centered state of animated icon
+        stage = page.locator(".jarvis-center-stage")
+        expect(stage).to_have_class(re.compile(r"is-initial"))
+        card = page.locator(".jarvis-subtitle-card")
+        expect(card).to_have_class(re.compile(r"is-empty"))
+        print("✅ Confirmed: Animated Arc Reactor starts centered with sleek compact pill!")
 
-        # Verify Exit button is compact cross button (text is hidden)
+        # Verify Voice mode center title element is cut/removed
+        voice_mode_title = page.locator(".hud-center-title")
+        expect(voice_mode_title).to_have_count(0)
+        print("✅ Confirmed: Voice mode central title element is completely removed!")
+
+        # Verify MZA Corp branding is visible on mobile
+        mza_brand = page.locator(".hud-corner-mark.top-left .hud-code")
+        expect(mza_brand).to_be_visible()
+        expect(mza_brand).to_have_text("MZA Corp")
+        print("✅ Confirmed: 'MZA Corp' is visible on mobile HUD!")
+
+        # Verify Exit button is compact cross button for both mobile and PC
         exit_btn = page.locator("button.hud-exit-btn")
         expect(exit_btn).to_be_visible()
-        exit_text = page.locator(".hud-exit-btn .hud-exit-text")
-        expect(exit_text).to_be_hidden()
-        print("✅ Confirmed: Exit voice mode button shows only cross icon on mobile device!")
+        expect(exit_btn).to_have_attribute("title", "Exit Voice Mode (Esc)")
+        print("✅ Confirmed: Exit voice mode button is cross icon with hover tooltip!")
+
+        # Verify Back to Chats button is visible in screen
+        back_to_chats = page.locator("button.jarvis-return-link")
+        expect(back_to_chats).to_be_visible()
+        expect(back_to_chats).to_contain_text("Back to Chats")
+        print("✅ Confirmed: 'Back to Chats' and controls are visible in screen!")
 
         # Click cross button to exit
         exit_btn.click()
         page.wait_for_url("**/")
         print("✅ Successfully exited voice mode back to mobile chat workspace!")
+
+        # Verify model-pill remains hidden on mobile workspace
+        expect(page.locator(".model-pill")).to_be_hidden()
+        print("✅ Confirmed: model-pill remains hidden on mobile chat workspace!")
 
         browser.close()
         print("🎉 All Mobile Voice, Bootloader & Settings Dialog tests completed with 100% success!")

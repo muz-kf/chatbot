@@ -28,8 +28,11 @@
    ========================================================================== */
 
 /* 1. DAZZ / JARVIS */
-:is(.jarvis-voice-mode-root.theme-dazz, .jarvis-voice-mode-root[data-theme="dazz"], :root[data-theme="dazz"] .jarvis-voice-mode-root, :root[data-theme="jarvis"] .jarvis-voice-mode-root) {
+:is(.jarvis-voice-mode-root, .bootloader-screen-root, .settings-dialog-root):is(.theme-dazz, [data-theme="dazz"]),
+:root[data-theme="dazz"] :is(.jarvis-voice-mode-root, .bootloader-screen-root, .settings-dialog-root),
+:root[data-theme="jarvis"] :is(.jarvis-voice-mode-root, .bootloader-screen-root, .settings-dialog-root) {
   background-color: #020e1a;
+  --reactor-bg: #020e1a;
   --reactor-accent: #00f0ff;
   --reactor-core-cyan: #00f0ff;
   --reactor-core-blue: #0077ff;
@@ -39,8 +42,10 @@
 }
 
 /* 2. PURPLE */
-:is(.jarvis-voice-mode-root.theme-purple, .jarvis-voice-mode-root[data-theme="purple"], :root[data-theme="purple"] .jarvis-voice-mode-root) {
+:is(.jarvis-voice-mode-root, .bootloader-screen-root, .settings-dialog-root):is(.theme-purple, [data-theme="purple"]),
+:root[data-theme="purple"] :is(.jarvis-voice-mode-root, .bootloader-screen-root, .settings-dialog-root) {
   background-color: #0e051c;
+  --reactor-bg: #0e051c;
   --reactor-accent: #c084fc;
   --reactor-core-cyan: #a855f7;
   --reactor-core-blue: #7c3aed;
@@ -50,8 +55,10 @@
 }
 
 /* 3. GREEN */
-:is(.jarvis-voice-mode-root.theme-green, .jarvis-voice-mode-root[data-theme="green"], :root[data-theme="green"] .jarvis-voice-mode-root) {
+:is(.jarvis-voice-mode-root, .bootloader-screen-root, .settings-dialog-root):is(.theme-green, [data-theme="green"]),
+:root[data-theme="green"] :is(.jarvis-voice-mode-root, .bootloader-screen-root, .settings-dialog-root) {
   background-color: #02160d;
+  --reactor-bg: #02160d;
   --reactor-accent: #34d399;
   --reactor-core-cyan: #10b981;
   --reactor-core-blue: #059669;
@@ -61,8 +68,10 @@
 }
 
 /* 4. GOLD */
-:is(.jarvis-voice-mode-root.theme-gold, .jarvis-voice-mode-root[data-theme="gold"], :root[data-theme="gold"] .jarvis-voice-mode-root) {
+:is(.jarvis-voice-mode-root, .bootloader-screen-root, .settings-dialog-root):is(.theme-gold, [data-theme="gold"]),
+:root[data-theme="gold"] :is(.jarvis-voice-mode-root, .bootloader-screen-root, .settings-dialog-root) {
   background-color: #171203;
+  --reactor-bg: #171203;
   --reactor-accent: #fbbf24;
   --reactor-core-cyan: #f59e0b;
   --reactor-core-blue: #b45309;
@@ -72,8 +81,10 @@
 }
 
 /* 5. RED */
-:is(.jarvis-voice-mode-root.theme-red, .jarvis-voice-mode-root[data-theme="red"], :root[data-theme="red"] .jarvis-voice-mode-root) {
+:is(.jarvis-voice-mode-root, .bootloader-screen-root, .settings-dialog-root):is(.theme-red, [data-theme="red"]),
+:root[data-theme="red"] :is(.jarvis-voice-mode-root, .bootloader-screen-root, .settings-dialog-root) {
   background-color: #180407;
+  --reactor-bg: #180407;
   --reactor-accent: #f87171;
   --reactor-core-cyan: #ef4444;
   --reactor-core-blue: #b91c1c;
@@ -83,8 +94,10 @@
 }
 
 /* 6. ORANGE */
-:is(.jarvis-voice-mode-root.theme-orange, .jarvis-voice-mode-root[data-theme="orange"], :root[data-theme="orange"] .jarvis-voice-mode-root) {
+:is(.jarvis-voice-mode-root, .bootloader-screen-root, .settings-dialog-root):is(.theme-orange, [data-theme="orange"]),
+:root[data-theme="orange"] :is(.jarvis-voice-mode-root, .bootloader-screen-root, .settings-dialog-root) {
   background-color: #170802;
+  --reactor-bg: #170802;
   --reactor-accent: #fb923c;
   --reactor-core-cyan: #f97316;
   --reactor-core-blue: #ea580c;
@@ -94,8 +107,10 @@
 }
 
 /* 7. MAROON */
-:is(.jarvis-voice-mode-root.theme-maroon, .jarvis-voice-mode-root[data-theme="maroon"], :root[data-theme="maroon"] .jarvis-voice-mode-root) {
+:is(.jarvis-voice-mode-root, .bootloader-screen-root, .settings-dialog-root):is(.theme-maroon, [data-theme="maroon"]),
+:root[data-theme="maroon"] :is(.jarvis-voice-mode-root, .bootloader-screen-root, .settings-dialog-root) {
   background-color: #160309;
+  --reactor-bg: #160309;
   --reactor-accent: #fb7185;
   --reactor-core-cyan: #e11d48;
   --reactor-core-blue: #9f1239;
@@ -105,8 +120,10 @@
 }
 
 /* 8. SKYBLUE */
-:is(.jarvis-voice-mode-root.theme-skyblue, .jarvis-voice-mode-root[data-theme="skyblue"], :root[data-theme="skyblue"] .jarvis-voice-mode-root) {
+:is(.jarvis-voice-mode-root, .bootloader-screen-root, .settings-dialog-root):is(.theme-skyblue, [data-theme="skyblue"]),
+:root[data-theme="skyblue"] :is(.jarvis-voice-mode-root, .bootloader-screen-root, .settings-dialog-root) {
   background-color: #031326;
+  --reactor-bg: #031326;
   --reactor-accent: #38bdf8;
   --reactor-core-cyan: #0ea5e9;
   --reactor-core-blue: #0284c7;
@@ -116,8 +133,10 @@
 }
 
 /* 9. PINK */
-:is(.jarvis-voice-mode-root.theme-pink, .jarvis-voice-mode-root[data-theme="pink"], :root[data-theme="pink"] .jarvis-voice-mode-root) {
+:is(.jarvis-voice-mode-root, .bootloader-screen-root, .settings-dialog-root):is(.theme-pink, [data-theme="pink"]),
+:root[data-theme="pink"] :is(.jarvis-voice-mode-root, .bootloader-screen-root, .settings-dialog-root) {
   background-color: #180413;
+  --reactor-bg: #180413;
   --reactor-accent: #f472b6;
   --reactor-core-cyan: #ec4899;
   --reactor-core-blue: #db2777;
@@ -127,8 +146,10 @@
 }
 
 /* 10. ZYRICON */
-:is(.jarvis-voice-mode-root.theme-zyricon, .jarvis-voice-mode-root[data-theme="zyricon"], :root[data-theme="zyricon"] .jarvis-voice-mode-root) {
+:is(.jarvis-voice-mode-root, .bootloader-screen-root, .settings-dialog-root):is(.theme-zyricon, [data-theme="zyricon"]),
+:root[data-theme="zyricon"] :is(.jarvis-voice-mode-root, .bootloader-screen-root, .settings-dialog-root) {
   background-color: #0d0818;
+  --reactor-bg: #0d0818;
   --reactor-accent: #a78bfa;
   --reactor-core-cyan: #8b5cf6;
   --reactor-core-blue: #6d28d9;
@@ -138,8 +159,10 @@
 }
 
 /* 11. WHITE */
-:is(.jarvis-voice-mode-root.theme-white, .jarvis-voice-mode-root[data-theme="white"], :root[data-theme="white"] .jarvis-voice-mode-root) {
+:is(.jarvis-voice-mode-root, .bootloader-screen-root, .settings-dialog-root):is(.theme-white, [data-theme="white"]),
+:root[data-theme="white"] :is(.jarvis-voice-mode-root, .bootloader-screen-root, .settings-dialog-root) {
   background-color: #0f172a;
+  --reactor-bg: #0f172a;
   --reactor-accent: #e2e8f0;
   --reactor-core-cyan: #94a3b8;
   --reactor-core-blue: #64748b;
@@ -149,8 +172,10 @@
 }
 
 /* 12. MIRACLE */
-:is(.jarvis-voice-mode-root.theme-miracle, .jarvis-voice-mode-root[data-theme="miracle"], :root[data-theme="miracle"] .jarvis-voice-mode-root) {
+:is(.jarvis-voice-mode-root, .bootloader-screen-root, .settings-dialog-root):is(.theme-miracle, [data-theme="miracle"]),
+:root[data-theme="miracle"] :is(.jarvis-voice-mode-root, .bootloader-screen-root, .settings-dialog-root) {
   background-color: #130c22;
+  --reactor-bg: #130c22;
   --reactor-accent: #e9d5ff;
   --reactor-core-cyan: #c084fc;
   --reactor-core-blue: #9333ea;
@@ -177,7 +202,7 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: radial-gradient(circle at center, transparent 30%, rgba(1, 6, 14, 0.85) 90%);
+  background: radial-gradient(circle at center, transparent 30%, var(--reactor-bg, rgba(1, 6, 14, 0.85)) 90%);
   z-index: 2;
 }
 
@@ -337,32 +362,44 @@
 }
 
 .hud-exit-btn {
-  display: flex;
+  position: relative;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 14px;
-  border-radius: 8px;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 50%;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.18);
   color: #ffffff;
-  font-size: 12px;
-  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .hud-exit-btn:hover {
-  background: rgba(255, 60, 60, 0.18);
+  background: rgba(255, 60, 60, 0.2);
   border-color: rgba(255, 60, 60, 0.5);
   color: #ff8080;
+  transform: scale(1.05);
 }
 
-.hud-exit-btn kbd {
-  font-size: 10px;
-  padding: 1px 5px;
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.15);
-  color: #d4f4ff;
+.hud-exit-btn:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  background: rgba(10, 15, 25, 0.95);
+  color: #ffffff;
+  border: 1px solid var(--reactor-accent, rgba(255, 255, 255, 0.3));
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 100;
 }
 
 /* ==========================================================================
@@ -374,10 +411,81 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   flex: 1;
-  padding: 10px 20px;
-  gap: 20px;
+  min-height: 0;
+  overflow: hidden;
+  transition: all 0.45s cubic-bezier(0.34, 1.2, 0.64, 1);
+}
+
+/* 1. Initial State: Center the Arc Reactor prominently in viewport */
+.jarvis-center-stage.is-initial,
+.jarvis-center-stage.scale-empty {
+  justify-content: center;
+  padding: 1.25rem 20px;
+  gap: 16px;
+}
+
+.jarvis-center-stage.is-initial .jarvis-arc-container,
+.jarvis-center-stage.scale-empty .jarvis-arc-container {
+  width: 250px;
+  height: 250px;
+}
+
+.jarvis-center-stage.is-initial .arc-glow-aura,
+.jarvis-center-stage.scale-empty .arc-glow-aura {
+  width: 200px;
+  height: 200px;
+}
+
+/* 2. Short Scale: User talks less or AI answers shortly (e.g. '40') */
+.jarvis-center-stage.scale-short {
+  justify-content: center;
+  padding: 1rem 20px 10px;
+  gap: 14px;
+}
+
+.jarvis-center-stage.scale-short .jarvis-arc-container {
+  width: 200px;
+  height: 200px;
+}
+
+.jarvis-center-stage.scale-short .arc-glow-aura {
+  width: 160px;
+  height: 160px;
+}
+
+/* 3. Medium Scale: Moderate discussion */
+.jarvis-center-stage.scale-medium {
+  justify-content: center;
+  padding: 0.8rem 20px 8px;
+  gap: 12px;
+}
+
+.jarvis-center-stage.scale-medium .jarvis-arc-container {
+  width: 165px;
+  height: 165px;
+}
+
+.jarvis-center-stage.scale-medium .arc-glow-aura {
+  width: 130px;
+  height: 130px;
+}
+
+/* 4. Expanded Scale: Long discussion, multiple paragraphs / tokens streaming */
+.jarvis-center-stage.scale-expanded {
+  justify-content: flex-start;
+  padding: 0.65rem 20px 8px;
+  gap: 10px;
+}
+
+.jarvis-center-stage.scale-expanded .jarvis-arc-container {
+  width: 135px;
+  height: 135px;
+}
+
+.jarvis-center-stage.scale-expanded .arc-glow-aura {
+  width: 105px;
+  height: 105px;
 }
 
 .reactor-wrapper {
@@ -385,17 +493,20 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .jarvis-arc-container {
   position: relative;
-  width: 320px;
-  height: 320px;
+  width: 220px;
+  height: 220px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: width 0.45s cubic-bezier(0.34, 1.2, 0.64, 1),
+              height 0.45s cubic-bezier(0.34, 1.2, 0.64, 1),
+              transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .jarvis-arc-container:hover {
@@ -404,13 +515,16 @@
 
 .arc-glow-aura {
   position: absolute;
-  width: 220px;
-  height: 220px;
+  width: 170px;
+  height: 170px;
   border-radius: 50%;
   background: radial-gradient(circle, var(--reactor-glow) 0%, transparent 70%);
-  filter: blur(28px);
+  filter: blur(24px);
   pointer-events: none;
-  transition: transform 0.2s ease-out, opacity 0.2s ease;
+  transition: width 0.45s cubic-bezier(0.34, 1.2, 0.64, 1),
+              height 0.45s cubic-bezier(0.34, 1.2, 0.64, 1),
+              transform 0.2s ease-out,
+              opacity 0.2s ease;
 }
 
 .arc-reactor-svg {
@@ -624,21 +738,79 @@
    ========================================================================== */
 .jarvis-subtitle-card {
   position: relative;
-  width: min(94%, 720px);
-  min-height: 120px;
-  max-height: 280px;
   overflow-y: auto;
   scroll-behavior: smooth;
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding: 18px 24px;
-  border-radius: 18px;
-  background: rgba(2, 16, 32, 0.72);
-  border: 1px solid var(--reactor-accent);
   backdrop-filter: blur(18px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55), inset 0 0 24px rgba(0, 240, 255, 0.05);
-  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+  box-sizing: border-box;
+  flex: 0 1 auto; /* Dynamic height scaling - hugs text rather than fixing full height */
+  transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              min-width 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              max-width 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              padding 0.3s ease,
+              border-radius 0.3s ease,
+              border-color 0.25s ease,
+              box-shadow 0.25s ease;
+}
+
+/* Empty initial state: compact pill, no dead empty space */
+.jarvis-subtitle-card.is-empty,
+.jarvis-subtitle-card.scale-empty {
+  flex: 0 0 auto;
+  width: min(90%, 460px);
+  min-height: unset;
+  max-height: 52px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: rgba(2, 16, 32, 0.58);
+  border: 1px solid rgba(0, 240, 255, 0.25);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4), inset 0 0 16px rgba(0, 240, 255, 0.04);
+}
+
+/* Base styling when content is present */
+.jarvis-subtitle-card.has-content {
+  background: rgba(2, 16, 32, 0.78);
+  border: 1px solid var(--reactor-accent);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), inset 0 0 28px rgba(0, 240, 255, 0.06);
+}
+
+/* 1. Short scale: Hugs short responses (e.g. '40', short phrase), dynamic width & height */
+.jarvis-subtitle-card.scale-short {
+  width: fit-content;
+  min-width: min(90%, 280px);
+  max-width: min(92%, 520px);
+  height: auto;
+  min-height: unset;
+  max-height: 180px;
+  padding: 14px 22px;
+  border-radius: 16px;
+  gap: 8px;
+}
+
+/* 2. Medium scale: Scales dynamically for a few sentences */
+.jarvis-subtitle-card.scale-medium {
+  width: fit-content;
+  min-width: min(92%, 460px);
+  max-width: min(92%, 720px);
+  height: auto;
+  min-height: 100px;
+  max-height: 280px;
+  padding: 16px 24px;
+  border-radius: 18px;
+  gap: 10px;
+}
+
+/* 3. Expanded scale: Dynamically scales up to maximum viewport space for long responses */
+.jarvis-subtitle-card.scale-expanded {
+  width: min(94%, 880px);
+  height: auto;
+  min-height: 140px;
+  max-height: calc(100vh - 270px);
+  padding: 18px 26px;
+  border-radius: 20px;
+  gap: 12px;
 }
 
 .jarvis-subtitle-card::-webkit-scrollbar {
@@ -823,28 +995,80 @@
    DESKTOP / PC SPATIOUS SCREEN ARRANGEMENT & AUTO-SCROLL EFFORT
    ========================================================================== */
 @media (min-width: 960px) {
-  .jarvis-center-stage {
-    padding: 16px 40px;
-    gap: 24px;
+  .jarvis-center-stage.scale-empty .jarvis-arc-container,
+  .jarvis-center-stage.is-initial .jarvis-arc-container {
+    width: 270px;
+    height: 270px;
+  }
+  .jarvis-center-stage.scale-empty .arc-glow-aura,
+  .jarvis-center-stage.is-initial .arc-glow-aura {
+    width: 220px;
+    height: 220px;
   }
 
-  .jarvis-subtitle-card {
-    width: min(92%, 880px);
-    min-height: 160px;
-    max-height: 380px;
-    padding: 24px 32px;
+  .jarvis-center-stage.scale-short {
+    gap: 16px;
+  }
+  .jarvis-center-stage.scale-short .jarvis-arc-container {
+    width: 215px;
+    height: 215px;
+  }
+  .jarvis-center-stage.scale-short .arc-glow-aura {
+    width: 175px;
+    height: 175px;
+  }
+
+  .jarvis-center-stage.scale-medium {
+    gap: 14px;
+  }
+  .jarvis-center-stage.scale-medium .jarvis-arc-container {
+    width: 175px;
+    height: 175px;
+  }
+  .jarvis-center-stage.scale-medium .arc-glow-aura {
+    width: 140px;
+    height: 140px;
+  }
+
+  .jarvis-center-stage.scale-expanded {
+    padding: 0.75rem 30px 8px;
+    gap: 12px;
+  }
+  .jarvis-center-stage.scale-expanded .jarvis-arc-container {
+    width: 140px;
+    height: 140px;
+  }
+  .jarvis-center-stage.scale-expanded .arc-glow-aura {
+    width: 110px;
+    height: 110px;
+  }
+
+  .jarvis-subtitle-card.scale-short {
+    min-width: 320px;
+    max-width: 540px;
+  }
+
+  .jarvis-subtitle-card.scale-medium {
+    min-width: 480px;
+    max-width: 740px;
+  }
+
+  .jarvis-subtitle-card.scale-expanded {
+    width: min(92%, 920px);
+    max-height: calc(100vh - 280px);
+    padding: 18px 26px;
   }
 
   .turn-text {
-    font-size: 16px;
-    line-height: 1.65;
+    font-size: 15px;
+    line-height: 1.55;
   }
 }
 
 @media (min-width: 1280px) {
-  .jarvis-subtitle-card {
+  .jarvis-subtitle-card.scale-expanded {
     width: min(90%, 960px);
-    max-height: 440px;
+    max-height: calc(100vh - 280px);
   }
 }
 
@@ -852,105 +1076,144 @@
    MOBILE RESPONSIVENESS
    ========================================================================== */
 @media (max-width: 768px) {
-  .jarvis-arc-container {
-    width: 220px;
-    height: 220px;
+  .jarvis-center-stage.is-initial,
+  .jarvis-center-stage.scale-empty {
+    padding: 1rem 12px;
+    gap: 14px;
   }
 
-  .hud-corner-mark.top-left .hud-bracket,
-  .hud-corner-mark.top-left .hud-code,
+  .jarvis-center-stage.is-initial .jarvis-arc-container,
+  .jarvis-center-stage.scale-empty .jarvis-arc-container {
+    width: 200px;
+    height: 200px;
+  }
+
+  .jarvis-center-stage.is-initial .arc-glow-aura,
+  .jarvis-center-stage.scale-empty .arc-glow-aura {
+    width: 160px;
+    height: 160px;
+  }
+
+  .jarvis-subtitle-card.is-empty,
+  .jarvis-subtitle-card.scale-empty {
+    width: min(92%, 360px);
+    padding: 8px 14px;
+    font-size: 12px;
+  }
+
+  /* Mobile Short Scale */
+  .jarvis-center-stage.scale-short {
+    padding: 0.75rem 10px 8px;
+    gap: 10px;
+  }
+
+  .jarvis-center-stage.scale-short .jarvis-arc-container {
+    width: 155px;
+    height: 155px;
+  }
+
+  .jarvis-center-stage.scale-short .arc-glow-aura {
+    width: 120px;
+    height: 120px;
+  }
+
+  .jarvis-subtitle-card.scale-short {
+    width: fit-content;
+    min-width: min(90%, 250px);
+    max-width: 92%;
+    max-height: 160px;
+    padding: 10px 16px;
+    border-radius: 14px;
+    gap: 6px;
+  }
+
+  /* Mobile Medium Scale */
+  .jarvis-center-stage.scale-medium {
+    padding: 0.65rem 10px 6px;
+    gap: 8px;
+  }
+
+  .jarvis-center-stage.scale-medium .jarvis-arc-container {
+    width: 135px;
+    height: 135px;
+  }
+
+  .jarvis-center-stage.scale-medium .arc-glow-aura {
+    width: 105px;
+    height: 105px;
+  }
+
+  .jarvis-subtitle-card.scale-medium {
+    width: fit-content;
+    min-width: 90%;
+    max-width: 95%;
+    max-height: 220px;
+    padding: 12px 16px;
+    border-radius: 16px;
+    gap: 8px;
+  }
+
+  /* Mobile Expanded Scale */
+  .jarvis-center-stage.scale-expanded {
+    padding: 0.5rem 10px 6px;
+    gap: 8px;
+  }
+
+  .jarvis-center-stage.scale-expanded .jarvis-arc-container {
+    width: 115px;
+    height: 115px;
+  }
+
+  .jarvis-center-stage.scale-expanded .arc-glow-aura {
+    width: 90px;
+    height: 90px;
+  }
+
+  .hud-corner-mark.top-left {
+    display: flex !important;
+  }
+
+  .hud-corner-mark.top-left .hud-bracket {
+    display: inline-block !important;
+  }
+
+  .hud-corner-mark.top-left .hud-code {
+    display: inline-block !important;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
   .hud-corner-mark.bottom-left,
   .hud-corner-mark.bottom-right {
     display: none;
   }
 
-  .hud-center-title {
-    display: none !important;
-  }
-
   .jarvis-hud-top,
   .jarvis-control-deck {
-    padding: 10px 14px;
+    padding: 8px 14px;
   }
 
-  .hud-title-text {
-    font-size: 12px;
-  }
-
-  .hud-exit-btn {
-    position: relative;
-    width: 36px !important;
-    height: 36px !important;
-    min-width: 36px !important;
-    padding: 0 !important;
-    border-radius: 50% !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    gap: 0 !important;
-  }
-
-  .hud-exit-btn .hud-exit-text,
-  .hud-exit-btn kbd {
-    display: none !important;
-  }
-
-  .hud-exit-btn:hover::after {
-    content: attr(data-tooltip);
-    position: absolute;
-    bottom: -32px;
-    right: 0;
-    padding: 4px 8px;
-    border-radius: 6px;
-    font-size: 11px;
-    font-weight: 500;
-    background: rgba(10, 15, 25, 0.95);
-    color: #ffffff;
-    border: 1px solid var(--reactor-accent, rgba(255, 255, 255, 0.3));
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-    white-space: nowrap;
-    pointer-events: none;
-    z-index: 100;
-  }
-
-  .jarvis-subtitle-card {
-    width: 95%;
-    min-height: 96px;
-    max-height: 220px;
-    padding: 12px 16px;
+  .jarvis-subtitle-card.scale-expanded {
+    width: 96%;
+    min-height: 100px;
+    max-height: calc(100vh - 215px);
+    padding: 12px 14px;
+    border-radius: 16px;
+    gap: 10px;
   }
 
   .turn-text {
-    font-size: 14px;
-    line-height: 1.5;
+    font-size: 13px;
+    line-height: 1.45;
   }
 
   .jarvis-pill-button {
-    padding: 10px 18px;
-    font-size: 13px;
+    padding: 8px 14px;
+    font-size: 12px;
   }
 
   .control-cluster {
-    gap: 10px;
-  }
-}
-
-@media (max-width: 420px) {
-  .jarvis-arc-container {
-    width: 190px;
-    height: 190px;
-  }
-
-  .jarvis-center-stage {
-    gap: 14px;
-  }
-
-  .status-label {
-    font-size: 11px;
-  }
-
-  .jarvis-subtitle-card {
-    max-height: 190px;
+    gap: 8px;
   }
 }
 

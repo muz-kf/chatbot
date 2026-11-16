@@ -76,6 +76,24 @@ export function VoiceModeView({
     }
   }, [lastAssistantReply, transcript, interimTranscript]);
 
+  const hasContent = Boolean(transcript || interimTranscript || lastAssistantReply);
+
+  const totalContentLength = (
+    (transcript || "") +
+    " " +
+    (interimTranscript || "") +
+    " " +
+    (lastAssistantReply || "")
+  ).trim().length;
+
+  const contentScale = !hasContent
+    ? "empty"
+    : totalContentLength < 100
+    ? "short"
+    : totalContentLength < 350
+    ? "medium"
+    : "expanded";
+
   // On mount: Play Jarvis startup sound sweep and start listening automatically
   useEffect(() => {
     if (soundEffectsEnabled) {
@@ -138,16 +156,9 @@ export function VoiceModeView({
 
       {/* Top HUD Telemetry Bar */}
       <header className="jarvis-hud-top">
-        <div className="hud-corner-mark top-left" aria-hidden="true">
+        <div className="hud-corner-mark top-left">
           <span className="hud-bracket" />
-          <span className="hud-code">DAZZ BY MZA</span>
-        </div>
-
-        <div className="hud-center-title">
-          <div className="hud-title-badge">
-            <Radio size={14} className="hud-beacon-icon animate-pulse" />
-            <span className="hud-title-text">{aiName} VOICE MODE</span>
-          </div>
+          <span className="hud-code">MZA Corp</span>
         </div>
 
         <div className="hud-corner-mark top-right">
@@ -169,9 +180,7 @@ export function VoiceModeView({
               title="Exit Voice Mode (Esc)"
               data-tooltip="Exit Voice Mode (Esc)"
             >
-              <X size={16} />
-              <span className="hud-exit-text">Exit Voice Mode</span>
-              <kbd>Esc</kbd>
+              <X size={18} />
             </button>
           </div>
           <span className="hud-bracket" />
@@ -179,7 +188,9 @@ export function VoiceModeView({
       </header>
 
       {/* Center Stage: Iron Man Arc Reactor & Audio Waveform */}
-      <main className="jarvis-center-stage">
+      <main
+        className={`jarvis-center-stage ${hasContent ? "has-content" : "is-initial"} scale-${contentScale}`}
+      >
         <div className="reactor-wrapper">
           <JarvisArcReactor
             status={status}
@@ -211,7 +222,11 @@ export function VoiceModeView({
         )}
 
         {/* Live Conversation Subtitle / Transcoding Glass Card */}
-        <div ref={subtitleContainerRef} className="jarvis-subtitle-card" aria-live="polite">
+        <div
+          ref={subtitleContainerRef}
+          className={`jarvis-subtitle-card ${hasContent ? "has-content" : "is-empty"} scale-${contentScale}`}
+          aria-live="polite"
+        >
           {/* User Live Speech Transcription */}
           {(transcript || interimTranscript) && (
             <div className="subtitle-turn user-turn">
@@ -292,7 +307,7 @@ export function VoiceModeView({
             title="Switch back to text view"
           >
             <ChevronLeft size={16} />
-            <span>Chat History</span>
+            <span>Back to Chats</span>
           </button>
         </div>
 
