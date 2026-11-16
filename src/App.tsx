@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { MessageSquareDashed, Plus } from "lucide-react";
+import { AnimatePresence } from "framer-motion";
 import { Button } from "./components/ui/button";
 import { AuthGate } from "./components/chat/AuthGate";
 import { ChatComposer } from "./components/chat/ChatComposer";
@@ -9,6 +10,8 @@ import { ChatSidebar } from "./components/chat/ChatSidebar";
 import { MessageList } from "./components/chat/MessageList";
 import { WelcomeScreen } from "./components/chat/WelcomeScreen";
 import { VoiceModeView } from "./features/voice/VoiceModeView";
+import { BootloaderScreen } from "./components/chat/BootloaderScreen";
+import { SettingsDialog } from "./components/chat/SettingsDialog";
 import { processAttachment, recordedAudioToWav } from "./lib/attachmentProcessing";
 import { ApiError, apiRequest, queryKeys } from "./lib/api";
 import { createSpeechRecognition } from "./lib/speechRecognition";
@@ -82,6 +85,7 @@ function App() {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [authState, setAuthState] = useState<AuthState>("loading");
   const [authError, setAuthError] = useState("");
+  const [isBooting, setIsBooting] = useState(true);
   const [draft, setDraft] = useState("");
   const [attachments, setAttachments] = useState<ChatAttachment[]>([]);
   const [streaming, setStreaming] = useState(false);
@@ -305,9 +309,14 @@ function App() {
       setUser(sessionQuery.data.user);
       setAuthState("authenticated");
       setAuthError("");
+      const timer = setTimeout(() => {
+        setIsBooting(false);
+      }, 1000);
+      return () => clearTimeout(timer);
     } else if (sessionQuery.isError) {
       setUser(null);
       setAuthState("unauthenticated");
+      setIsBooting(false);
       if (!(sessionQuery.error instanceof ApiError && sessionQuery.error.status === 401)) {
         setAuthError(sessionQuery.error.message || "Could not load your profile.");
       }
@@ -767,7 +776,14 @@ function App() {
 
   function changeTheme(nextTheme: ThemeChoice) {
     setTheme(nextTheme);
+    window.localStorage.setItem("chat-theme", nextTheme);
     setFont(themeFonts[nextTheme]);
+    window.localStorage.setItem("chat-font", themeFonts[nextTheme]);
+  }
+
+  function changeFont(nextFont: FontChoice) {
+    setFont(nextFont);
+    window.localStorage.setItem("chat-font", nextFont);
   }
 
   async function addFiles(files: File[]) {
@@ -939,30 +955,17 @@ function App() {
       </div>
       <ChatSidebar
         open={sidebarOpen}
-        settingsOpen={settingsOpen}
-        font={font}
-        theme={theme}
         chats={chats}
         activeChatId={activeChatId}
         user={user ?? { email: "", name: "" }}
         sendOnVoiceEnd={sendOnVoiceEnd}
-        autoListenOnResponse={autoListenOnResponse}
-        provider={provider}
-        defaultAiName={defaultAiName}
-        voiceSettings={voiceSettings}
         onSendOnVoiceEndChange={handleSendOnVoiceEndChange}
-        onAutoListenOnResponseChange={handleAutoListenOnResponseChange}
-        onProviderChange={handleProviderChange}
-        onDefaultAiNameChange={handleDefaultAiNameChange}
-        onVoiceSettingsChange={handleVoiceSettingsChange}
         onClose={() => setSidebarOpen(false)}
         onNewChat={newChat}
         onSelectChat={(chatId) => void openChat(chatId)}
         onSignOut={() => void signOut()}
-        onToggleSettings={() => setSettingsOpen((open) => !open)}
+        onToggleSettings={() => setSettingsOpen(true)}
         onOpenVoiceMode={handleOpenVoiceMode}
-        onFontChange={setFont}
-        onThemeChange={changeTheme}
       />
       <main className="chat-workspace">
         <ChatHeader
@@ -1063,11 +1066,35 @@ function App() {
           }}
         />
       )}
-      {authState === "loading" && (
-        <div className="auth-overlay">
-          <div className="auth-loading" role="status">Restoring your session...</div>
-        </div>
-      )}
+      <SettingsDialog
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        theme={theme}
+        onThemeChange={changeTheme}
+        font={font}
+        onFontChange={changeFont}
+        provider={provider}
+        onProviderChange={handleProviderChange}
+        defaultAiName={defaultAiName}
+        onDefaultAiNameChange={handleDefaultAiNameChange}
+        sendOnVoiceEnd={sendOnVoiceEnd}
+        onSendOnVoiceEndChange={handleSendOnVoiceEndChange}
+        autoListenOnResponse={autoListenOnResponse}
+        onAutoListenOnResponseChange={handleAutoListenOnResponseChange}
+        voiceSettings={voiceSettings}
+        onVoiceSettingsChange={handleVoiceSettingsChange}
+        user={user}
+        onSignOut={() => void signOut()}
+      />
+      <AnimatePresence>
+        {isBooting && authState === "authenticated" && (
+          <BootloaderScreen
+            theme={theme}
+            aiName={activeAiName}
+            onBootComplete={() => setIsBooting(false)}
+          />
+        )}
+      </AnimatePresence>
       {authState === "unauthenticated" && (
         <AuthGate onAuthenticated={(profile) => void completeSignIn(profile)} />
       )}

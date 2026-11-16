@@ -166,10 +166,11 @@ export function VoiceModeView({
               className="hud-exit-btn"
               onClick={onExit}
               aria-label="Exit Voice Mode (Esc)"
-              title="Return to regular chat view (Esc)"
+              title="Exit Voice Mode (Esc)"
+              data-tooltip="Exit Voice Mode (Esc)"
             >
               <X size={16} />
-              <span>Exit Voice Mode</span>
+              <span className="hud-exit-text">Exit Voice Mode</span>
               <kbd>Esc</kbd>
             </button>
           </div>
