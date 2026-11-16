@@ -130,6 +130,10 @@ def test_mobile_voice_bootloader_and_settings():
         expect(mic_btn).to_be_visible()
         print("✅ Confirmed: 'Back to Chats' is removed; microphone button is at bottom of screen!")
 
+        # Capture mobile voice mode screenshot
+        page.screenshot(path="tests/screenshots/mobile_voice_new_chat.png")
+        print("📸 Saved mobile voice mode screenshot to tests/screenshots/mobile_voice_new_chat.png")
+
         # Click cross button to exit
         exit_btn.click()
         page.wait_for_url("**/")

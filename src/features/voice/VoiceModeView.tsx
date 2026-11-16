@@ -190,9 +190,9 @@ export function VoiceModeView({
       </header>
 
       {/* Center Stage: Iron Man Arc Reactor & Audio Waveform */}
-      <main className="jarvis-center-stage">
-        {/* Fixed First-Quarter Hero Animator Section */}
-        <div className="reactor-fixed-section">
+      <main className={`jarvis-center-stage ${hasContent ? "has-content" : "is-new-chat"}`}>
+        {/* Fixed Hero Animator Section (40-60% when new chat, 20-40% when content active) */}
+        <div className={`reactor-fixed-section ${hasContent ? "has-content" : "is-new-chat"}`}>
           <div className="reactor-wrapper">
             <JarvisArcReactor
               status={status}
@@ -227,7 +227,7 @@ export function VoiceModeView({
         {/* Live Conversation Subtitle / Transcoding Text Stream (Without bg box, with scrollbar) */}
         <div
           ref={subtitleContainerRef}
-          className="jarvis-subtitle-card jarvis-speech-stream"
+          className={`jarvis-subtitle-card jarvis-speech-stream ${hasContent ? "has-content" : "is-new-chat"}`}
           aria-live="polite"
         >
           {/* User Live Speech Transcription */}
@@ -252,18 +252,6 @@ export function VoiceModeView({
                 {lastAssistantReply}
                 {status === "speaking" && <span className="hud-cursor" />}
               </p>
-            </div>
-          )}
-
-          {/* Default Placeholder when waiting */}
-          {!transcript && !interimTranscript && !lastAssistantReply && (
-            <div className="subtitle-placeholder">
-              <Sparkles size={16} className="placeholder-icon" />
-              <span>
-                {muted
-                  ? "Microphone is muted. Tap below to speak."
-                  : "Speak freely. Your voice is transcoded in real time."}
-              </span>
             </div>
           )}
         </div>
