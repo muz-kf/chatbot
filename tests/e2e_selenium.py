@@ -130,7 +130,7 @@ def run_e2e_selenium_test():
 
         # 8. Save screenshot
         os.makedirs("tests/screenshots", exist_ok=True)
-        screenshot_path = "tests/screenshots/selenium_response.png"
+        screenshot_path = "tests/screenshots/sample_response.png"
         driver.save_screenshot(screenshot_path)
         print(f"📸 Saved verification screenshot to {screenshot_path}")
         print("✨ Selenium E2E automation test completed successfully!")

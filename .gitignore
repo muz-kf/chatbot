@@ -6,4 +6,3 @@ __pycache__/
 .pytest_cache/
 .venv/
 tests/screenshots/
-tests/screenshots/playwright_response.png
