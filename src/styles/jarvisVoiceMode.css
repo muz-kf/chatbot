@@ -241,6 +241,13 @@
   border-width: 0 2px 2px 0;
 }
 
+.hud-corner-mark.top-left .hud-bracket {
+  width: 15px;
+  height: 15px;
+  border-width: 3px 0 0 3px;
+  margin-right: 8px;
+}
+
 .hud-corner-mark.top-left .hud-code.hud-brand-stacked {
   display: inline-flex !important;
   flex-direction: column !important;
@@ -251,18 +258,19 @@
 }
 
 .hud-brand-stacked .brand-main {
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: 0.14em;
+  font-size: 24px;
+  font-weight: 900;
+  letter-spacing: 0.16em;
   color: var(--reactor-accent);
   display: block !important;
+  text-shadow: 0 0 16px var(--reactor-glow);
 }
 
 .hud-brand-stacked .brand-sub {
-  font-size: 8.5px;
-  font-weight: 600;
-  letter-spacing: 0.22em;
-  color: rgba(255, 255, 255, 0.7);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  color: rgba(255, 255, 255, 0.85);
   display: block !important;
 }
 
@@ -462,38 +470,40 @@
   transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* When chat is new: centered around 40-60% area of screen */
+/* When chat is new or transcribing: centered around 40-60% area of screen (~400px on desktop) */
 .reactor-fixed-section.is-new-chat {
-  height: 48vh;
-  min-height: 250px;
-  max-height: 52vh;
+  height: 56vh;
+  min-height: 420px;
+  max-height: 62vh;
 }
 
 .reactor-fixed-section.is-new-chat .jarvis-arc-container {
-  width: 250px;
-  height: 250px;
+  width: 400px;
+  height: 400px;
 }
 
 .reactor-fixed-section.is-new-chat .arc-glow-aura {
-  width: 200px;
-  height: 200px;
+  width: 340px;
+  height: 340px;
+  filter: blur(34px);
 }
 
-/* When conversation starts: sits in 20-40% zone to leave room for text */
+/* When AI response starts: transitions to 20-40% zone to leave room for 90% wide text stream */
 .reactor-fixed-section.has-content {
   height: 34vh;
-  min-height: 180px;
+  min-height: 250px;
   max-height: 38vh;
 }
 
 .reactor-fixed-section.has-content .jarvis-arc-container {
-  width: 195px;
-  height: 195px;
+  width: 250px;
+  height: 250px;
 }
 
 .reactor-fixed-section.has-content .arc-glow-aura {
-  width: 155px;
-  height: 155px;
+  width: 200px;
+  height: 200px;
+  filter: blur(28px);
 }
 
 .reactor-wrapper {
@@ -755,7 +765,8 @@
 .jarvis-subtitle-card,
 .jarvis-speech-stream {
   position: relative;
-  width: min(94%, 820px);
+  width: 90%;
+  max-width: 90vw;
   margin: 0 auto;
   overflow-y: auto;
   scroll-behavior: smooth;
@@ -778,12 +789,29 @@
   overflow: hidden;
 }
 
+/* When text is transcribed and sending to chatbot, display it below the centered animator without moving it (fig 2) */
+.jarvis-subtitle-card.is-new-chat.has-transcription {
+  height: auto;
+  min-height: 44px;
+  max-height: 18vh;
+  padding: 8px 16px 0;
+  overflow-y: auto;
+  text-align: center;
+}
+
+.jarvis-subtitle-card.is-new-chat.has-transcription .subtitle-turn {
+  align-items: center;
+  text-align: center;
+}
+
 .jarvis-subtitle-card.has-content {
   flex: 1;
   min-height: 0;
-  max-height: 50vh;
-  padding: 10px 16px 16px;
+  max-height: 52vh;
+  padding: 12px 20px 20px;
   gap: 16px;
+  width: 90%;
+  max-width: 90vw;
 }
 
 .jarvis-subtitle-card::-webkit-scrollbar,
@@ -958,29 +986,27 @@
    ========================================================================== */
 @media (min-width: 960px) {
   .jarvis-center-stage {
-    padding: 0 30px;
-  }
-
-  .reactor-fixed-section {
-    height: 35vh;
+    padding: 0 40px;
   }
 
   .jarvis-subtitle-card {
-    width: min(92%, 840px);
-    max-height: 52vh;
-    padding: 10px 20px 24px;
-    gap: 16px;
+    width: 90%;
+    max-width: 90vw;
+    max-height: 54vh;
+    padding: 12px 24px 24px;
+    gap: 18px;
   }
 
   .turn-text {
-    font-size: 16px;
-    line-height: 1.6;
+    font-size: 18px;
+    line-height: 1.65;
   }
 }
 
 @media (min-width: 1280px) {
   .jarvis-subtitle-card {
-    width: min(90%, 900px);
+    width: 90%;
+    max-width: 90vw;
   }
 }
 
@@ -1006,36 +1032,37 @@
     width: 100%;
   }
 
+  /* Mobile circle size: 330px when new or transcribing */
   .reactor-fixed-section.is-new-chat {
-    height: 46vh;
-    min-height: 230px;
-    max-height: 50vh;
+    height: 52vh;
+    min-height: 350px;
+    max-height: 56vh;
   }
 
   .reactor-fixed-section.is-new-chat .jarvis-arc-container {
-    width: 210px;
-    height: 210px;
+    width: min(330px, 88vw);
+    height: min(330px, 88vw);
   }
 
   .reactor-fixed-section.is-new-chat .arc-glow-aura {
-    width: 170px;
-    height: 170px;
+    width: min(270px, 72vw);
+    height: min(270px, 72vw);
   }
 
   .reactor-fixed-section.has-content {
     height: 30vh;
-    min-height: 160px;
+    min-height: 190px;
     max-height: 34vh;
   }
 
   .reactor-fixed-section.has-content .jarvis-arc-container {
-    width: 165px;
-    height: 165px;
+    width: 190px;
+    height: 190px;
   }
 
   .reactor-fixed-section.has-content .arc-glow-aura {
-    width: 130px;
-    height: 130px;
+    width: 150px;
+    height: 150px;
   }
 
   .jarvis-subtitle-card.is-new-chat {
@@ -1044,6 +1071,13 @@
     min-height: 10px;
     padding: 0;
     overflow: hidden;
+  }
+
+  .jarvis-subtitle-card.is-new-chat.has-transcription {
+    height: auto;
+    min-height: 40px;
+    max-height: 18vh;
+    padding: 6px 8px 0;
   }
 
   .jarvis-subtitle-card.has-content {

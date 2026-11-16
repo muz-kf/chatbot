@@ -75,7 +75,11 @@ export function VoiceModeView({
     }
   }, [lastAssistantReply, transcript, interimTranscript]);
 
-  const hasContent = Boolean(transcript || interimTranscript || lastAssistantReply);
+  // Moving the animator to the top zone is only needed when AI begins streaming back response text.
+  // When text is transcribed and sending to the chatbot or thinking, the animator circle stays in the center (fig 2).
+  const hasAiResponse = Boolean(lastAssistantReply && lastAssistantReply.trim().length > 0);
+  const hasUserSpeech = Boolean(transcript || interimTranscript);
+  const hasContent = hasAiResponse || hasUserSpeech;
 
   const totalContentLength = (
     (transcript || "") +
@@ -190,9 +194,9 @@ export function VoiceModeView({
       </header>
 
       {/* Center Stage: Iron Man Arc Reactor & Audio Waveform */}
-      <main className={`jarvis-center-stage ${hasContent ? "has-content" : "is-new-chat"}`}>
-        {/* Fixed Hero Animator Section (40-60% when new chat, 20-40% when content active) */}
-        <div className={`reactor-fixed-section ${hasContent ? "has-content" : "is-new-chat"}`}>
+      <main className={`jarvis-center-stage ${hasAiResponse ? "has-content" : "is-new-chat"} ${hasUserSpeech ? "has-transcription" : ""}`}>
+        {/* Fixed Hero Animator Section (~400px desktop, 330px mobile in center when new/transcribing) */}
+        <div className={`reactor-fixed-section ${hasAiResponse ? "has-content" : "is-new-chat"}`}>
           <div className="reactor-wrapper">
             <JarvisArcReactor
               status={status}
@@ -227,7 +231,7 @@ export function VoiceModeView({
         {/* Live Conversation Subtitle / Transcoding Text Stream (Without bg box, with scrollbar) */}
         <div
           ref={subtitleContainerRef}
-          className={`jarvis-subtitle-card jarvis-speech-stream ${hasContent ? "has-content" : "is-new-chat"}`}
+          className={`jarvis-subtitle-card jarvis-speech-stream ${hasAiResponse ? "has-content" : "is-new-chat"} ${hasUserSpeech ? "has-transcription" : ""}`}
           aria-live="polite"
         >
           {/* User Live Speech Transcription */}

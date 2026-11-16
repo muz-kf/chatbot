@@ -951,7 +951,6 @@ function App() {
       <div className="cosmic-backdrop" aria-hidden="true">
         <div className="cosmic-glow cosmic-glow-violet" />
         <div className="cosmic-glow cosmic-glow-blue" />
-        <div className="cosmic-horizon" />
       </div>
       <ChatSidebar
         open={sidebarOpen}
