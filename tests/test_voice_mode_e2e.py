@@ -60,11 +60,12 @@ def test_jarvis_voice_mode():
         expect(svg_reactor).to_be_visible()
         print("✅ Arc Reactor SVG concentric rings and soundwave visualizer verified!")
 
-        # Verify MZA Corp branding on top-left HUD
+        # Verify MZA (next line small text Corp) branding on top-left HUD
         top_left_code = page.locator(".hud-corner-mark.top-left .hud-code")
         expect(top_left_code).to_be_visible()
-        expect(top_left_code).to_have_text("MZA Corp")
-        print("✅ Top-left HUD telemetry verified: 'MZA Corp'!")
+        expect(top_left_code.locator(".brand-main")).to_have_text("MZA")
+        expect(top_left_code.locator(".brand-sub")).to_have_text("Corp")
+        print("✅ Top-left HUD telemetry verified: 'MZA' with small 'Corp' on next line!")
 
         # Verify provider badge and theme selector are NOT in the Voice HUD
         provider_badge = page.locator(".jarvis-hud-top .hud-badge")
@@ -77,13 +78,11 @@ def test_jarvis_voice_mode():
         expect(status_line).to_be_visible()
         print(f"✅ HUD Status Line verified: {status_line.inner_text()}")
 
-        # Verify subtitle card exists and is ready for streaming
+        # Verify subtitle card / text stream exists and is ready for streaming
         subtitle_card = page.locator(".jarvis-subtitle-card")
         expect(subtitle_card).to_be_visible()
-        stage = page.locator(".jarvis-center-stage")
-        expect(stage).to_have_class(re.compile(r"is-initial"))
-        expect(subtitle_card).to_have_class(re.compile(r"is-empty"))
-        print("✅ Subtitle streaming container & initial centered reactor state verified!")
+        expect(page.locator(".reactor-fixed-section .jarvis-arc-container")).to_be_visible()
+        print("✅ Subtitle streaming container & fixed first-quarter reactor verified!")
 
         control_deck = page.locator(".jarvis-control-deck")
         expect(control_deck).to_be_visible()

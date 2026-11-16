@@ -97,23 +97,25 @@ def test_mobile_voice_bootloader_and_settings():
         page.wait_for_url("**/voice**")
         print("✅ Navigated to /voice route on mobile!")
 
-        # Verify initial centered state of animated icon
+        # Verify initial state of fixed first-quarter animated icon and text stream
         stage = page.locator(".jarvis-center-stage")
-        expect(stage).to_have_class(re.compile(r"is-initial"))
+        expect(stage).to_be_visible()
+        expect(page.locator(".reactor-fixed-section .jarvis-arc-container")).to_be_visible()
         card = page.locator(".jarvis-subtitle-card")
-        expect(card).to_have_class(re.compile(r"is-empty"))
-        print("✅ Confirmed: Animated Arc Reactor starts centered with sleek compact pill!")
+        expect(card).to_be_visible()
+        print("✅ Confirmed: Animated Arc Reactor sits in first quarter with transparent text stream below!")
 
         # Verify Voice mode center title element is cut/removed
         voice_mode_title = page.locator(".hud-center-title")
         expect(voice_mode_title).to_have_count(0)
         print("✅ Confirmed: Voice mode central title element is completely removed!")
 
-        # Verify MZA Corp branding is visible on mobile
+        # Verify MZA (next line small text Corp) branding is visible on mobile
         mza_brand = page.locator(".hud-corner-mark.top-left .hud-code")
         expect(mza_brand).to_be_visible()
-        expect(mza_brand).to_have_text("MZA Corp")
-        print("✅ Confirmed: 'MZA Corp' is visible on mobile HUD!")
+        expect(mza_brand.locator(".brand-main")).to_have_text("MZA")
+        expect(mza_brand.locator(".brand-sub")).to_have_text("Corp")
+        print("✅ Confirmed: 'MZA' with small 'Corp' on next line is visible on mobile HUD!")
 
         # Verify Exit button is compact cross button for both mobile and PC
         exit_btn = page.locator("button.hud-exit-btn")
@@ -121,11 +123,12 @@ def test_mobile_voice_bootloader_and_settings():
         expect(exit_btn).to_have_attribute("title", "Exit Voice Mode (Esc)")
         print("✅ Confirmed: Exit voice mode button is cross icon with hover tooltip!")
 
-        # Verify Back to Chats button is visible in screen
-        back_to_chats = page.locator("button.jarvis-return-link")
-        expect(back_to_chats).to_be_visible()
-        expect(back_to_chats).to_contain_text("Back to Chats")
-        print("✅ Confirmed: 'Back to Chats' and controls are visible in screen!")
+        # Verify Back to Chats button is removed as requested
+        expect(page.locator("button.jarvis-return-link")).to_have_count(0)
+        # Verify microphone button is present at the bottom
+        mic_btn = page.locator(".jarvis-control-deck .jarvis-pill-button")
+        expect(mic_btn).to_be_visible()
+        print("✅ Confirmed: 'Back to Chats' is removed; microphone button is at bottom of screen!")
 
         # Click cross button to exit
         exit_btn.click()

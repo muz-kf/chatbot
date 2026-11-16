@@ -8,7 +8,6 @@ import {
   Sparkles,
   Radio,
   CornerDownLeft,
-  ChevronLeft,
   Settings2,
 } from "lucide-react";
 import { JarvisArcReactor } from "./JarvisArcReactor";
@@ -89,10 +88,10 @@ export function VoiceModeView({
   const contentScale = !hasContent
     ? "empty"
     : totalContentLength < 100
-    ? "short"
-    : totalContentLength < 350
-    ? "medium"
-    : "expanded";
+      ? "short"
+      : totalContentLength < 350
+        ? "medium"
+        : "expanded";
 
   // On mount: Play Jarvis startup sound sweep and start listening automatically
   useEffect(() => {
@@ -158,7 +157,10 @@ export function VoiceModeView({
       <header className="jarvis-hud-top">
         <div className="hud-corner-mark top-left">
           <span className="hud-bracket" />
-          <span className="hud-code">MZA Corp</span>
+          <span className="hud-code hud-brand-stacked">
+            <span className="brand-main">MZA</span>
+            <span className="brand-sub">Corp</span>
+          </span>
         </div>
 
         <div className="hud-corner-mark top-right">
@@ -188,43 +190,44 @@ export function VoiceModeView({
       </header>
 
       {/* Center Stage: Iron Man Arc Reactor & Audio Waveform */}
-      <main
-        className={`jarvis-center-stage ${hasContent ? "has-content" : "is-initial"} scale-${contentScale}`}
-      >
-        <div className="reactor-wrapper">
-          <JarvisArcReactor
-            status={status}
-            audioLevel={audioLevel}
-            aiName={aiName}
-            theme={theme}
-            onClick={() => {
-              if (status === "speaking") {
-                interrupt();
-              } else if (status === "listening") {
-                toggleMute();
-              } else {
-                startListening();
-              }
-            }}
-          />
-        </div>
-
-        {/* Status Line */}
-        <div className="jarvis-status-line">
-          <span className={`status-led status-${status}`} />
-          <h2 className="status-label">{getStatusLabel(status)}</h2>
-        </div>
-
-        {error && (
-          <div className="jarvis-error-banner" role="alert">
-            <span>{error}</span>
+      <main className="jarvis-center-stage">
+        {/* Fixed First-Quarter Hero Animator Section */}
+        <div className="reactor-fixed-section">
+          <div className="reactor-wrapper">
+            <JarvisArcReactor
+              status={status}
+              audioLevel={audioLevel}
+              aiName={aiName}
+              theme={theme}
+              onClick={() => {
+                if (status === "speaking") {
+                  interrupt();
+                } else if (status === "listening") {
+                  toggleMute();
+                } else {
+                  startListening();
+                }
+              }}
+            />
           </div>
-        )}
 
-        {/* Live Conversation Subtitle / Transcoding Glass Card */}
+          {/* Status Line */}
+          <div className="jarvis-status-line">
+            <span className={`status-led status-${status}`} />
+            <h2 className="status-label">{getStatusLabel(status)}</h2>
+          </div>
+
+          {error && (
+            <div className="jarvis-error-banner" role="alert">
+              <span>{error}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Live Conversation Subtitle / Transcoding Text Stream (Without bg box, with scrollbar) */}
         <div
           ref={subtitleContainerRef}
-          className={`jarvis-subtitle-card ${hasContent ? "has-content" : "is-empty"} scale-${contentScale}`}
+          className="jarvis-subtitle-card jarvis-speech-stream"
           aria-live="polite"
         >
           {/* User Live Speech Transcription */}
@@ -298,17 +301,6 @@ export function VoiceModeView({
               <kbd>M</kbd>
             </button>
           )}
-
-          {/* Quick Return Link */}
-          <button
-            type="button"
-            className="jarvis-return-link"
-            onClick={onExit}
-            title="Switch back to text view"
-          >
-            <ChevronLeft size={16} />
-            <span>Back to Chats</span>
-          </button>
         </div>
 
         <div className="hud-corner-mark bottom-right" aria-hidden="true">

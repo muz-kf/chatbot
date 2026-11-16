@@ -241,6 +241,28 @@
   border-width: 0 2px 2px 0;
 }
 
+.hud-brand-stacked {
+  display: inline-flex;
+  flex-direction: column;
+  line-height: 1.1;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
+.hud-brand-stacked .brand-main {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: var(--reactor-accent);
+}
+
+.hud-brand-stacked .brand-sub {
+  font-size: 8.5px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  color: rgba(255, 255, 255, 0.7);
+}
+
 /* Header */
 .jarvis-hud-top {
   position: relative;
@@ -411,81 +433,24 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: flex-start;
   flex: 1;
   min-height: 0;
+  padding: 0 20px;
   overflow: hidden;
-  transition: all 0.45s cubic-bezier(0.34, 1.2, 0.64, 1);
 }
 
-/* 1. Initial State: Center the Arc Reactor prominently in viewport */
-.jarvis-center-stage.is-initial,
-.jarvis-center-stage.scale-empty {
+/* Zone 1: Fixed Animator in the first 20% to 40% height of screen */
+.reactor-fixed-section {
+  height: 34vh;
+  min-height: 180px;
+  max-height: 38vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
-  padding: 1.25rem 20px;
-  gap: 16px;
-}
-
-.jarvis-center-stage.is-initial .jarvis-arc-container,
-.jarvis-center-stage.scale-empty .jarvis-arc-container {
-  width: 250px;
-  height: 250px;
-}
-
-.jarvis-center-stage.is-initial .arc-glow-aura,
-.jarvis-center-stage.scale-empty .arc-glow-aura {
-  width: 200px;
-  height: 200px;
-}
-
-/* 2. Short Scale: User talks less or AI answers shortly (e.g. '40') */
-.jarvis-center-stage.scale-short {
-  justify-content: center;
-  padding: 1rem 20px 10px;
-  gap: 14px;
-}
-
-.jarvis-center-stage.scale-short .jarvis-arc-container {
-  width: 200px;
-  height: 200px;
-}
-
-.jarvis-center-stage.scale-short .arc-glow-aura {
-  width: 160px;
-  height: 160px;
-}
-
-/* 3. Medium Scale: Moderate discussion */
-.jarvis-center-stage.scale-medium {
-  justify-content: center;
-  padding: 0.8rem 20px 8px;
-  gap: 12px;
-}
-
-.jarvis-center-stage.scale-medium .jarvis-arc-container {
-  width: 165px;
-  height: 165px;
-}
-
-.jarvis-center-stage.scale-medium .arc-glow-aura {
-  width: 130px;
-  height: 130px;
-}
-
-/* 4. Expanded Scale: Long discussion, multiple paragraphs / tokens streaming */
-.jarvis-center-stage.scale-expanded {
-  justify-content: flex-start;
-  padding: 0.65rem 20px 8px;
-  gap: 10px;
-}
-
-.jarvis-center-stage.scale-expanded .jarvis-arc-container {
-  width: 135px;
-  height: 135px;
-}
-
-.jarvis-center-stage.scale-expanded .arc-glow-aura {
-  width: 105px;
-  height: 105px;
+  flex-shrink: 0;
+  width: 100%;
 }
 
 .reactor-wrapper {
@@ -498,33 +463,28 @@
 
 .jarvis-arc-container {
   position: relative;
-  width: 220px;
-  height: 220px;
+  width: clamp(140px, 22vh, 185px);
+  height: clamp(140px, 22vh, 185px);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: width 0.45s cubic-bezier(0.34, 1.2, 0.64, 1),
-              height 0.45s cubic-bezier(0.34, 1.2, 0.64, 1),
-              transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .jarvis-arc-container:hover {
-  transform: scale(1.02);
+  transform: scale(1.03);
 }
 
 .arc-glow-aura {
   position: absolute;
-  width: 170px;
-  height: 170px;
+  width: clamp(110px, 18vh, 145px);
+  height: clamp(110px, 18vh, 145px);
   border-radius: 50%;
   background: radial-gradient(circle, var(--reactor-glow) 0%, transparent 70%);
   filter: blur(24px);
   pointer-events: none;
-  transition: width 0.45s cubic-bezier(0.34, 1.2, 0.64, 1),
-              height 0.45s cubic-bezier(0.34, 1.2, 0.64, 1),
-              transform 0.2s ease-out,
-              opacity 0.2s ease;
+  transition: transform 0.2s ease-out, opacity 0.2s ease;
 }
 
 .arc-reactor-svg {
@@ -532,6 +492,14 @@
   width: 100%;
   height: 100%;
   overflow: visible;
+}
+
+.jarvis-status-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  flex-shrink: 0;
 }
 
 /* Rotations */
@@ -734,108 +702,52 @@
 }
 
 /* ==========================================================================
-   SUBTITLE TRANSCRIPTION GLASS CARD
+   SUBTITLE / SPEECH TEXT STREAM (RENDERED WITHOUT BG BOX, SCROLLABLE UP TO 90%)
    ========================================================================== */
-.jarvis-subtitle-card {
+.jarvis-subtitle-card,
+.jarvis-speech-stream {
   position: relative;
+  flex: 1;
+  min-height: 0;
+  max-height: 50vh;
+  width: min(94%, 820px);
+  margin: 0 auto;
+  padding: 10px 16px 16px;
   overflow-y: auto;
   scroll-behavior: smooth;
   display: flex;
   flex-direction: column;
-  backdrop-filter: blur(18px);
-  box-sizing: border-box;
-  flex: 0 1 auto; /* Dynamic height scaling - hugs text rather than fixing full height */
-  transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-              min-width 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-              max-width 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-              max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-              padding 0.3s ease,
-              border-radius 0.3s ease,
-              border-color 0.25s ease,
-              box-shadow 0.25s ease;
+  gap: 16px;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  scrollbar-width: thin;
+  scrollbar-color: var(--reactor-accent) rgba(255, 255, 255, 0.04);
 }
 
-/* Empty initial state: compact pill, no dead empty space */
-.jarvis-subtitle-card.is-empty,
-.jarvis-subtitle-card.scale-empty {
-  flex: 0 0 auto;
-  width: min(90%, 460px);
-  min-height: unset;
-  max-height: 52px;
-  padding: 10px 18px;
-  border-radius: 999px;
-  background: rgba(2, 16, 32, 0.58);
-  border: 1px solid rgba(0, 240, 255, 0.25);
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4), inset 0 0 16px rgba(0, 240, 255, 0.04);
+.jarvis-subtitle-card::-webkit-scrollbar,
+.jarvis-speech-stream::-webkit-scrollbar {
+  width: 5px;
 }
 
-/* Base styling when content is present */
-.jarvis-subtitle-card.has-content {
-  background: rgba(2, 16, 32, 0.78);
-  border: 1px solid var(--reactor-accent);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), inset 0 0 28px rgba(0, 240, 255, 0.06);
-}
-
-/* 1. Short scale: Hugs short responses (e.g. '40', short phrase), dynamic width & height */
-.jarvis-subtitle-card.scale-short {
-  width: fit-content;
-  min-width: min(90%, 280px);
-  max-width: min(92%, 520px);
-  height: auto;
-  min-height: unset;
-  max-height: 180px;
-  padding: 14px 22px;
-  border-radius: 16px;
-  gap: 8px;
-}
-
-/* 2. Medium scale: Scales dynamically for a few sentences */
-.jarvis-subtitle-card.scale-medium {
-  width: fit-content;
-  min-width: min(92%, 460px);
-  max-width: min(92%, 720px);
-  height: auto;
-  min-height: 100px;
-  max-height: 280px;
-  padding: 16px 24px;
-  border-radius: 18px;
-  gap: 10px;
-}
-
-/* 3. Expanded scale: Dynamically scales up to maximum viewport space for long responses */
-.jarvis-subtitle-card.scale-expanded {
-  width: min(94%, 880px);
-  height: auto;
-  min-height: 140px;
-  max-height: calc(100vh - 270px);
-  padding: 18px 26px;
-  border-radius: 20px;
-  gap: 12px;
-}
-
-.jarvis-subtitle-card::-webkit-scrollbar {
-  width: 4px;
-}
-
-.jarvis-subtitle-card::-webkit-scrollbar-thumb {
+.jarvis-subtitle-card::-webkit-scrollbar-thumb,
+.jarvis-speech-stream::-webkit-scrollbar-thumb {
   background: var(--reactor-accent);
-  border-radius: 99px;
-  box-shadow: 0 0 8px var(--reactor-accent);
+  border-radius: 999px;
+  box-shadow: 0 0 10px var(--reactor-accent);
 }
 
-.jarvis-subtitle-card::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.jarvis-subtitle-card:hover {
-  border-color: var(--reactor-accent);
-  box-shadow: 0 12px 44px rgba(0, 0, 0, 0.65), inset 0 0 30px rgba(0, 240, 255, 0.08);
+.jarvis-subtitle-card::-webkit-scrollbar-track,
+.jarvis-speech-stream::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 999px;
 }
 
 .subtitle-turn {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
 }
 
 .turn-label {
@@ -896,30 +808,40 @@
 }
 
 /* ==========================================================================
-   BOTTOM FLOATING CONTROL DECK
+   BOTTOM FLOATING CONTROL DECK (FULL-SIZE MICROPHONE BUTTON AT BOTTOM)
    ========================================================================== */
 .jarvis-control-deck {
   position: relative;
   z-index: 10;
+  height: 10vh;
+  min-height: 68px;
+  max-height: 84px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 24px;
+  padding: 8px 24px 12px;
 }
 
 .control-cluster {
   display: flex;
   align-items: center;
-  gap: 16px;
+  justify-content: center;
+  flex: 1;
+  max-width: min(100%, 640px);
+  margin: 0 auto;
 }
 
 .jarvis-pill-button {
+  width: 100%;
+  height: 52px;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 12px 24px;
+  justify-content: center;
+  gap: 12px;
+  padding: 0 24px;
   border-radius: 999px;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
   letter-spacing: 0.04em;
   cursor: pointer;
@@ -971,104 +893,34 @@
   color: inherit;
 }
 
-.jarvis-return-link {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 8px 14px;
-  border-radius: 8px;
-  background: transparent;
-  border: none;
-  color: rgba(212, 244, 255, 0.65);
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.jarvis-return-link:hover {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.06);
-}
-
 /* ==========================================================================
    DESKTOP / PC SPATIOUS SCREEN ARRANGEMENT & AUTO-SCROLL EFFORT
    ========================================================================== */
 @media (min-width: 960px) {
-  .jarvis-center-stage.scale-empty .jarvis-arc-container,
-  .jarvis-center-stage.is-initial .jarvis-arc-container {
-    width: 270px;
-    height: 270px;
-  }
-  .jarvis-center-stage.scale-empty .arc-glow-aura,
-  .jarvis-center-stage.is-initial .arc-glow-aura {
-    width: 220px;
-    height: 220px;
+  .jarvis-center-stage {
+    padding: 0 30px;
   }
 
-  .jarvis-center-stage.scale-short {
+  .reactor-fixed-section {
+    height: 35vh;
+  }
+
+  .jarvis-subtitle-card {
+    width: min(92%, 840px);
+    max-height: 52vh;
+    padding: 10px 20px 24px;
     gap: 16px;
-  }
-  .jarvis-center-stage.scale-short .jarvis-arc-container {
-    width: 215px;
-    height: 215px;
-  }
-  .jarvis-center-stage.scale-short .arc-glow-aura {
-    width: 175px;
-    height: 175px;
-  }
-
-  .jarvis-center-stage.scale-medium {
-    gap: 14px;
-  }
-  .jarvis-center-stage.scale-medium .jarvis-arc-container {
-    width: 175px;
-    height: 175px;
-  }
-  .jarvis-center-stage.scale-medium .arc-glow-aura {
-    width: 140px;
-    height: 140px;
-  }
-
-  .jarvis-center-stage.scale-expanded {
-    padding: 0.75rem 30px 8px;
-    gap: 12px;
-  }
-  .jarvis-center-stage.scale-expanded .jarvis-arc-container {
-    width: 140px;
-    height: 140px;
-  }
-  .jarvis-center-stage.scale-expanded .arc-glow-aura {
-    width: 110px;
-    height: 110px;
-  }
-
-  .jarvis-subtitle-card.scale-short {
-    min-width: 320px;
-    max-width: 540px;
-  }
-
-  .jarvis-subtitle-card.scale-medium {
-    min-width: 480px;
-    max-width: 740px;
-  }
-
-  .jarvis-subtitle-card.scale-expanded {
-    width: min(92%, 920px);
-    max-height: calc(100vh - 280px);
-    padding: 18px 26px;
   }
 
   .turn-text {
-    font-size: 15px;
-    line-height: 1.55;
+    font-size: 16px;
+    line-height: 1.6;
   }
 }
 
 @media (min-width: 1280px) {
-  .jarvis-subtitle-card.scale-expanded {
-    width: min(90%, 960px);
-    max-height: calc(100vh - 280px);
+  .jarvis-subtitle-card {
+    width: min(90%, 900px);
   }
 }
 
@@ -1076,97 +928,40 @@
    MOBILE RESPONSIVENESS
    ========================================================================== */
 @media (max-width: 768px) {
-  .jarvis-center-stage.is-initial,
-  .jarvis-center-stage.scale-empty {
-    padding: 1rem 12px;
-    gap: 14px;
+  .jarvis-hud-top {
+    height: 44px;
+    padding: 6px 14px;
   }
 
-  .jarvis-center-stage.is-initial .jarvis-arc-container,
-  .jarvis-center-stage.scale-empty .jarvis-arc-container {
-    width: 200px;
-    height: 200px;
+  .jarvis-center-stage {
+    padding: 0 12px;
   }
 
-  .jarvis-center-stage.is-initial .arc-glow-aura,
-  .jarvis-center-stage.scale-empty .arc-glow-aura {
-    width: 160px;
-    height: 160px;
+  .reactor-fixed-section {
+    height: 32vh;
+    min-height: 160px;
   }
 
-  .jarvis-subtitle-card.is-empty,
-  .jarvis-subtitle-card.scale-empty {
-    width: min(92%, 360px);
-    padding: 8px 14px;
-    font-size: 12px;
+  .jarvis-arc-container {
+    width: clamp(125px, 20vh, 150px);
+    height: clamp(125px, 20vh, 150px);
   }
 
-  /* Mobile Short Scale */
-  .jarvis-center-stage.scale-short {
-    padding: 0.75rem 10px 8px;
-    gap: 10px;
+  .arc-glow-aura {
+    width: clamp(100px, 16vh, 120px);
+    height: clamp(100px, 16vh, 120px);
   }
 
-  .jarvis-center-stage.scale-short .jarvis-arc-container {
-    width: 155px;
-    height: 155px;
+  .jarvis-subtitle-card {
+    width: 96%;
+    max-height: 50vh;
+    padding: 6px 8px 12px;
+    gap: 12px;
   }
 
-  .jarvis-center-stage.scale-short .arc-glow-aura {
-    width: 120px;
-    height: 120px;
-  }
-
-  .jarvis-subtitle-card.scale-short {
-    width: fit-content;
-    min-width: min(90%, 250px);
-    max-width: 92%;
-    max-height: 160px;
-    padding: 10px 16px;
-    border-radius: 14px;
-    gap: 6px;
-  }
-
-  /* Mobile Medium Scale */
-  .jarvis-center-stage.scale-medium {
-    padding: 0.65rem 10px 6px;
-    gap: 8px;
-  }
-
-  .jarvis-center-stage.scale-medium .jarvis-arc-container {
-    width: 135px;
-    height: 135px;
-  }
-
-  .jarvis-center-stage.scale-medium .arc-glow-aura {
-    width: 105px;
-    height: 105px;
-  }
-
-  .jarvis-subtitle-card.scale-medium {
-    width: fit-content;
-    min-width: 90%;
-    max-width: 95%;
-    max-height: 220px;
-    padding: 12px 16px;
-    border-radius: 16px;
-    gap: 8px;
-  }
-
-  /* Mobile Expanded Scale */
-  .jarvis-center-stage.scale-expanded {
-    padding: 0.5rem 10px 6px;
-    gap: 8px;
-  }
-
-  .jarvis-center-stage.scale-expanded .jarvis-arc-container {
-    width: 115px;
-    height: 115px;
-  }
-
-  .jarvis-center-stage.scale-expanded .arc-glow-aura {
-    width: 90px;
-    height: 90px;
+  .turn-text {
+    font-size: 14px;
+    line-height: 1.5;
   }
 
   .hud-corner-mark.top-left {
@@ -1179,8 +974,6 @@
 
   .hud-corner-mark.top-left .hud-code {
     display: inline-block !important;
-    font-size: 11px;
-    font-weight: 700;
   }
 
   .hud-corner-mark.bottom-left,
@@ -1188,32 +981,30 @@
     display: none;
   }
 
-  .jarvis-hud-top,
-  .jarvis-control-deck {
-    padding: 8px 14px;
-  }
-
-  .jarvis-subtitle-card.scale-expanded {
-    width: 96%;
-    min-height: 100px;
-    max-height: calc(100vh - 215px);
-    padding: 12px 14px;
-    border-radius: 16px;
-    gap: 10px;
-  }
-
-  .turn-text {
-    font-size: 13px;
-    line-height: 1.45;
-  }
-
-  .jarvis-pill-button {
-    padding: 8px 14px;
+  .hud-brand-stacked .brand-main {
     font-size: 12px;
   }
 
+  .hud-brand-stacked .brand-sub {
+    font-size: 8px;
+  }
+
+  .jarvis-control-deck {
+    height: 10vh;
+    min-height: 64px;
+    padding: 6px 14px 10px;
+  }
+
   .control-cluster {
-    gap: 8px;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+  }
+
+  .jarvis-pill-button {
+    width: 100%;
+    height: 48px;
+    font-size: 14px;
   }
 }
 
