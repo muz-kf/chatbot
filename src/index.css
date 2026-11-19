@@ -6230,9 +6230,9 @@ button {
     flex-shrink: 0;
   }
 
-  /* Hide the top-left menu toggle on mobile UI - tapping the DAZZ logo opens the sidebar */
+  /* Ensure sidebar toggle and settings buttons are visible on mobile */
   .sidebar-toggle {
-    display: none !important;
+    display: inline-flex !important;
   }
 
   .composer-area {

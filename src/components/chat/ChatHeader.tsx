@@ -1,4 +1,4 @@
-import { ArrowDown, PanelLeftClose, PanelLeftOpen, Radio } from "lucide-react";
+import { ArrowDown, Palette, PanelLeftClose, PanelLeftOpen, Radio } from "lucide-react";
 import { Button } from "../ui/button";
 import { DazzMark } from "./DazzMark";
 import type { AiProvider } from "../../types/chat";
@@ -10,6 +10,7 @@ type ChatHeaderProps = {
   onToggleSidebar: () => void;
   onScrollLatest: () => void;
   onOpenVoiceMode?: () => void;
+  onOpenSettings?: () => void;
 };
 
 export function ChatHeader({
@@ -19,6 +20,7 @@ export function ChatHeader({
   onToggleSidebar,
   onScrollLatest,
   onOpenVoiceMode,
+  onOpenSettings,
 }: ChatHeaderProps) {
   return (
     <header className="chat-header">
@@ -26,7 +28,7 @@ export function ChatHeader({
         <Button
           variant="ghost"
           size="icon"
-          className="sidebar-toggle desktop-only"
+          className="sidebar-toggle"
           aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
           aria-expanded={sidebarOpen}
           onClick={onToggleSidebar}
@@ -47,6 +49,18 @@ export function ChatHeader({
         </button>
       </div>
       <div className="header-trailing">
+        {onOpenSettings && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="header-settings-btn"
+            aria-label="Settings and Themes"
+            title="Settings & Themes"
+            onClick={onOpenSettings}
+          >
+            <Palette size={18} />
+          </Button>
+        )}
         {onOpenVoiceMode && (
           <Button
             variant="outline"

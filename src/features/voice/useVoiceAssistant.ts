@@ -46,6 +46,9 @@ export function useVoiceAssistant({
   const accumulatedSpeechRef = useRef("");
   const hasSpokenRef = useRef(false);
   const inFlightRef = useRef(false);
+  const lastPromptRef = useRef("");
+  const errorRef = useRef("");
+  errorRef.current = error;
   const activeChatIdRef = useRef<string | null>(chatId);
   activeChatIdRef.current = chatId;
 
@@ -76,6 +79,7 @@ export function useVoiceAssistant({
       const prompt = spokenPrompt.trim();
       if (!prompt || inFlightRef.current) return;
 
+      lastPromptRef.current = prompt;
       inFlightRef.current = true;
       setStatus("thinking");
       startAudioSimulation(0.4);
@@ -174,8 +178,9 @@ export function useVoiceAssistant({
         if (!response.ok) {
           let errMsg = `Failed to get voice reply (${response.status}).`;
           try {
-            const errJson = (await response.json()) as { error?: string };
+            const errJson = (await response.json()) as { error?: string; detail?: string };
             if (errJson?.error) errMsg = errJson.error;
+            else if (errJson?.detail) errMsg = errJson.detail;
           } catch {
             // ignore
           }
@@ -192,14 +197,21 @@ export function useVoiceAssistant({
 
         const processLine = (line: string) => {
           if (!line.trim()) return;
+          let parsed: { token?: string; error?: string; detail?: string } | null = null;
           try {
-            const parsed = JSON.parse(line) as { token?: string; error?: string };
-            if (parsed.error) throw new Error(parsed.error);
-            if (typeof parsed.token === "string") handleToken(parsed.token);
-          } catch (lineErr) {
-            if (lineErr instanceof Error && lineErr.message.includes("error")) {
-              throw lineErr;
-            }
+            parsed = JSON.parse(line);
+          } catch {
+            return;
+          }
+          if (!parsed) return;
+          if (parsed.error) {
+            throw new Error(parsed.error);
+          }
+          if (parsed.detail) {
+            throw new Error(parsed.detail);
+          }
+          if (typeof parsed.token === "string") {
+            handleToken(parsed.token);
           }
         };
 
@@ -257,8 +269,9 @@ export function useVoiceAssistant({
   );
 
   // Start Speech Recognition
-  const startListening = useCallback(() => {
+  const startListening = useCallback((force = false) => {
     if (muted || inFlightRef.current) return;
+    if (errorRef.current && !force) return;
 
     if (silenceTimerRef.current) {
       clearTimeout(silenceTimerRef.current);
@@ -276,6 +289,7 @@ export function useVoiceAssistant({
     setTranscript("");
     setInterimTranscript("");
     setError("");
+    errorRef.current = "";
     setStatus("listening");
     startAudioSimulation(0.65);
 
@@ -404,6 +418,21 @@ export function useVoiceAssistant({
     };
   }, []);
 
+  const retryLastPrompt = useCallback(() => {
+    setError("");
+    errorRef.current = "";
+    if (lastPromptRef.current) {
+      sendSpeechToAi(lastPromptRef.current);
+    } else {
+      startListening(true);
+    }
+  }, [sendSpeechToAi, startListening]);
+
+  const clearError = useCallback(() => {
+    setError("");
+    errorRef.current = "";
+  }, []);
+
   return {
     status,
     transcript,
@@ -417,5 +446,7 @@ export function useVoiceAssistant({
     interrupt,
     toggleMute,
     sendManualPrompt: sendSpeechToAi,
+    retryLastPrompt,
+    clearError,
   };
 }
