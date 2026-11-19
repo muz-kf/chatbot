@@ -9,6 +9,8 @@ import {
   Radio,
   CornerDownLeft,
   Settings2,
+  AlertTriangle,
+  RotateCcw,
 } from "lucide-react";
 import { JarvisArcReactor } from "./JarvisArcReactor";
 import { useVoiceAssistant, type VoiceAssistantStatus } from "./useVoiceAssistant";
@@ -54,6 +56,8 @@ export function VoiceModeView({
     interrupt,
     toggleMute,
     sendManualPrompt,
+    retryLastPrompt,
+    clearError,
   } = useVoiceAssistant({
     chatId,
     aiName,
@@ -116,6 +120,10 @@ export function VoiceModeView({
 
   // Keyboard shortcut listener: Space/M = toggle mute, Esc = exit, Enter = quick send
   useEffect(() => {
+    (window as unknown as { __voiceSendPrompt?: (p: string) => void }).__voiceSendPrompt = (p: string) => {
+      sendManualPrompt(p);
+    };
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
         return;
@@ -133,10 +141,16 @@ export function VoiceModeView({
     };
 
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [interrupt, onExit, status, toggleMute]);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      delete (window as unknown as { __voiceSendPrompt?: (p: string) => void }).__voiceSendPrompt;
+    };
+  }, [interrupt, onExit, sendManualPrompt, status, toggleMute]);
 
   const getStatusLabel = (s: VoiceAssistantStatus) => {
+    if (error) {
+      return `${aiName.toUpperCase()} // CHAT API ERROR`;
+    }
     switch (s) {
       case "listening":
         return `${aiName.toUpperCase()} // LISTENING TO VOCAL INPUT`;
@@ -196,15 +210,18 @@ export function VoiceModeView({
       {/* Center Stage: Iron Man Arc Reactor & Audio Waveform */}
       <main className={`jarvis-center-stage ${hasAiResponse ? "has-content" : "is-new-chat"} ${hasUserSpeech ? "has-transcription" : ""}`}>
         {/* Fixed Hero Animator Section (~400px desktop, 330px mobile in center when new/transcribing) */}
-        <div className={`reactor-fixed-section ${hasAiResponse ? "has-content" : "is-new-chat"}`}>
+        <div className={`reactor-fixed-section ${hasAiResponse ? "has-content" : "is-new-chat"} ${error ? "has-api-error" : ""}`}>
           <div className="reactor-wrapper">
             <JarvisArcReactor
               status={status}
               audioLevel={audioLevel}
               aiName={aiName}
               theme={theme}
+              hasError={Boolean(error)}
               onClick={() => {
-                if (status === "speaking") {
+                if (error) {
+                  retryLastPrompt();
+                } else if (status === "speaking") {
                   interrupt();
                 } else if (status === "listening") {
                   toggleMute();
@@ -217,13 +234,37 @@ export function VoiceModeView({
 
           {/* Status Line */}
           <div className="jarvis-status-line">
-            <span className={`status-led status-${status}`} />
+            <span className={`status-led ${error ? "status-error" : `status-${status}`}`} />
             <h2 className="status-label">{getStatusLabel(status)}</h2>
           </div>
 
           {error && (
             <div className="jarvis-error-banner" role="alert">
-              <span>{error}</span>
+              <div className="error-banner-content">
+                <AlertTriangle size={15} className="error-icon" />
+                <span className="error-message">{error}</span>
+              </div>
+              <div className="error-banner-actions">
+                <button
+                  type="button"
+                  className="error-retry-btn"
+                  onClick={retryLastPrompt}
+                  title="Retry previous query"
+                  aria-label="Retry previous query"
+                >
+                  <RotateCcw size={12} />
+                  <span>Retry</span>
+                </button>
+                <button
+                  type="button"
+                  className="error-dismiss-btn"
+                  onClick={clearError}
+                  title="Dismiss error"
+                  aria-label="Dismiss error"
+                >
+                  <X size={12} />
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -231,7 +272,7 @@ export function VoiceModeView({
         {/* Live Conversation Subtitle / Transcoding Text Stream (Without bg box, with scrollbar) */}
         <div
           ref={subtitleContainerRef}
-          className={`jarvis-subtitle-card jarvis-speech-stream ${hasAiResponse ? "has-content" : "is-new-chat"} ${hasUserSpeech ? "has-transcription" : ""}`}
+          className={`jarvis-subtitle-card jarvis-speech-stream ${hasAiResponse ? "has-content" : "is-new-chat"} ${hasUserSpeech ? "has-transcription" : ""} ${error ? "has-stream-error" : ""}`}
           aria-live="polite"
         >
           {/* User Live Speech Transcription */}
@@ -245,6 +286,31 @@ export function VoiceModeView({
                 )}
                 <span className="hud-cursor" />
               </p>
+            </div>
+          )}
+
+          {/* Assistant Error Turn if API failed */}
+          {error && (
+            <div className="subtitle-turn error-turn" role="alert">
+              <span className="turn-label">SYSTEM ALERT</span>
+              <div className="voice-error-card">
+                <AlertTriangle size={16} className="error-card-icon" />
+                <div className="error-card-body">
+                  <p className="error-card-text">{error}</p>
+                  <span className="error-card-hint">
+                    Check network connection or tap retry.
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  className="error-card-retry"
+                  onClick={retryLastPrompt}
+                  aria-label="Retry query"
+                >
+                  <RotateCcw size={13} />
+                  <span>Retry</span>
+                </button>
+              </div>
             </div>
           )}
 
@@ -284,13 +350,20 @@ export function VoiceModeView({
           ) : (
             <button
               type="button"
-              className={`jarvis-pill-button btn-mic ${muted ? "is-muted" : "is-active"}`}
-              onClick={toggleMute}
-              aria-label={muted ? "Unmute microphone (M)" : "Mute microphone (M)"}
+              className={`jarvis-pill-button btn-mic ${muted ? "is-muted" : "is-active"} ${error ? "has-error-state" : ""}`}
+              onClick={() => {
+                if (error) {
+                  clearError();
+                  startListening(true);
+                } else {
+                  toggleMute();
+                }
+              }}
+              aria-label={error ? "Tap to try again" : muted ? "Unmute microphone (M)" : "Mute microphone (M)"}
             >
               {muted ? <MicOff size={18} /> : <Mic size={18} />}
-              <span>{muted ? "Microphone Muted" : "Listening Active"}</span>
-              <kbd>M</kbd>
+              <span>{error ? "Tap to Try Again" : muted ? "Microphone Muted" : "Listening Active"}</span>
+              <kbd>{error ? "R" : "M"}</kbd>
             </button>
           )}
         </div>

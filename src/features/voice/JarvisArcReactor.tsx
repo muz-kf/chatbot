@@ -7,6 +7,7 @@ export interface JarvisArcReactorProps {
   onClick?: () => void;
   aiName?: string;
   theme?: string;
+  hasError?: boolean;
 }
 
 export function JarvisArcReactor({
@@ -15,6 +16,7 @@ export function JarvisArcReactor({
   onClick,
   aiName = "JARVIS",
   theme = "dazz",
+  hasError = false,
 }: JarvisArcReactorProps) {
   // Dynamic scale and pulse factors based on status and audio reactivity
   const scale = 1 + (status === "speaking" || status === "listening" ? audioLevel * 0.15 : 0.03);
@@ -43,13 +45,15 @@ export function JarvisArcReactor({
 
   return (
     <div
-      className={`jarvis-arc-container status-${status} theme-${theme}`}
+      className={`jarvis-arc-container status-${status} theme-${theme} ${hasError ? "has-error" : ""}`}
       onClick={onClick}
       role="button"
       tabIndex={0}
-      aria-label={`${aiName} Arc Reactor Core - Current state: ${status}. Click to interact.`}
+      aria-label={`${aiName} Arc Reactor Core - Current state: ${hasError ? "error" : status}. Click to interact.`}
       title={
-        status === "speaking"
+        hasError
+          ? "API Error. Click to retry or speak"
+          : status === "speaking"
           ? "Click to interrupt"
           : status === "listening"
           ? "Listening... Click to pause"
@@ -221,9 +225,9 @@ export function JarvisArcReactor({
       )}
 
       {/* Kinetic Center Icon / State Badge */}
-      <div className="arc-status-badge">
-        <span className={`status-dot dot-${status}`} />
-        <span className="status-text">{status.toUpperCase()}</span>
+      <div className={`arc-status-badge ${hasError ? "is-error" : ""}`}>
+        <span className={`status-dot ${hasError ? "dot-error" : `dot-${status}`}`} />
+        <span className="status-text">{hasError ? "ERROR" : status.toUpperCase()}</span>
       </div>
     </div>
   );

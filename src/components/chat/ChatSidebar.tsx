@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   LogOut,
   MessageSquare,
+  Palette,
   PanelLeftClose,
   Plus,
   Radio,
@@ -147,12 +148,12 @@ export function ChatSidebar({
           <Button
             variant="ghost"
             className="settings-toggle"
-            aria-label="Open settings"
+            aria-label="Open settings and themes"
             onClick={onToggleSettings}
           >
             <span className="settings-toggle-label">
-              <Settings2 size={16} />
-              <span>Settings</span>
+              <Palette size={16} />
+              <span>Settings & Themes</span>
             </span>
           </Button>
         </div>

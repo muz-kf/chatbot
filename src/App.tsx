@@ -974,6 +974,7 @@ function App() {
           onToggleSidebar={() => setSidebarOpen((open) => !open)}
           onScrollLatest={() => scrollToBottom(true)}
           onOpenVoiceMode={handleOpenVoiceMode}
+          onOpenSettings={() => setSettingsOpen(true)}
         />
         <section ref={viewportRef} className="conversation-viewport" aria-label={`Conversation with ${activeAiName}`}>
           {chatNotFound ? (
