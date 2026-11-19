@@ -17,7 +17,14 @@ class ApiSecurityMiddleware:
 
         headers = dict(scope["headers"])
         origin = headers.get(b"origin")
-        if scope["method"] not in {"GET", "HEAD", "OPTIONS"} and not origin:
+        client_platform = headers.get(b"x-client-platform", b"").decode("latin-1").lower()
+        is_mobile_client = client_platform in {"android", "ios", "mobile"}
+
+        if (
+            scope["method"] not in {"GET", "HEAD", "OPTIONS"}
+            and not origin
+            and not is_mobile_client
+        ):
             await self._reject(
                 scope,
                 receive,
@@ -27,7 +34,7 @@ class ApiSecurityMiddleware:
             )
             return
 
-        if origin:
+        if origin and not is_mobile_client:
             try:
                 normalized_origin = normalize_origin(origin.decode("latin-1"))
                 host = headers.get(b"host", b"").decode("latin-1")

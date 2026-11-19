@@ -128,6 +128,15 @@ def test_untrusted_origin_is_rejected() -> None:
     assert response.json() == {"error": "Cross-origin requests are not allowed."}
 
 
+def test_mobile_client_request_is_allowed_without_origin() -> None:
+    response = client.post(
+        "/api/auth/logout",
+        headers={"X-Client-Platform": "android"},
+    )
+
+    assert response.status_code == 204
+
+
 def test_oversized_content_length_is_rejected_before_parsing() -> None:
     response = client.post(
         "/api/auth/logout",
